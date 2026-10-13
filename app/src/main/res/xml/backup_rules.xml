@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude domain="database" path="amr_studio.db" />
+    <exclude domain="sharedpref" path="amr_studio_preferences.xml" />
+    <exclude domain="file" path="downloads/" />
+    <exclude domain="file" path="projects/" />
+</full-backup-content>

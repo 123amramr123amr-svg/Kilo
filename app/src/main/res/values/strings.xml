@@ -1,0 +1,210 @@
+<resources>
+    <string name="app_name">مساعدون عمرو</string>
+    <string name="app_name_en">Amr Studio</string>
+    <string name="app_short_name">Amr Studio</string>
+
+    <!-- Auth -->
+    <string name="welcome_title">مرحباً بك في مساعدون عمرو</string>
+    <string name="welcome_subtitle">منصة الذكاء الاصطناعي للمحادثة والبرمجة والمشاريع</string>
+    <string name="login">دخول</string>
+    <string name="register">إنشاء حساب</string>
+    <string name="name">الاسم</string>
+    <string name="email">البريد الإلكتروني</string>
+    <string name="phone">رقم الهاتف</string>
+    <string name="password">كلمة المرور</string>
+    <string name="confirm_password">تأكيد كلمة المرور</string>
+    <string name="privacy_agreement">أوافق على <u>سياسة الخصوصية</u> و <u>شروط الاستخدام</u></string>
+    <string name="demo_notice">هذا نسخة تجريبية محلية. البيانات محفوظة على جهازك فقط.</string>
+    <string name="enter_valid_email">أدخل بريداً إلكترونياً صحيحاً</string>
+    <string name="enter_valid_phone">أدخل رقم هاتف صحيحاً</string>
+    <string name="passwords_dont_match">كلمة المرور غير متطابقة</string>
+    <string name="password_too_short">كلمة المرور يجب أن تكون 8 أحرف على الأقل</string>
+    <string name="field_required">هذا الحقل مطلوب</string>
+    <string name="register_success">تم إنشاء الحساب بنجاح! لديك 24 ساعة تجربة.</string>
+    <string name="login_success">مرحباً بعودتك!</string>
+    <string name="account_expired">انتهت صلاحية حسابك. تواصل مع المطور لتمديد المدة.</string>
+    <string name="logout">تسجيل الخروج</string>
+    <string name="delete_account">حذف الحساب</string>
+    <string name="confirm_delete_account">هل أنت متأكد من حذف حسابك وكل بياناتك؟ لا يمكن التراجع.</string>
+    <string name="switch_account">تبديل الحساب</string>
+
+    <!-- Main UI -->
+    <string name="chats">المحادثات</string>
+    <string name="projects">المشاريع</string>
+    <string name="models">النماذج</string>
+    <string name="connectors">الوصلات</string>
+    <string name="agent">الوكيل</string>
+    <string name="settings">الإعدادات</string>
+    <string name="new_chat">محادثة جديدة</string>
+    <string name="search_chats">البحث في المحادثات</string>
+    <string name="select_model">اختر النموذج</string>
+    <string name="remaining_time">الوقت المتبقي</string>
+    <string name="expires_on">ينتهي في</string>
+    <string name="hours_left">ساعات متبقية</string>
+    <string name="days_left">أيام متبقية</string>
+    <string name="trial_expired">انتهت الفترة التجريبية</string>
+    <string name="contact_developer">تواصل مع المطور</string>
+
+    <!-- Chat -->
+    <string name="message_placeholder">اكتب رسالتك هنا…</string>
+    <string name="attach_file">إرفاق ملف</string>
+    <string name="record_audio">تسجيل صوتي</string>
+    <string name="send">إرسال</string>
+    <string name="cancel_generation">إلغاء التوليد</string>
+    <string name="thinking">يفكر…</string>
+    <string name="response_complete">انتهى الرد</string>
+    <string name="copy_code">نسخ الكود</string>
+    <string name="download_code">تنزيل الكود</string>
+    <string name="preview_code">معاينة</string>
+    <string name="open_in_editor">فتح في المحرر</string>
+    <string name="export_chat">تصدير المحادثة</string>
+    <string name="delete_chat">حذف المحادثة</string>
+    <string name="confirm_delete_chat">حذف هذه المحادثة؟</string>
+
+    <!-- Developer Panel -->
+    <string name="developer_panel">لوحة المطور</string>
+    <string name="users_tab">المستخدمون</string>
+    <string name="api_keys_tab">مفاتيح API</string>
+    <string name="models_tab">النماذج</string>
+    <string name="activate_user">تفعيل</string>
+    <string name="deactivate_user">إيقاف</string>
+    <string name="extend_duration">تمديد المدة</string>
+    <string name="extend_hours">ساعات</string>
+    <string name="extend_days">أيام</string>
+    <string name="extend_months">أشهر</string>
+    <string name="allowed_models">النماذج المسموحة</string>
+    <string name="delete_user">حذف المستخدم</string>
+    <string name="confirm_delete_user">حذف هذا المستخدم وكل بياناته؟</string>
+    <string name="add_api_key">إضافة مفتاح</string>
+    <string name="provider_name">اسم المزوّد</string>
+    <string name="base_url">Base URL</string>
+    <string name="api_key">API Key</string>
+    <string name="default_model">النموذج الافتراضي</string>
+    <string name="test_connection">اختبار الاتصال</string>
+    <string name="show_key">إظهار المفتاح</string>
+    <string name="hide_key">إخفاء المفتاح</string>
+    <string name="edit_key">تعديل</string>
+    <string name="delete_key">حذف</string>
+    <string name="model_name">اسم النموذج</string>
+    <string name="model_provider">المزوّد</string>
+    <string name="model_type">النوع</string>
+    <string name="model_free">مجاني</string>
+    <string name="model_requires_key">يحتاج مفتاح</string>
+    <string name="model_active">مفعل</string>
+    <string name="model_inactive">معطل</string>
+    <string name="allowed_users">المستخدمون المسموح لهم</string>
+    <string name="toggle_model">تفعيل/تعطيل</string>
+    <string name="model_order":الترتيب</string>
+
+    <!-- Model Center -->
+    <string name="model_center">مركز النماذج</string>
+    <string name="ollama_tab">نماذج Ollama</string>
+    <string name="hermes_tab">Hermes/OpenCode</string>
+    <string name="nine_router_tab">9Router</string>
+    <string name="added_models_tab">النماذج المضافة</string>
+    <string name="downloads_tab">التنزيلات</string>
+    <string name="ollama_address">عنوان Ollama</string>
+    <string name="check_connection">فحص الاتصال</string>
+    <string name="fetch_models">جلب النماذج</string>
+    <string name="download_model">تنزيل النموذج</string>
+    <string name="download_progress">جاري التنزيل…</string>
+    <string name="model_size">الحجم</string>
+    <string name="pause_download">إيقاف</string>
+    <string name="resume_download">استئناف</string>
+    <string name="retry_download">إعادة المحاولة</string>
+    <string name="verify_file">التحقق من الملف</string>
+    <string name="hermes_gateway_title">Hermes Gateway</string>
+    <string name="hermes_address">عنوان Hermes</string>
+    <string name="hermes_api_key">API Server Key</string>
+    <string name="hermes_model">hermes-agent</string>
+    <string name="hermes_session_key">X-Hermes-Session-Key</string>
+    <string name="hermes_session_id">X-Hermes-Session-Id</string>
+    <string name="hermes_note">شغّل \'hermes gateway\' على جهاز الكمبيوتر، ثم أدخل العنوان هنا.</string>
+    <string name="opencode_note">OpenCode يعمل على الكمبيوتر، ليس تطبيقاً للأندرويد مباشرة.</string>
+    <string name="nine_router_address">عنوان 9Router</string>
+    <string name="nine_router_note">يدعم OpenAI-compatible و fallback بين المزوّدين.</string>
+
+    <!-- Projects -->
+    <string name="create_project">إنشاء مشروع</string>
+    <string name="project_name">اسم المشروع</string>
+    <string name="project_type">نوع المشروع</string>
+    <string name="project_type_html">HTML</string>
+    <string name="project_type_landing">Landing Page</string>
+    <string name="project_type_webapp">Web App</string>
+    <string name="project_type_dashboard">Dashboard</string>
+    <string name="project_type_store">متجر</string>
+    <string name="project_type_api">API</string>
+    <string name="project_files">ملفات المشروع</string>
+    <string name="file_editor">محرر الملفات</string>
+    <string name="live_preview">معاينة مباشرة</string>
+    <string name="ai_assistant">مساعد AI</string>
+    <string name="save_version">حفظ نسخة</string>
+    <string name="version_history">سجل النسخ</string>
+    <string name="undo">تراجع</string>
+    <string name="redo":إعادة</string>
+    <string name="export_zip">تصدير ZIP</string>
+    <string name="download_html">تنزيل HTML</string>
+    <string name="deploy_github">نشر على GitHub Pages</string>
+    <string name="deploy_cloudflare">نشر على Cloudflare Pages</string>
+    <string name="deploy_netlify">نشر على Netlify</string>
+    <string name="deploy_note">النشر يحتاج حسابك ومفتاحك الشخصي. لا توجد استضافة مجانية غير محدودة تلقائياً.</string>
+
+    <!-- Connectors -->
+    <string name="connector_status_connected">متصل</string>
+    <string name="connector_status_disconnected">غير متصل</string>
+    <string name="connector_status_connecting">جاري الاتصال…</string>
+    <string name="test_connector">اختبار</string>
+    <string name="disconnect_connector">فصل</string>
+    <string name="connector_settings">إعدادات</string>
+    <string name="connector_description">وصف مختصر لما تفعله الوصلة</string>
+
+    <!-- Agent -->
+    <string name="agent_workspace">مساحة الوكيل</string>
+    <string name="new_task">مهمة جديدة</string>
+    <string name="task_description">وصف المهمة</string>
+    <string name="create_plan">إنشاء خطة</string>
+    <string name="execute_steps">تنفيذ الخطوات</string>
+    <string name="operations_log">سجل العمليات</string>
+    <string name="pause_agent">إيقاف</string>
+    <string name="resume_agent">استئناف</string>
+    <string name="confirm_dangerous_op">هذا الإجراء خطير (حذف ملفات/نشر عام). تأكيد؟</string>
+    <string name="task_completed">اكتملت المهمة</string>
+    <string name="notification_task_done">انتهت مهمة الوكيل</string>
+
+    <!-- Settings -->
+    <string name="theme">السمة</string>
+    <string name="theme_light">فاتح</string>
+    <string name="theme_dark">داكن</string>
+    <string name="theme_system">حسب النظام</string>
+    <string name="color_scheme">مخطط الألوان</string>
+    <string name="color_ocean">Ocean</string>
+    <string name="color_violet">Violet</string>
+    <string name="color_forest">Forest</string>
+    <string name="color_light">Light</string>
+    <string name="language">اللغة</string>
+    <string name="language_ar">العربية</string>
+    <string name="language_en":English</string>
+    <string name="notifications">الإشعارات</string>
+    <string name="offline_mode">وضع عدم الاتصال</string>
+    <string name="backup_data">نسخ احتياطي</string>
+    <string name="restore_data">استعادة</string>
+    <string name="privacy_policy">سياسة الخصوصية</string>
+    <string name="terms_of_service">شروط الاستخدام</string>
+    <string name="help_faq">المساعدة والأسئلة الشائعة</string>
+    <string name="about">حول التطبيق</string>
+    <string name="version">الإصدار 1.0.0</string>
+    <string name="onboarding_title">مرحباً بك في مساعدون عمرو</string>
+    <string name="onboarding_1">محادثة ذكية مع أحدث نماذج AI</string>
+    <string name="onboarding_2">برمجة وإنشاء مواقع وتطبيقات</string>
+    <string name="onboarding_3">إدارة نماذج ومشاريع محلياً وسحابياً</string>
+    <string name="onboarding_4">لوحة مطور قوية لإدارة المستخدمين والمفاتيح</string>
+    <string name="get_started">ابدأ الآن</string>
+
+    <!-- Errors -->
+    <string name="error_network">خطأ في الشبكة. تحقق من اتصالك.</string>
+    <string name="error_server">خطأ في الخادم. حاول لاحقاً.</string>
+    <string name="error_unauthorized">جلسة منتهية. سجل دخولك مجدداً.</string>
+    <string name="error_rate_limit">تجاوزت الحد المسموح. انتظر قليلاً.</string>
+    <string name="error_unknown">حدث خطأ غير متوقع.</string>
+    <string name="retry">إعادة المحاولة</string>
+</resources>

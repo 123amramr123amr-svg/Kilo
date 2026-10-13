@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" path="amr_studio.db" />
+        <exclude domain="sharedpref" path="amr_studio_preferences.xml" />
+        <exclude domain="file" path="downloads/" />
+        <exclude domain="file" path="projects/" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="amr_studio.db" />
+        <exclude domain="sharedpref" path="amr_studio_preferences.xml" />
+    </device-transfer>
+</data-extraction-rules>

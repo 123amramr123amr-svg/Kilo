@@ -1,7 +1,7 @@
 {
-  "name": "mauns-web",
+  "name": "memoo",
   "version": "1.0.0",
-  "description": "Web UI similar to Mauns AI agent",
+  "description": "Memoo AI agent web UI",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

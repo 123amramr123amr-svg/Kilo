@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "LensAI",
+    "slug": "lensai-camera",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "lensai",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lensai.camera",
+      "info.plist": {
+        "NSCameraUsageDescription": "يستخدم LensAI الكاميرة ل التقاط الصور و الفيديو ب جودة احترافية.",
+        "NSMicrophoneUsageDescription": "يستخدم LensAI الميكروفون ل تسجيل الصوت مع الفيديو.",
+        "NSPhotoLibraryUsageDescription": "يستخدم LensAI المعرض ل عرض و تعديل الصور المخزنة."
+      }
+    },
+    "android": {
+      "package": "com.lensai.camera",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      "expo-camera",
+      "expo-media-library",
+      "expo-file-system",
+      "expo-sharing",
+      "expo-haptics"
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  API keys are stored AES/GCM-encrypted with a non-exportable Android Keystore key,
+  so they are useless outside this device. They must never leave the device through
+  cloud backup either, therefore every domain that can contain credentials is excluded.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="pai_secure_keys.xml" />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="database" path="personal_ai_agent.db" />
+    <exclude domain="file" path="datastore/" />
+</full-backup-content>

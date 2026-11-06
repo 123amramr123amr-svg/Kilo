@@ -1,0 +1,17 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+*.jks
+*.keystore
+secrets.properties
+# Never commit API keys or exported backups
+/app/src/main/assets/local_api_keys.json
+*.apikeys

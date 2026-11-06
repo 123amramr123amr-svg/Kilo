@@ -68,7 +68,9 @@ class SettingsRepositoryImpl(
     }
 
     private fun Preferences.toSettings(): AppSettings = AppSettings(
-        language = AppLanguage.fromTag(this[KEY_LANGUAGE]),
+        // Before the user picks a language, follow the device locale so the very
+        // first launch is already in Arabic on an Arabic phone.
+        language = AppLanguage.fromTag(this[KEY_LANGUAGE] ?: systemLanguageTag()),
         theme = runCatching { ThemeMode.valueOf(this[KEY_THEME] ?: ThemeMode.MIDNIGHT.name) }
             .getOrDefault(ThemeMode.MIDNIGHT),
         ttsEnabled = this[KEY_TTS] ?: false,
@@ -78,6 +80,9 @@ class SettingsRepositoryImpl(
         displayName = this[KEY_DISPLAY_NAME] ?: "",
         createdAt = this[KEY_CREATED_AT] ?: 0L,
     )
+
+    private fun systemLanguageTag(): String =
+        java.util.Locale.getDefault().language.ifBlank { AppLanguage.ENGLISH.tag }
 
     private companion object {
         val KEY_LANGUAGE = stringPreferencesKey("language")

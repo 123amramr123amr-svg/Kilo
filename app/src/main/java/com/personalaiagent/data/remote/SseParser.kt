@@ -15,6 +15,7 @@ data class SseEvent(val event: String?, val data: String)
 class SseStreamParser {
 
     private var eventName: String? = null
+    private var hasData = false
     private val data = StringBuilder()
 
     /** Feeds one line (without line terminator). Returns an event when it is complete. */
@@ -30,8 +31,9 @@ class SseStreamParser {
         when (field) {
             "event" -> eventName = value
             "data" -> {
-                if (data.isNotEmpty()) data.append('\n')
+                if (hasData) data.append('\n')
                 data.append(value)
+                hasData = true
             }
             // "id" and "retry" are irrelevant for these APIs.
             else -> Unit
@@ -41,9 +43,10 @@ class SseStreamParser {
 
     /** Flushes a pending event (used when the stream ends without a blank line). */
     fun flush(): SseEvent? {
-        if (eventName == null && data.isEmpty()) return null
+        if (eventName == null && !hasData) return null
         val result = SseEvent(eventName, data.toString())
         eventName = null
+        hasData = false
         data.clear()
         return result
     }

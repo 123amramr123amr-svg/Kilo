@@ -10,11 +10,16 @@ import org.junit.Test
 
 /** Deterministic, reversible fake of the Android Keystore cipher. */
 private class FakeCipher : SecretCipher {
-    override fun encrypt(plainText: String): String = "enc:$plainText"
+    /** Reverses the payload so the stored value cannot contain the plaintext. */
+    override fun encrypt(plainText: String): String = PREFIX + plainText.reversed()
 
     override fun decrypt(payload: String): String {
-        if (!payload.startsWith("enc:")) throw SecureStorageException("bad payload")
-        return payload.removePrefix("enc:")
+        if (!payload.startsWith(PREFIX)) throw SecureStorageException("bad payload")
+        return payload.removePrefix(PREFIX).reversed()
+    }
+
+    private companion object {
+        const val PREFIX = "enc:"
     }
 }
 
@@ -48,6 +53,7 @@ class EncryptedCredentialStoreTest {
         val persisted = store.values.values.single()
         assertFalse(persisted.contains("sk-secret-value"))
         assertTrue(persisted.startsWith("enc:"))
+        assertFalse(persisted.contains("sk-"))
         assertEquals("sk-secret-value", credentials.read("provider-1"))
     }
 

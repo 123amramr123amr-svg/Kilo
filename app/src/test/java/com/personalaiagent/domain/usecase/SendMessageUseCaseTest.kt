@@ -57,7 +57,7 @@ class SendMessageUseCaseTest {
         val events = useCase(client).invoke(null, "  Hi there  ", null).toList()
 
         val started = events.filterIsInstance<SendMessageEvent.Started>().single()
-        assertEquals("Hi there", events.filterIsInstance<SendMessageEvent.Delta>().joinToString("") { it.text })
+        assertEquals("Hello", events.filterIsInstance<SendMessageEvent.Delta>().joinToString("") { it.text })
         val completed = events.filterIsInstance<SendMessageEvent.Completed>().single()
 
         assertEquals("Hello", completed.fullText)

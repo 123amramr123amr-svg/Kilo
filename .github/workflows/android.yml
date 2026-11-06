@@ -31,11 +31,41 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Unit tests
-        run: gradle :app:testDebugUnitTest --stacktrace
-
       - name: Assemble debug APK
-        run: gradle :app:assembleDebug --stacktrace
+        id: assemble
+        continue-on-error: true
+        run: gradle :app:assembleDebug --console=plain --stacktrace 2>&1 | tee assemble.log
+
+      - name: Unit tests
+        id: tests
+        continue-on-error: true
+        run: gradle :app:testDebugUnitTest --console=plain --stacktrace 2>&1 | tee unit-tests.log
+
+      # Surfaces compiler/test failures as check annotations, which stay readable
+      # even when the raw Actions log archive is not reachable.
+      - name: Report failures
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os, re
+          blocks = []
+          for name in ("assemble.log", "unit-tests.log"):
+              if not os.path.exists(name):
+                  continue
+              lines = open(name, errors="ignore").read().splitlines()
+              picked = [l for l in lines if re.search(r"(^e: |^w: .*error|error: |FAILURE:|What went wrong|Execution failed|Could not resolve|Caused by: |^\s+> )", l)]
+              if picked:
+                  blocks.append(f"=== {name} ===\n" + "\n".join(picked[:150]))
+          if not blocks:
+              blocks = ["No matching error lines found; see uploaded logs."]
+          payload = "\n".join(blocks)[:60000]
+          payload = payload.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+          print(f"::error title=Gradle failure::{payload}")
+          PY
+
+      - name: Fail the job when the build failed
+        if: steps.assemble.outcome == 'failure' || steps.tests.outcome == 'failure'
+        run: exit 1
 
       - name: Upload test report
         if: always()

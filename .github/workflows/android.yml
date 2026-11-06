@@ -49,20 +49,40 @@ jobs:
         if: always()
         run: |
           python3 - <<'PY'
-          import os, re
+          import glob, os, re
+          import xml.etree.ElementTree as ET
+
           blocks = []
+
+          # 1. Compiler / Gradle errors from the console logs.
           for name in ("assemble.log", "unit-tests.log"):
               if not os.path.exists(name):
                   continue
               lines = open(name, errors="ignore").read().splitlines()
-              picked = [l for l in lines if re.search(r"(^e: |^w: .*error|error: |FAILURE:|What went wrong|Execution failed|Could not resolve|Caused by: |^\s+> )", l)]
+              picked = [l for l in lines if re.search(r"(^e: |error: |What went wrong|Execution failed|Could not resolve|Caused by: |FAILED$)", l)]
               if picked:
-                  blocks.append(f"=== {name} ===\n" + "\n".join(picked[:150]))
+                  blocks.append(f"=== {name} ===\n" + "\n".join(picked[:120]))
+
+          # 2. Failing unit tests, straight from the JUnit XML results.
+          for path in glob.glob("app/build/test-results/testDebugUnitTest/*.xml"):
+              try:
+                  root = ET.parse(path).getroot()
+              except Exception:
+                  continue
+              for case in root.iter("testcase"):
+                  for failure in list(case.findall("failure")) + list(case.findall("error")):
+                      message = (failure.get("message") or "").strip()[:500]
+                      detail = (failure.text or "").strip()
+                      detail = "\n".join(detail.splitlines()[:8])[:900]
+                      blocks.append(
+                          f"TEST FAILED {case.get('classname')}::{case.get('name')}\n{message}\n{detail}"
+                      )
+
           if not blocks:
-              blocks = ["No matching error lines found; see uploaded logs."]
-          payload = "\n".join(blocks)[:60000]
+              blocks = ["Build reported a failure but no matching lines were found."]
+          payload = "\n\n".join(blocks)[:60000]
           payload = payload.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
-          print(f"::error title=Gradle failure::{payload}")
+          print(f"::error title=Build or test failure::{payload}")
           PY
 
       - name: Fail the job when the build failed

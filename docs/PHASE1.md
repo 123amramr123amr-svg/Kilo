@@ -3,6 +3,11 @@
 Native Android app **Personal AI Agent** (Compose + MVVM + Hilt + Room).
 Everything below describes what is actually implemented in `app/src/main`.
 
+> **Build status:** `:app:assembleDebug` and `:app:testDebugUnitTest` run green on
+> GitHub Actions (56/56 tests). An installable debug APK is published on the
+> `phase1-debug` release. Details and the defects caught by the real compiler:
+> [`VERIFICATION.md`](VERIFICATION.md).
+
 ## Screens (all interactive, all localised AR/EN)
 
 | # | Screen | Route | Notes |

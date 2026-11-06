@@ -6,8 +6,28 @@ database; API keys are encrypted with the Android Keystore and never leave the
 device. There is no first-party server, no account, no analytics.
 
 <p align="center">
-  <em>Phase 1: full UI, local data layer, provider clients, execution log, tests.</em>
+  <em>Phase 1: full UI, local data layer, provider clients, execution log, tests.</em><br/>
+  <a href="https://github.com/123amramr123amr-svg/Kilo/actions/workflows/android.yml"><img alt="Android CI" src="https://github.com/123amramr123amr-svg/Kilo/actions/workflows/android.yml/badge.svg?branch=arena%2F93372d4c-kilo"/></a>
 </p>
+
+## Try it on your phone (no build needed)
+
+1. Open this link **on the Android device**:
+   <https://github.com/123amramr123amr-svg/Kilo/releases/download/phase1-debug/personal-ai-agent-debug.apk>
+2. Allow your browser to install unknown apps when prompted
+   (Settings → Apps → Special access → Install unknown apps).
+3. Install and open **Personal AI Agent** (debug build, `com.personalaiagent.debug`,
+   Android 8.0 / API 26 or newer).
+4. Pick العربية or English → **المحادثة → تهيئة المزوّد** → choose a preset (OpenAI,
+   Anthropic, Gemini, Groq, DeepSeek) → paste your own API key → **اختبار الاتصال** → save.
+5. The model list is fetched from your provider; choose a model in the composer and chat.
+
+The APK is rebuilt and re-published by CI on every push to this branch. It is a
+**debug-signed** build and it contains **no API keys** — you add your own provider key
+inside the app, where it is encrypted with the Android Keystore.
+
+Verified in CI: build **success**, unit tests **56/56 passing** (see
+[`docs/VERIFICATION.md`](docs/VERIFICATION.md)).
 
 ## Feature highlights
 

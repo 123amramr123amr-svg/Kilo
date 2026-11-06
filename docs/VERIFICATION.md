@@ -1,101 +1,94 @@
-# Verification report (phase 1)
+# Verification report — phase 1 (executed build)
 
-## What could and could not be executed here
+## Where the build actually ran
 
-This sandbox has **no JDK, no Gradle and no Android SDK**, and outbound network access
-is limited to GitHub / npm / PyPI. The Android build needs Maven Central, Google Maven
-and a Gradle distribution, which are not reachable:
-
-```
-$ java -version            → java: command not found
-$ which gradle             → gradle: MISSING
-$ which sdkmanager adb     → android-sdk: MISSING
-$ curl https://repo.maven.apache.org        → BLOCKED (HTTP 000, TLS refused)
-$ curl https://maven.google.com             → BLOCKED
-$ curl https://services.gradle.org          → BLOCKED
-$ curl https://plugins.gradle.org           → BLOCKED
-```
-
-Therefore `gradle :app:assembleDebug` / `:app:testDebugUnitTest` **could not be run
-here**. Nothing in this report claims a successful compilation. The project is wired
-so that CI (`.github/workflows/android.yml`, JDK 17 + Gradle 8.9 + Android SDK) runs
-those exact commands on push.
-
-## Static verification that *was* run
-
-| Check | Method | Result |
-|---|---|---|
-| Kotlin brace/paren/bracket balance, all 97 `.kt` files | script (strings/comments stripped) | **0 imbalances** |
-| `package` ↔ directory agreement (main + test) | script | **0 mismatches** |
-| Duplicate top-level type declarations per package | script | **none** |
-| All `com.personalaiagent.*` imports resolve to a declared package/type | script | **0 unresolved** |
-| All `R.string.*` references exist | script vs `values/strings.xml` | **0 missing** |
-| AR/EN string parity + format-specifier parity (`%1$s`, `%1$d`) | script | **321/321 keys, 0 mismatches** |
-| Every repository interface is fully implemented | script (interface member diff) | **0 missing members** (Provider, Model, Chat, Task, Settings, CredentialStore, ProviderClient ×2) |
-| Hilt graph: every `@Inject` constructor dependency is provided/bound/injectable | script | **0 unresolved** |
-| DAO method calls exist in the DAO interfaces | script | **0 unknown methods** |
-| All XML resources + manifest parse | `xml.etree` | **14/14 valid** |
-| Version catalog parses; no dangling `libs.*` references | `tomllib` | **OK** |
-| Screen ↔ navigation callback signatures match | manual review | **OK** |
-| Composable-only calls (`stringResource`, `remember`, …) kept out of `onClick`/`LaunchedEffect`/`collect` bodies | script + manual review | **OK** (localised strings are pre-computed before coroutine blocks) |
-
-## Defects found during review and fixed
-
-1. **Duplicate Dagger binding** — `provideOpenAiClient` and `provideAnthropicClient` both
-   returned `ProviderClient` unqualified, which is an `@Provides` duplicate. They now
-   return the concrete `OpenAiCompatibleClient` / `AnthropicClient` types.
-2. **Duplicate binding for `BackupManager`** — `@Inject constructor` *and* an `@Provides`
-   method. The constructor annotation was removed.
-3. **Dependency-injection safety** — credential storage was refactored behind a
-   `KeyValueStore` interface so it can be unit-tested on the JVM; the Keystore-backed
-   cipher is the only Android-specific part.
-4. **Language-change loop risk** — `MainActivity` used to recreate itself whenever the
-   settings language differed from the value read in `attachBaseContext`, without first
-   writing that value; a stale mirror would have caused an infinite recreate loop. The
-   mirror is now written *before* `recreate()`.
-5. **RTL polish** — back arrows now use the auto-mirrored icon; `send` already did.
-6. **Optional navigation argument** — `provider_edit` was navigated with an empty
-   `?providerId=`; it now omits the query parameter for the "add" case.
-7. **Double navigation-bar inset** — removed `navigationBarsPadding()` from the
-   `NavigationBar` (Material 3 already applies its own window insets).
-8. **SQLite ordering** — DAO ordering no longer relies on the implicit `rowid`.
-9. **Double back-stack clear** — sign-out now pops to `navController.graph.id`.
-
-## Tests written (56 test methods, run on CI / locally with an SDK)
-
-`app/src/test/java/com/personalaiagent/`
-
-- `SseStreamParserTest` (7) — SSE framing: multi-line data, named events, comments,
-  flush at EOF, state reset.
-- `StreamDecoderTest` (10) — OpenAI and Anthropic chunk decoding, usage, `[DONE]`,
-  malformed JSON → `Parse` error, Anthropic error events.
-- `ModelCatalogTest` (8) — non-chat model filtering, unknown ids kept, dedupe,
-  capability inference, context windows, bundled fallback.
-- `ProviderValidatorTest` (8) — https accepted, http rejected for public hosts,
-  private/loopback http allowed, normalisation, malformed URLs.
-- `EncryptedCredentialStoreTest` (4) — ciphertext-only persistence, key lifecycle,
-  corrupt payload → `null`, full clear.
-- `BackupSerializationTest` (4) — round-trip, Arabic content, **no key material in the
-  file**, future-version detection.
-- `HttpEngineStreamingTest` (5, MockWebServer) — real SSE streaming end-to-end,
-  `Authorization` header, 401 → `Auth`, 429 → `RateLimit`, catalog filtering,
-  non-streaming single delta.
-- `SendMessageUseCaseTest` (10) — streaming + persistence + task success, all five
-  execution steps recorded, request payload (system prompt, model, key), blank input,
-  missing key, no model, no provider, provider error → failed message + failed task,
-  empty completion → parse error, conversation reuse.
-
-Run them with:
+The sandbox used to author this project has **no JDK, no Gradle and no Android SDK**,
+and it cannot reach Maven Central / Google Maven / services.gradle.org. The project was
+therefore compiled and tested on **GitHub Actions** (`.github/workflows/android.yml`,
+JDK 17 + Android SDK 35 + Gradle 8.9), which is the same command set you would run locally:
 
 ```bash
+gradle :app:assembleDebug
 gradle :app:testDebugUnitTest
 ```
 
-## Honest limitations of this verification
+### Result of the final run
 
-- Static analysis cannot prove that Compose Material 3 icon names, experimental
-  annotations or exact parameter names match the resolved library version. Those are
-  the first things CI will confirm.
-- No instrumented tests (Room, Keystore, `SpeechRecognizer`, SAF flows) exist in
-  phase 1; they require a device/emulator.
-- No APK was produced, so runtime behaviour is unverified.
+| Item | Result |
+|---|---|
+| `:app:assembleDebug` | **SUCCESS** |
+| `:app:testDebugUnitTest` | **SUCCESS — 56 passed, 0 failed** |
+| APK | published as release asset `personal-ai-agent-debug.apk` (18.72 MB) |
+| Workflow run | `42183056392` (success) |
+
+Installable build:
+`https://github.com/123amramr123amr-svg/Kilo/releases/download/phase1-debug/personal-ai-agent-debug.apk`
+
+The workflow re-publishes that asset on every push (same tag, `--clobber`), so the link
+stays valid and always points at the newest build of this branch.
+
+## Defects the real compiler/tests caught (and fixed)
+
+Static review of ~10.6k lines could not replace a compiler. Seven defect groups were
+found and fixed:
+
+1. **Nested `Triple` construction** — `a to b to c` parses as `Pair<Pair<String,String>,Int?>`;
+   the catalog sync expected `Triple<String,String,Int?>` (2 sites).
+2. **Missing import** — `ProviderEntity` used after an import cleanup in
+   `ProviderRepositoryImpl`.
+3. **Non-exhaustive `when`** — a data-class event (`BackupEvent.Imported`) needs `is`, not `==`.
+4. **Icon extension properties** — `androidx.compose.material.icons.Icons.Rounded.Memory`
+   (and `Bolt`, `Refresh`, `Cloud`) cannot be referenced fully qualified; the property
+   must be imported (4 sites).
+5. **Composable call in a non-composable scope** — `stringResource` inside `LazyRow {}`
+   (whose receiver is `LazyListScope`, not `@Composable`). Labels are now resolved before
+   the lazy list.
+6. **`[Dagger/MissingBinding]`** — the four repository implementations lacked
+   `@Inject constructor`, so Hilt could not provide them.
+7. **Three failing unit tests**, two of them revealing real issues:
+   - **Product fix:** the SSE parser dropped an explicit empty `data:` field instead of
+     dispatching an empty event (spec behaviour); now tracked with a `hasData` flag.
+   - **Test fix:** the fake cipher embedded the plaintext in its "ciphertext", making the
+     "never stores plaintext" assertion meaningless; it now reverses the value.
+   - **Test fix:** the streaming assertion compared concatenated deltas against the wrong
+     expected string.
+
+## Static checks that still run in the repo
+
+Earlier (pre-build) passes, kept as regression guards:
+
+| Check | Result |
+|---|---|
+| Kotlin brace/paren balance over 97 files | 0 imbalances |
+| `package` ↔ directory agreement | 0 mismatches |
+| Duplicate top-level declarations | none |
+| `com.personalaiagent.*` import resolution | 0 unresolved |
+| `R.string.*` references vs resources | 0 missing |
+| AR/EN parity + format specifiers | 321/321 keys, 0 mismatches |
+| Repository implementations complete | 0 missing members |
+| Hilt graph completeness | 0 unresolved dependencies |
+| DAO methods referenced exist | 0 unknown methods |
+| XML resources + manifest parse | 14/14 valid |
+
+## Test suite (56 methods, all green)
+
+| File | Tests | Covers |
+|---|---|---|
+| `SseStreamParserTest` | 7 | SSE framing: multi-line data, named events, comments, empty data field, flush, reset |
+| `StreamDecoderTest` | 10 | OpenAI & Anthropic chunk decoding, usage, `[DONE]`, malformed JSON → `Parse`, Anthropic error events |
+| `ModelCatalogTest` | 8 | non-chat filtering, unknown ids kept, dedupe, capability inference, context windows, fallback |
+| `ProviderValidatorTest` | 8 | https ok, http public rejected, loopback/private http allowed, normalisation, malformed URLs |
+| `EncryptedCredentialStoreTest` | 4 | ciphertext-only persistence, lifecycle, corrupt payload → `null`, clear |
+| `BackupSerializationTest` | 4 | round-trip, Arabic content, no key material, future version detection |
+| `HttpEngineStreamingTest` | 5 | real SSE over MockWebServer, `Authorization` header, 401 → `Auth`, 429 → `RateLimit`, catalog, non-streaming |
+| `SendMessageUseCaseTest` | 10 | stream+persist+task success, all 5 steps recorded, request payload, blank input, missing key, no model, no provider, provider error, empty completion, conversation reuse |
+
+## What is still not verified
+
+- **Runtime behaviour on a device**: first launch, RTL switching, Keystore round-trip,
+  speech recognition/TTS and SAF backup/restore need real hardware. Only static analysis
+  and JVM tests cover them today.
+- **Instrumented tests**: none yet (Room DAOs, Keystore, `SpeechRecognizer`, SAF).
+- **Release build**: `:app:assembleRelease` (R8 + resource shrinking) has not been run
+  in CI; only the debug variant is produced so far.
+- **Tablet/foldable layouts**: responsive via Compose intrinsics but not screenshot-tested.

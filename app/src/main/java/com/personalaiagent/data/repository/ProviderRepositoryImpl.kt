@@ -22,7 +22,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class ProviderRepositoryImpl(
+class ProviderRepositoryImpl @Inject constructor(
     private val database: AppDatabase,
     private val providerDao: ProviderDao,
     private val credentialStore: CredentialStore,

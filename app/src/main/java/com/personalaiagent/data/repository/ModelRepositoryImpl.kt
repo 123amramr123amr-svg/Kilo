@@ -21,7 +21,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
-class ModelRepositoryImpl(
+class ModelRepositoryImpl @Inject constructor(
     private val database: AppDatabase,
     private val modelDao: ModelDao,
     private val providerDao: ProviderDao,

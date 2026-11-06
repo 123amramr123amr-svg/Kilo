@@ -89,16 +89,17 @@ fun ModelsScreen(
 
         Spacer(Modifier.height(10.dp))
 
+        val filters = listOf(
+            ModelFilter.ALL to stringResource(R.string.models_filter_all),
+            ModelFilter.ENABLED to stringResource(R.string.models_enabled),
+            ModelFilter.VISION to stringResource(R.string.models_cap_vision),
+            ModelFilter.TOOLS to stringResource(R.string.models_cap_tools),
+        )
+
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            val filters = listOf(
-                ModelFilter.ALL to stringResource(R.string.models_filter_all),
-                ModelFilter.ENABLED to stringResource(R.string.models_enabled),
-                ModelFilter.VISION to stringResource(R.string.models_cap_vision),
-                ModelFilter.TOOLS to stringResource(R.string.models_cap_tools),
-            )
             items(filters) { (filter, label) ->
                 ChoiceChip(
                     label = label,

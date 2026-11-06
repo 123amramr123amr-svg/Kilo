@@ -58,7 +58,7 @@ fun BackupScreen(
             when (event) {
                 BackupEvent.Exported -> snackbarHostState.showSnackbar(exportedMessage)
                 BackupEvent.ExportFailed -> snackbarHostState.showSnackbar(exportFailedMessage)
-                BackupEvent.Imported -> snackbarHostState.showSnackbar(importedMessage)
+                is BackupEvent.Imported -> snackbarHostState.showSnackbar(importedMessage)
                 is BackupEvent.ImportFailed -> pendingError = event.error
             }
         }

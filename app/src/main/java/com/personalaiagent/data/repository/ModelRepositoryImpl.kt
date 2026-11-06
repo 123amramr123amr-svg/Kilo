@@ -103,7 +103,10 @@ class ModelRepositoryImpl(
                 if (result.value.isEmpty()) {
                     Outcome.Failure(AppError.NoModel)
                 } else {
-                    val count = store(providerId, result.value.map { it.remoteId to it.displayName to it.contextWindow })
+                    val count = store(
+                        providerId,
+                        result.value.map { Triple(it.remoteId, it.displayName, it.contextWindow) },
+                    )
                     providerDao.updateStatus(providerId, ProviderStatus.CONNECTED.name, time.now())
                     Outcome.Success(CatalogSyncResult(count, fromRemote = true))
                 }
@@ -113,7 +116,10 @@ class ModelRepositoryImpl(
                 if (modelDao.countByProvider(providerId) == 0) {
                     // Offline fallback so the user can still pick a model and retry later.
                     val bundled = ModelCatalog.bundled(provider.kind)
-                    val count = store(providerId, bundled.map { it.remoteId to it.displayName to it.contextWindow })
+                    val count = store(
+                        providerId,
+                        bundled.map { Triple(it.remoteId, it.displayName, it.contextWindow) },
+                    )
                     Outcome.Success(CatalogSyncResult(count, fromRemote = false))
                 } else {
                     providerDao.updateStatus(providerId, ProviderStatus.ERROR.name, time.now())

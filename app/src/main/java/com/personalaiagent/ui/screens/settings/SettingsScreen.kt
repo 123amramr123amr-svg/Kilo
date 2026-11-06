@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
@@ -126,7 +127,7 @@ fun SettingsScreen(
                 )
                 com.personalaiagent.ui.components.Divider()
                 SettingsRow(
-                    icon = androidx.compose.material.icons.Icons.Rounded.Cloud,
+                    icon = Icons.Rounded.Cloud,
                     title = stringResource(R.string.settings_providers),
                     subtitle = stringResource(R.string.settings_providers_desc),
                     onClick = onOpenProviders,

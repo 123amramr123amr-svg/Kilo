@@ -7,6 +7,7 @@ import com.personalaiagent.core.Outcome
 import com.personalaiagent.core.TimeProvider
 import com.personalaiagent.data.local.AppDatabase
 import com.personalaiagent.data.local.ProviderDao
+import com.personalaiagent.data.local.ProviderEntity
 import com.personalaiagent.data.local.toDomain
 import com.personalaiagent.data.remote.ProviderClientRouter
 import com.personalaiagent.data.secure.SecureStorageException

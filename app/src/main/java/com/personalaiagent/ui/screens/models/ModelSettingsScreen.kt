@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -115,7 +118,7 @@ fun ModelSettingsScreen(
                     },
                 )
                 SettingsRow(
-                    icon = androidx.compose.material.icons.Icons.Rounded.Memory,
+                    icon = Icons.Rounded.Memory,
                     title = stringResource(R.string.models_enable),
                     subtitle = stringResource(R.string.models_enable_body),
                     onClick = null,
@@ -184,7 +187,7 @@ fun ModelSettingsScreen(
 
             SectionCard {
                 SettingsRow(
-                    icon = androidx.compose.material.icons.Icons.Rounded.Bolt,
+                    icon = Icons.Rounded.Bolt,
                     title = stringResource(R.string.models_streaming),
                     subtitle = stringResource(R.string.models_streaming_body),
                     onClick = null,
@@ -203,7 +206,7 @@ fun ModelSettingsScreen(
             GhostButton(
                 text = stringResource(R.string.models_reset),
                 onClick = viewModel::resetToDefaults,
-                icon = androidx.compose.material.icons.Icons.Rounded.Refresh,
+                icon = Icons.Rounded.Refresh,
             )
             SnackbarHost(hostState = snackbarHostState)
         }

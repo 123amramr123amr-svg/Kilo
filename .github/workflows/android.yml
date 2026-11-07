@@ -1,0 +1,141 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ main, 'arena/**' ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0'
+
+      # Installs Gradle 8.9 directly, so no wrapper JAR has to be committed.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Assemble debug APK
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          gradle :app:assembleDebug --console=plain --stacktrace 2>&1 | tee assemble.log || touch assemble.failed
+
+      - name: Unit tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          gradle :app:testDebugUnitTest --console=plain --stacktrace 2>&1 | tee unit-tests.log || touch tests.failed
+
+      # Surfaces compiler/test failures as check annotations, which stay readable
+      # even when the raw Actions log archive is not reachable.
+      - name: Report results
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, os, re
+          import xml.etree.ElementTree as ET
+
+          failures = []
+          passed = 0
+          failed = 0
+
+          # 1. Compiler / Gradle errors.
+          for name in ("assemble.log", "unit-tests.log"):
+              if not os.path.exists(name):
+                  continue
+              lines = open(name, errors="ignore").read().splitlines()
+              picked = [l for l in lines if re.search(r"(^e: |error: |What went wrong|Could not resolve|Caused by: |FAILED$)", l)]
+              if picked:
+                  failures.append(f"=== {name} ===\n" + "\n".join(picked[:120]))
+
+          # 2. Failing unit tests from the JUnit XML results.
+          for path in glob.glob("app/build/test-results/testDebugUnitTest/*.xml"):
+              try:
+                  root = ET.parse(path).getroot()
+              except Exception:
+                  continue
+              for case in root.iter("testcase"):
+                  problems = list(case.findall("failure")) + list(case.findall("error"))
+                  if problems:
+                      failed += 1
+                      failure = problems[0]
+                      message = (failure.get("message") or "").strip()[:400]
+                      detail = "\n".join((failure.text or "").strip().splitlines()[:8])[:800]
+                      failures.append(f"TEST FAILED {case.get('classname')}::{case.get('name')}\n{message}\n{detail}")
+                  elif not list(case.findall("skipped")):
+                      passed += 1
+
+          def emit(level, title, text):
+              text = text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+              print(f"::{level} title={title}::{text}")
+
+          if failures:
+              emit("error", "Build or test failure", "\n\n".join(failures)[:60000])
+          elif passed or failed:
+              emit("notice", "Unit tests", f"{passed} passed, {failed} failed")
+          PY
+
+      - name: Fail the job when the build failed
+        if: always()
+        run: |
+          if [ -f assemble.failed ] || [ -f tests.failed ]; then
+            echo "Gradle reported failures (see annotations)."
+            exit 1
+          fi
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: ignore
+
+      - name: Upload APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: personal-ai-agent-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: ignore
+
+      # Turns the build into an installable download link (no unzip needed).
+      - name: Publish debug APK release
+        if: always() && hashFiles('app/build/outputs/apk/debug/*.apk') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
+          TAG="phase1-debug"
+          NAME="personal-ai-agent-debug.apk"
+          cp "$APK" "$RUNNER_TEMP/$NAME"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$RUNNER_TEMP/$NAME" --clobber
+          else
+            gh release create "$TAG" "$RUNNER_TEMP/$NAME" \
+              --title "Personal AI Agent — Phase 1 debug build" \
+              --notes "Sideloadable debug APK for testing phase 1. Debug-signed, no API keys bundled: add your own provider key in the app."
+          fi

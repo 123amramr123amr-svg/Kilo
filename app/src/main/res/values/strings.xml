@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en">
+
+    <string name="app_name">Personal AI Agent</string>
+    <string name="app_tagline">Your on-device AI assistant</string>
+
+    <!-- Global actions -->
+    <string name="action_start">Start now</string>
+    <string name="action_skip">Skip</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_back">Back</string>
+    <string name="action_next">Next</string>
+    <string name="action_done">Done</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_add">Add</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_search">Search</string>
+    <string name="action_close">Close</string>
+    <string name="action_confirm">Confirm</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_send">Send</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_open_settings">Open system settings</string>
+    <string name="action_allow">Allow</string>
+    <string name="action_test">Test connection</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_export">Export</string>
+    <string name="action_import">Import</string>
+    <string name="action_manage">Manage</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="cd_back">Back</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_headline">Personal AI Agent</string>
+    <string name="onboarding_subheadline">The smart assistant that works from your device</string>
+    <string name="onboarding_language_title">Choose your language</string>
+    <string name="onboarding_language_body">The interface and the assistant replies use this language. You can change it later from Settings.</string>
+    <string name="onboarding_privacy_title">Private by design</string>
+    <string name="onboarding_privacy_body">No account and no cloud sync. Conversations stay in a local database and API keys are encrypted with the Android Keystore.</string>
+    <string name="onboarding_features_title">What you can do</string>
+    <string name="onboarding_feature_chat">Chat with the model you choose</string>
+    <string name="onboarding_feature_voice">Dictate with your voice</string>
+    <string name="onboarding_feature_models">Multiple providers, Arabic and English</string>
+    <string name="onboarding_terms">By continuing you confirm that you own the API keys you enter and that you accept your provider\'s terms.</string>
+    <string name="language_arabic">العربية</string>
+    <string name="language_english">English</string>
+    <string name="language_name_arabic">Arabic</string>
+    <string name="language_name_english">English</string>
+
+    <!-- Navigation -->
+    <string name="nav_chat">Chat</string>
+    <string name="nav_models">Models</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Chat -->
+    <string name="chat_subtitle_ready">Connected</string>
+    <string name="chat_subtitle_setup">No provider configured</string>
+    <string name="chat_stop_generating">Stop generating</string>
+    <string name="chat_input_hint">Ask anything, or tell the agent what to do</string>
+    <string name="chat_empty_title">Start a conversation</string>
+    <string name="chat_empty_body">Type a message or use the microphone. Answers appear here as they are generated.</string>
+    <string name="chat_new">New chat</string>
+    <string name="chat_listen">Listening…</string>
+    <string name="chat_thinking">Thinking…</string>
+    <string name="chat_message_failed">Message failed</string>
+    <string name="chat_retry_failed">Retry</string>
+    <string name="chat_setup_title">Add a provider to begin</string>
+    <string name="chat_setup_body">Your messages are sent directly from this device to the provider you configure.</string>
+    <string name="chat_setup_action">Configure provider</string>
+    <string name="chat_mic_permission_title">Microphone permission needed</string>
+    <string name="chat_mic_permission_body">Voice input uses the system speech recogniser. Grant the permission from the Permissions screen.</string>
+    <string name="chat_you">You</string>
+    <string name="chat_assistant">Assistant</string>
+    <string name="chat_scroll_bottom">Scroll to latest</string>
+    <string name="chat_delete_conversation">Delete conversation</string>
+    <string name="chat_conversation_deleted">Conversation deleted</string>
+    <string name="chat_task_running">Task in progress</string>
+    <string name="chat_model_picker">Model</string>
+    <string name="chat_no_models">No enabled model</string>
+
+    <!-- Models -->
+    <string name="models_title">Models</string>
+    <string name="models_search_hint">Search models…</string>
+    <string name="models_filter_all">All</string>
+    <string name="models_empty_title">No models available</string>
+    <string name="models_empty_body">Add a provider first, or enable a model from the catalog.</string>
+    <string name="models_active">Active</string>
+    <string name="models_enabled">Enabled</string>
+    <string name="models_disabled">Disabled</string>
+    <string name="models_cap_text">Text</string>
+    <string name="models_cap_vision">Vision</string>
+    <string name="models_cap_tools">Tools</string>
+    <string name="models_cap_reasoning">Reasoning</string>
+    <string name="models_cap_code">Code</string>
+    <string name="models_context">%1$s context</string>
+    <string name="models_context_window">Context window</string>
+    <string name="models_settings_title">Model settings</string>
+    <string name="models_temperature">Temperature</string>
+    <string name="models_temperature_body">Higher values make answers more creative.</string>
+    <string name="models_max_tokens">Max output tokens</string>
+    <string name="models_top_p">Top P</string>
+    <string name="models_system_prompt">System prompt</string>
+    <string name="models_system_prompt_hint">Describe how the assistant should behave…</string>
+    <string name="models_streaming">Stream responses</string>
+    <string name="models_streaming_body">Show the answer while it is being generated.</string>
+    <string name="models_enable">Enable model</string>
+    <string name="models_enable_body">Disabled models are hidden from the chat picker.</string>
+    <string name="models_reset">Reset to defaults</string>
+    <string name="models_saved">Model settings saved</string>
+    <string name="models_set_default">Set as default</string>
+    <string name="models_default">Default</string>
+    <string name="models_provider_missing">Provider removed</string>
+
+    <!-- Providers -->
+    <string name="providers_title">AI providers</string>
+    <string name="providers_add">Add provider</string>
+    <string name="providers_empty_title">No providers yet</string>
+    <string name="providers_empty_body">Connect an OpenAI-compatible or Anthropic endpoint. Keys are encrypted on this device.</string>
+    <string name="providers_status_connected">Connected</string>
+    <string name="providers_status_error">Connection failed</string>
+    <string name="providers_status_unknown">Not tested</string>
+    <string name="providers_set_default">Set as default</string>
+    <string name="providers_default">Default</string>
+    <string name="providers_delete_title">Delete provider?</string>
+    <string name="providers_delete_body">The encrypted API key and the models of this provider are removed from this device.</string>
+    <string name="providers_add_title">New provider</string>
+    <string name="providers_edit_title">Edit provider</string>
+    <string name="providers_name">Display name</string>
+    <string name="providers_kind">Provider type</string>
+    <string name="providers_kind_openai">OpenAI-compatible</string>
+    <string name="providers_kind_anthropic">Anthropic</string>
+    <string name="providers_base_url">Base URL</string>
+    <string name="providers_base_url_hint">https://api.openai.com/v1</string>
+    <string name="providers_api_key">API key</string>
+    <string name="providers_api_key_hint">Paste your key</string>
+    <string name="providers_api_key_keep">Leave empty to keep the stored key</string>
+    <string name="providers_key_stored">Encrypted key stored on this device</string>
+    <string name="providers_key_missing">No key stored</string>
+    <string name="providers_test_success">Connected · %1$d models available</string>
+    <string name="providers_test_failure">Could not reach the provider: %1$s</string>
+    <string name="providers_error_name">Enter a display name</string>
+    <string name="providers_error_url">Enter a valid http(s) base URL</string>
+    <string name="providers_error_key">An API key is required</string>
+    <string name="providers_saved">Provider saved</string>
+    <string name="providers_deleted">Provider deleted</string>
+    <string name="providers_key_deleted">API key deleted</string>
+    <string name="providers_added">Provider added</string>
+    <string name="providers_presets">Quick start</string>
+    <string name="providers_preset_openai">OpenAI</string>
+    <string name="providers_preset_anthropic">Anthropic</string>
+    <string name="providers_preset_gemini">Gemini (OpenAI compatibility)</string>
+    <string name="providers_preset_groq">Groq</string>
+    <string name="providers_preset_deepseek">DeepSeek</string>
+
+    <!-- Account -->
+    <string name="account_title">Account</string>
+    <string name="account_local_badge">Local account</string>
+    <string name="account_profile">Local profile</string>
+    <string name="account_profile_desc">Stored only on this device</string>
+    <string name="account_privacy">Privacy &amp; security</string>
+    <string name="account_privacy_desc">Encryption, logging and data controls</string>
+    <string name="account_api_keys">API keys</string>
+    <string name="account_api_keys_desc">Per-provider encrypted credentials</string>
+    <string name="account_backup">Backup</string>
+    <string name="account_backup_desc">Export or import local data</string>
+    <string name="account_about">About</string>
+    <string name="account_version">Version %1$s</string>
+    <string name="account_display_name">Display name</string>
+    <string name="account_display_name_hint">How the assistant should address you</string>
+    <string name="account_locale">Interface language</string>
+    <string name="account_profile_saved">Profile saved</string>
+    <string name="account_name_required">Name cannot be empty</string>
+    <string name="account_since">Local since %1$s</string>
+    <string name="account_no_cloud_title">No cloud account</string>
+    <string name="account_no_cloud_body">This version has no server-side account, sign-in or sync. Everything is stored locally on this device.</string>
+    <string name="account_sign_out">Sign out</string>
+    <string name="account_sign_out_desc">Delete the local profile, conversations, keys and settings</string>
+    <string name="account_sign_out_title">Delete all local data?</string>
+    <string name="account_sign_out_body">Conversations, providers, encrypted keys, task logs and preferences are removed from this device. This cannot be undone.</string>
+    <string name="account_sign_out_confirm">Delete everything</string>
+    <string name="account_sign_out_done">Local data deleted</string>
+
+    <!-- Privacy -->
+    <string name="privacy_title">Privacy &amp; security</string>
+    <string name="privacy_network_title">Where your data goes</string>
+    <string name="privacy_network_body">Messages are sent only to the provider you configured, using the key you stored. There is no first-party server, no analytics SDK and no advertising SDK.</string>
+    <string name="privacy_storage_title">Local storage</string>
+    <string name="privacy_storage_body">Conversations, providers and task logs live in a local SQLite database. API keys are encrypted with AES-256-GCM using a non-exportable Android Keystore key.</string>
+    <string name="privacy_backup_title">Backups</string>
+    <string name="privacy_backup_body">Automatic cloud backup is disabled. Manual backups never include API keys.</string>
+    <string name="privacy_logs_title">Logging</string>
+    <string name="privacy_logs_body">Keys and message bodies are never written to logcat. HTTP body logging is disabled in release builds.</string>
+    <string name="privacy_clear_chat">Delete all conversations</string>
+    <string name="privacy_clear_logs">Delete task logs</string>
+    <string name="privacy_clear_chat_done">Conversations deleted</string>
+    <string name="privacy_clear_logs_done">Task logs deleted</string>
+    <string name="privacy_clear_chat_body">Every conversation and message stored on this device is deleted.</string>
+
+    <!-- API keys -->
+    <string name="api_keys_title">API keys</string>
+    <string name="api_keys_body">Keys are encrypted on-device and never logged. The app only shows whether a key exists, never its value.</string>
+    <string name="api_keys_empty_title">No providers configured</string>
+    <string name="api_keys_empty_body">Add a provider to store an API key.</string>
+    <string name="api_keys_not_set">Not set</string>
+    <string name="api_keys_set">Encrypted</string>
+    <string name="api_keys_add">Add key</string>
+    <string name="api_keys_update">Update key</string>
+    <string name="api_keys_delete">Delete key</string>
+    <string name="api_keys_delete_title">Delete this key?</string>
+    <string name="api_keys_delete_body">Requests to this provider will fail until a new key is added.</string>
+    <string name="api_keys_dialog_title">API key for %1$s</string>
+    <string name="api_keys_saved">Key saved securely</string>
+    <string name="api_keys_unavailable">Secure storage is unavailable on this device, so the key was not saved.</string>
+
+    <!-- Backup -->
+    <string name="backup_title">Backup</string>
+    <string name="backup_body">Create a JSON file containing conversations, providers (without keys), models, task logs and settings.</string>
+    <string name="backup_export_title">Export backup</string>
+    <string name="backup_export_body">Includes everything except API keys.</string>
+    <string name="backup_import_title">Import backup</string>
+    <string name="backup_import_body">Existing local data is replaced by the backup content.</string>
+    <string name="backup_export_success">Backup saved</string>
+    <string name="backup_export_failed">Could not write the backup file</string>
+    <string name="backup_import_success">Backup imported</string>
+    <string name="backup_import_failed">Invalid backup file: %1$s</string>
+    <string name="backup_keys_excluded">API keys are not included</string>
+    <string name="backup_restore_note">After importing you must re-enter API keys for each provider.</string>
+    <string name="backup_include_logs">Include task logs</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_desc">Arabic / English</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_midnight">Midnight</string>
+    <string name="settings_theme_amoled">AMOLED black</string>
+    <string name="settings_providers">AI providers</string>
+    <string name="settings_providers_desc">Manage providers and models</string>
+    <string name="settings_voice">Voice</string>
+    <string name="settings_voice_desc">Speech input and spoken replies</string>
+    <string name="settings_tts">Speak replies</string>
+    <string name="settings_tts_body">Read assistant answers aloud with the system speech engine.</string>
+    <string name="settings_haptics">Haptic feedback</string>
+    <string name="settings_haptics_body">Vibrate on send, stop and confirmations.</string>
+    <string name="settings_streaming">Stream responses</string>
+    <string name="settings_streaming_body">Render tokens while they arrive.</string>
+    <string name="settings_permissions">Permissions</string>
+    <string name="settings_permissions_desc">Microphone and notifications</string>
+    <string name="settings_task_log">Execution log</string>
+    <string name="settings_task_log_desc">Review what the agent did</string>
+    <string name="settings_account">Account</string>
+    <string name="settings_account_desc">Profile, privacy and backup</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version_row">Version</string>
+    <string name="settings_default_model">Default model</string>
+    <string name="settings_default_model_desc">Used for new conversations</string>
+    <string name="settings_data">Data controls</string>
+    <string name="settings_theme_dialog">Choose theme</string>
+    <string name="settings_language_dialog">Choose language</string>
+    <string name="settings_applied">Settings updated</string>
+    <string name="settings_general">General</string>
+    <string name="settings_ai">AI</string>
+    <string name="settings_security">Security</string>
+
+    <!-- Permissions -->
+    <string name="permissions_title">Permissions</string>
+    <string name="permissions_body">The app requests only what a feature needs. You can revoke any permission from system settings.</string>
+    <string name="permissions_granted">Granted</string>
+    <string name="permissions_denied">Not granted</string>
+    <string name="permissions_blocked">Blocked in system settings</string>
+    <string name="permissions_rationale">Required for this feature</string>
+    <string name="perm_mic_name">Microphone</string>
+    <string name="perm_mic_body">Speech-to-text for the composer and the voice assistant.</string>
+    <string name="perm_notif_name">Notifications</string>
+    <string name="perm_notif_body">Progress and results of task execution.</string>
+    <string name="perm_network_name">Internet</string>
+    <string name="perm_network_body">Required to reach your AI provider. Granted at install time.</string>
+    <string name="permissions_grant_all">Grant missing permissions</string>
+    <string name="permissions_note_title">Why these permissions</string>
+    <string name="permissions_note_body">No contacts, location, camera, SMS, call log or storage-wide access is requested.</string>
+    <string name="permissions_summary">%1$d of %2$d granted</string>
+    <string name="permissions_request_hint">Tap a permission to grant or review it.</string>
+
+    <!-- Voice -->
+    <string name="voice_title">Voice assistant</string>
+    <string name="voice_listening">Listening now…</string>
+    <string name="voice_hint">Speak your request, then wait for the agent.</string>
+    <string name="voice_unavailable">Speech recognition is not available on this device.</string>
+    <string name="voice_error">Could not recognise speech. Try again.</string>
+    <string name="voice_stop">Stop listening</string>
+    <string name="voice_processing">Processing…</string>
+    <string name="voice_permission_required">Microphone permission is required for voice input.</string>
+    <string name="voice_result_hint">Recognised text is inserted into the composer.</string>
+    <string name="voice_retry">Speak again</string>
+
+    <!-- Task log -->
+    <string name="tasks_title">Execution log</string>
+    <string name="tasks_empty_title">No tasks yet</string>
+    <string name="tasks_empty_body">Every message you send becomes a task. Its steps are recorded here.</string>
+    <string name="tasks_search_hint">Search tasks…</string>
+    <string name="tasks_status_queued">Queued</string>
+    <string name="tasks_status_running">Running</string>
+    <string name="tasks_status_succeeded">Succeeded</string>
+    <string name="tasks_status_failed">Failed</string>
+    <string name="tasks_status_cancelled">Cancelled</string>
+    <string name="tasks_detail_title">Task details</string>
+    <string name="tasks_prompt">Request</string>
+    <string name="tasks_steps">Steps</string>
+    <string name="tasks_started">Started</string>
+    <string name="tasks_finished">Finished</string>
+    <string name="tasks_duration">Duration</string>
+    <string name="tasks_model">Model</string>
+    <string name="tasks_error">Error</string>
+    <string name="tasks_clear_all">Clear log</string>
+    <string name="tasks_clear_title">Clear the execution log?</string>
+    <string name="tasks_clear_body">Recorded steps for all tasks are removed.</string>
+    <string name="tasks_cleared">Execution log cleared</string>
+    <string name="tasks_tokens">Tokens (in / out)</string>
+    <string name="tasks_step_resolve">Resolve provider and model</string>
+    <string name="tasks_step_prompt">Build prompt</string>
+    <string name="tasks_step_request">Send request</string>
+    <string name="tasks_step_stream">Receive response</string>
+    <string name="tasks_step_persist">Save message</string>
+    <string name="tasks_detail_missing">Task not found</string>
+    <string name="tasks_seconds">%1$s s</string>
+
+    <!-- Errors -->
+    <string name="error_no_provider">No AI provider is configured. Add one to start chatting.</string>
+    <string name="error_no_model">Select an enabled model before sending.</string>
+    <string name="error_missing_key">No API key is stored for %1$s.</string>
+    <string name="error_network">Network error. Check your connection and the base URL.</string>
+    <string name="error_timeout">The provider took too long to respond.</string>
+    <string name="error_auth">Authentication failed. Check your API key.</string>
+    <string name="error_rate_limit">The provider rate-limited the request. Try again shortly.</string>
+    <string name="error_server">The provider returned an error (%1$d).</string>
+    <string name="error_parse">Unexpected response from the provider.</string>
+    <string name="error_cancelled">Generation stopped.</string>
+    <string name="error_unknown">Something went wrong.</string>
+    <string name="error_secure_storage">Secure storage is unavailable.</string>
+    <string name="error_empty_message">Write a message first.</string>
+
+    <!-- Common states -->
+    <string name="state_loading">Loading…</string>
+    <string name="state_empty">Nothing here yet</string>
+    <string name="state_error">Something went wrong</string>
+    <string name="state_offline">Offline</string>
+
+    <!-- Accessibility -->
+    <string name="a11y_avatar">Assistant avatar</string>
+    <string name="a11y_send">Send message</string>
+    <string name="a11y_mic">Start voice input</string>
+    <string name="a11y_more">More options</string>
+    <string name="a11y_toggle_enabled">Toggle enabled</string>
+    <string name="a11y_current_model">Current model</string>
+</resources>

@@ -98,6 +98,7 @@ fun ChatScreen(
     onOpenVoice: () -> Unit,
     onOpenTaskLog: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenWorkspace: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current

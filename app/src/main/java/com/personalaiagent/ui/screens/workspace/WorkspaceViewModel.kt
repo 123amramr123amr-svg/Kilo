@@ -94,7 +94,7 @@ class WorkspaceViewModel @Inject constructor(
                     eventChannel.send(WorkspaceEvent.Connected)
                     refresh()
                 }
-                is Outcome.Failure -> eventChannel.send(WorkspaceEvent.Failed(result.error))
+                is Outcome.Failure -> fail(result.error)
             }
         }
     }
@@ -175,7 +175,7 @@ class WorkspaceViewModel @Inject constructor(
 
     fun createFile(nameOrPath: String, content: String) {
         val target = resolveNewPath(nameOrPath) ?: run {
-            viewModelScope.launch { eventChannel.send(WorkspaceEvent.Failed(AppError.InvalidInput("path"))) }
+            viewModelScope.launch { fail(AppError.InvalidInput("path")) }
             return
         }
         _uiState.update { it.copy(showNewFile = false, isWorking = true) }
@@ -186,10 +186,7 @@ class WorkspaceViewModel @Inject constructor(
                     eventChannel.send(WorkspaceEvent.Created)
                     refresh()
                 }
-                is Outcome.Failure -> {
-                    _uiState.update { it.copy(isWorking = false) }
-                    eventChannel.send(WorkspaceEvent.Failed(result.error))
-                }
+                is Outcome.Failure -> fail(result.error)
             }
         }
     }
@@ -204,7 +201,7 @@ class WorkspaceViewModel @Inject constructor(
 
     fun createFolder(nameOrPath: String) {
         val target = resolveNewPath(nameOrPath) ?: run {
-            viewModelScope.launch { eventChannel.send(WorkspaceEvent.Failed(AppError.InvalidInput("path"))) }
+            viewModelScope.launch { fail(AppError.InvalidInput("path")) }
             return
         }
         _uiState.update { it.copy(showNewFolder = false, isWorking = true) }
@@ -215,10 +212,7 @@ class WorkspaceViewModel @Inject constructor(
                     eventChannel.send(WorkspaceEvent.Created)
                     refresh()
                 }
-                is Outcome.Failure -> {
-                    _uiState.update { it.copy(isWorking = false) }
-                    eventChannel.send(WorkspaceEvent.Failed(result.error))
-                }
+                is Outcome.Failure -> fail(result.error)
             }
         }
     }
@@ -241,7 +235,7 @@ class WorkspaceViewModel @Inject constructor(
                 }
                 is Outcome.Failure -> {
                     _uiState.update { it.copy(editor = null) }
-                    eventChannel.send(WorkspaceEvent.Failed(result.error))
+                    fail(result.error)
                 }
             }
         }
@@ -269,12 +263,15 @@ class WorkspaceViewModel @Inject constructor(
                     eventChannel.send(WorkspaceEvent.Deleted)
                     refresh()
                 }
-                is Outcome.Failure -> {
-                    _uiState.update { it.copy(isWorking = false) }
-                    eventChannel.send(WorkspaceEvent.Failed(result.error))
-                }
+                is Outcome.Failure -> fail(result.error)
             }
         }
+    }
+
+    /** Records a failure for the banner and notifies the screen. */
+    private suspend fun fail(error: AppError) {
+        _uiState.update { it.copy(isWorking = false, error = error) }
+        eventChannel.send(WorkspaceEvent.Failed(error))
     }
 
     fun clearError() {

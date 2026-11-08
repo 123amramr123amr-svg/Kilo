@@ -28,6 +28,9 @@ sealed class AppError {
     data object Parse : AppError()
     data object Cancelled : AppError()
 
+    /** The agent has no workspace folder to work in yet. */
+    data object NoWorkspace : AppError()
+
     /** The Android Keystore / encrypted storage could not be used. */
     data object SecureStorage : AppError()
 

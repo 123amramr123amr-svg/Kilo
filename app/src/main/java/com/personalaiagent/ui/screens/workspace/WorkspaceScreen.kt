@@ -104,7 +104,9 @@ fun WorkspaceScreen(
                 WorkspaceEvent.Deleted -> snackbarHostState.showSnackbar(deletedMessage)
                 WorkspaceEvent.Created -> snackbarHostState.showSnackbar(createdMessage)
                 WorkspaceEvent.Connected -> snackbarHostState.showSnackbar(connectedMessage)
-                is WorkspaceEvent.Failed -> snackbarHostState.showSnackbar(appErrorText(event.error))
+                // The failure is rendered by the error banner from view-model state,
+                // so the collector only needs to keep the channel drained.
+                is WorkspaceEvent.Failed -> Unit
             }
         }
     }

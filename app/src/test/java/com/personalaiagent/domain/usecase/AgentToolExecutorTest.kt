@@ -40,7 +40,7 @@ class AgentToolExecutorTest {
     fun `list reports files`() = runTest {
         workspace.files["a.txt"] = "1"
         workspace.files["b.txt"] = "22"
-        val result = executor.execute(call(AgentToolCatalog.LIST_FILES, """{"path":""""}"""))
+        val result = executor.execute(call(AgentToolCatalog.LIST_FILES, "{\"path\":\"\"}"))
         assertTrue(result.ok)
         assertTrue(result.output.contains("a.txt"))
         assertTrue(result.output.contains("b.txt"))
@@ -75,7 +75,7 @@ class AgentToolExecutorTest {
     @Test
     fun `no workspace yields a helpful message`() = runTest {
         val empty = AgentToolExecutor(FakeWorkspaceRepository(workspace = null), Json)
-        val result = empty.execute(call(AgentToolCatalog.LIST_FILES, """{"path":""""}"""))
+        val result = empty.execute(call(AgentToolCatalog.LIST_FILES, "{\"path\":\"\"}"))
         assertFalse(result.ok)
         assertTrue(result.output.contains("workspace", ignoreCase = true))
     }

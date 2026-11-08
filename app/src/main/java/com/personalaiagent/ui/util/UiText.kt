@@ -28,6 +28,12 @@ fun appErrorText(error: AppError): String = when (error) {
     is AppError.Server -> stringResource(R.string.error_server, error.code)
     AppError.Parse -> stringResource(R.string.error_parse)
     AppError.Cancelled -> stringResource(R.string.error_cancelled)
+    AppError.NoWorkspace -> stringResource(R.string.error_no_workspace)
     AppError.SecureStorage -> stringResource(R.string.error_secure_storage)
-    is AppError.Unknown -> stringResource(R.string.error_unknown)
+    is AppError.Unknown -> when (error.message) {
+        "agent_round_limit" -> stringResource(R.string.error_tool_limit)
+        "workspace_permission_denied" -> stringResource(R.string.workspace_no_permission)
+        "not_found" -> stringResource(R.string.state_empty)
+        else -> stringResource(R.string.error_unknown)
+    }
 }

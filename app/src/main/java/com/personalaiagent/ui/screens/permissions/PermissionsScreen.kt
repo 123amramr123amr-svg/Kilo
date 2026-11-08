@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.MaterialTheme
@@ -103,6 +104,14 @@ fun PermissionsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
+                text = stringResource(
+                    R.string.permissions_workspace_summary,
+                    state.workspaceName ?: stringResource(R.string.permissions_workspace_none),
+                ),
+                style = MaterialTheme.typography.labelMedium,
+                color = BrandCyan,
+            )
+            Text(
                 text = stringResource(R.string.permissions_request_hint),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -118,6 +127,7 @@ fun PermissionsScreen(
                             when (permission) {
                                 AppPermission.MICROPHONE -> R.string.perm_mic_name
                                 AppPermission.NOTIFICATIONS -> R.string.perm_notif_name
+                                AppPermission.STORAGE -> R.string.perm_storage_name
                                 AppPermission.INTERNET -> R.string.perm_network_name
                             },
                         ),
@@ -125,11 +135,13 @@ fun PermissionsScreen(
                             when (permission) {
                                 AppPermission.MICROPHONE -> R.string.perm_mic_body
                                 AppPermission.NOTIFICATIONS -> R.string.perm_notif_body
+                                AppPermission.STORAGE -> R.string.perm_storage_body
                                 AppPermission.INTERNET -> R.string.perm_network_body
                             },
                         ),
                         onClick = {
                             val canAsk = permission.minSdk <= android.os.Build.VERSION.SDK_INT &&
+                                permission.maxSdk >= android.os.Build.VERSION.SDK_INT &&
                                 permission != AppPermission.INTERNET &&
                                 status != PermissionState.GRANTED
                             if (canAsk) launcher.launch(permission.permission)
@@ -196,5 +208,6 @@ fun PermissionsScreen(
 private fun AppPermission.icon(): ImageVector = when (this) {
     AppPermission.MICROPHONE -> Icons.Rounded.Mic
     AppPermission.NOTIFICATIONS -> Icons.Rounded.Notifications
+    AppPermission.STORAGE -> Icons.Rounded.FolderOpen
     AppPermission.INTERNET -> Icons.Rounded.Public
 }

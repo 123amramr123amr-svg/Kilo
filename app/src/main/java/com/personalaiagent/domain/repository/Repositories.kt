@@ -1,5 +1,6 @@
 package com.personalaiagent.domain.repository
 
+import com.personalaiagent.core.AppConstants
 import com.personalaiagent.core.Outcome
 import com.personalaiagent.domain.model.AiModel
 import com.personalaiagent.domain.model.AppLanguage
@@ -10,10 +11,14 @@ import com.personalaiagent.domain.model.ConnectionTestResult
 import com.personalaiagent.domain.model.ModelParams
 import com.personalaiagent.domain.model.Provider
 import com.personalaiagent.domain.model.ProviderDraft
+import com.personalaiagent.domain.model.RemoteModel
 import com.personalaiagent.domain.model.TaskRun
 import com.personalaiagent.domain.model.TaskStatus
 import com.personalaiagent.domain.model.TaskStepName
 import com.personalaiagent.domain.model.TaskStepStatus
+import com.personalaiagent.domain.model.Workspace
+import com.personalaiagent.domain.model.WorkspaceEntry
+import com.personalaiagent.domain.model.WorkspaceFile
 import com.personalaiagent.domain.model.ThemeMode
 import kotlinx.coroutines.flow.Flow
 
@@ -26,6 +31,16 @@ interface ProviderRepository {
     suspend fun updateProvider(id: String, draft: ProviderDraft, apiKey: String?): Outcome<Unit>
     suspend fun deleteProvider(id: String): Outcome<Unit>
     suspend fun setDefaultProvider(id: String): Outcome<Unit>
+    /**
+     * Fetches the model catalog for the given credentials without persisting
+     * anything. Used by the "fetch models" button before the provider exists.
+     */
+    suspend fun fetchAvailableModels(
+        providerId: String?,
+        draft: ProviderDraft,
+        apiKey: String?,
+    ): Outcome<List<RemoteModel>>
+
     /** Tests credentials without persisting anything. [providerId] is null for a new provider. */
     suspend fun testConnection(
         providerId: String?,
@@ -60,7 +75,39 @@ interface ModelRepository {
     suspend fun setDefault(id: String)
     suspend fun updateParams(id: String, params: ModelParams)
     suspend fun refreshCatalog(providerId: String): Outcome<CatalogSyncResult>
+
+    /**
+     * Enables exactly [enabledRemoteIds] for the provider and disables the rest.
+     * Used by the "fetch models" dialog to apply what the user ticked.
+     */
+    suspend fun applySelection(providerId: String, enabledRemoteIds: Set<String>)
     suspend fun clearAll()
+}
+
+/**
+ * File access for the agent. The implementation is backed by the Storage Access
+ * Framework tree the user picked, so every operation stays inside that folder and
+ * needs no broad storage permission.
+ */
+interface WorkspaceRepository {
+    fun observeWorkspace(): Flow<Workspace?>
+
+    /** Persists the tree URI and takes a persistable read/write permission. */
+    suspend fun connect(treeUri: String): Outcome<Workspace>
+
+    suspend fun disconnect()
+
+    /** Lists a directory (`""` or "/" = workspace root). */
+    suspend fun list(path: String): Outcome<List<WorkspaceEntry>>
+
+    suspend fun read(path: String, maxBytes: Int = AppConstants.MAX_TOOL_READ_BYTES): Outcome<WorkspaceFile>
+
+    /** Creates or overwrites a text file, creating parent folders as needed. */
+    suspend fun write(path: String, content: String, append: Boolean = false): Outcome<WorkspaceEntry>
+
+    suspend fun createFolder(path: String): Outcome<WorkspaceEntry>
+
+    suspend fun delete(path: String): Outcome<Unit>
 }
 
 interface ChatRepository {
@@ -110,5 +157,7 @@ interface SettingsRepository {
     suspend fun setStreamingEnabled(enabled: Boolean)
     suspend fun setOnboardingCompleted(completed: Boolean)
     suspend fun setDisplayName(name: String)
+    suspend fun setWorkspace(uri: String?, displayName: String?)
+    suspend fun setAgentFileToolsEnabled(enabled: Boolean)
     suspend fun clearAll()
 }

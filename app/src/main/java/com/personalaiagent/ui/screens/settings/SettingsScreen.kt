@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.Workspaces
 import androidx.compose.material.icons.rounded.Vibration
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +62,7 @@ fun SettingsScreen(
     onOpenTaskLog: () -> Unit,
     onOpenAccount: () -> Unit,
     onOpenModels: () -> Unit,
+    onOpenWorkspace: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -133,6 +135,20 @@ fun SettingsScreen(
                     onClick = onOpenProviders,
                     trailing = {
                         Tag(text = "${state.providerCount}", color = BrandCyan)
+                    },
+                )
+                com.personalaiagent.ui.components.Divider()
+                SettingsRow(
+                    icon = Icons.Rounded.Workspaces,
+                    title = stringResource(R.string.settings_workspace),
+                    subtitle = state.settings.workspaceName
+                        ?: stringResource(R.string.settings_workspace_desc),
+                    onClick = onOpenWorkspace,
+                    trailing = {
+                        Switch(
+                            checked = state.settings.agentFileToolsEnabled,
+                            onCheckedChange = viewModel::setAgentFileToolsEnabled,
+                        )
                     },
                 )
                 com.personalaiagent.ui.components.Divider()

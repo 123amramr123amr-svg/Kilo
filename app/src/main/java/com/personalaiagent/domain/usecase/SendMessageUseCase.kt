@@ -10,28 +10,33 @@ import com.personalaiagent.data.remote.ProviderClientRouter
 import com.personalaiagent.data.remote.ProviderException
 import com.personalaiagent.data.remote.toAppError
 import com.personalaiagent.domain.model.AiModel
-import com.personalaiagent.domain.model.AppSettings
 import com.personalaiagent.domain.model.ChatMessage
 import com.personalaiagent.domain.model.ChatTurn
 import com.personalaiagent.domain.model.MessageRole
 import com.personalaiagent.domain.model.MessageStatus
-import com.personalaiagent.domain.model.Provider
 import com.personalaiagent.domain.model.ProviderKind
 import com.personalaiagent.domain.model.TaskStatus
 import com.personalaiagent.domain.model.TaskStepName
 import com.personalaiagent.domain.model.TaskStepStatus
+import com.personalaiagent.domain.model.ToolCall
 import com.personalaiagent.domain.repository.ChatRepository
 import com.personalaiagent.domain.repository.CredentialStore
 import com.personalaiagent.domain.repository.ModelRepository
 import com.personalaiagent.domain.repository.ProviderRepository
 import com.personalaiagent.domain.repository.SettingsRepository
 import com.personalaiagent.domain.repository.TaskRepository
+import com.personalaiagent.domain.usecase.agent.AgentToolCatalog
+import com.personalaiagent.domain.usecase.agent.AgentToolExecutor
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 /** Everything the chat UI needs to know while a message is being executed. */
 sealed interface SendMessageEvent {
@@ -42,6 +47,13 @@ sealed interface SendMessageEvent {
     ) : SendMessageEvent
 
     data class Delta(val text: String) : SendMessageEvent
+
+    /** A file tool ran (or failed) on the phone workspace. */
+    data class ToolActivity(
+        val toolName: String,
+        val detail: String,
+        val ok: Boolean,
+    ) : SendMessageEvent
 
     data class Completed(
         val taskId: String,
@@ -57,9 +69,13 @@ sealed interface SendMessageEvent {
 }
 
 /**
- * The core "agent task": resolve provider → build prompt → stream completion →
- * persist answer. Every step is recorded in the execution log, and a failed or
- * cancelled stream never loses the text that was already produced.
+ * The core agent task:
+ *
+ * resolve provider → build prompt → (stream answer → run tools → stream again)* → persist.
+ *
+ * When a workspace folder is connected, the model receives the file tools and the
+ * phone genuinely becomes its workspace: it can list, read, create, edit and delete
+ * files, and every tool call is recorded in the execution log.
  */
 class SendMessageUseCase @Inject constructor(
     private val chatRepository: ChatRepository,
@@ -69,6 +85,8 @@ class SendMessageUseCase @Inject constructor(
     private val taskRepository: TaskRepository,
     private val settingsRepository: SettingsRepository,
     private val clients: ProviderClientRouter,
+    private val toolExecutor: AgentToolExecutor,
+    private val json: Json,
     private val time: TimeProvider,
     private val ids: IdGenerator,
 ) {
@@ -85,6 +103,7 @@ class SendMessageUseCase @Inject constructor(
         }
 
         val settings = settingsRepository.current()
+        val toolsEnabled = settings.hasWorkspace && settings.agentFileToolsEnabled
 
         // ---- 1. Resolve model + provider -------------------------------------
         val model = resolveModel(preferredModelId)
@@ -117,21 +136,22 @@ class SendMessageUseCase @Inject constructor(
         taskRepository.finishStep(
             resolveStep,
             TaskStepStatus.SUCCEEDED,
-            detail = "${provider.name} · ${model.displayName}",
+            detail = "${provider.name} · ${model.displayName}" + if (toolsEnabled) " · tools" else "",
         )
 
         val now = time.now()
-        val userMessage = ChatMessage(
-            id = ids.newId(),
-            conversationId = convId,
-            role = MessageRole.USER,
-            content = prompt,
-            createdAt = now,
-            status = MessageStatus.COMPLETE,
-            providerId = provider.id,
-            modelId = model.id,
+        chatRepository.appendMessage(
+            ChatMessage(
+                id = ids.newId(),
+                conversationId = convId,
+                role = MessageRole.USER,
+                content = prompt,
+                createdAt = now,
+                status = MessageStatus.COMPLETE,
+                providerId = provider.id,
+                modelId = model.id,
+            ),
         )
-        chatRepository.appendMessage(userMessage)
 
         val assistantId = ids.newId()
         chatRepository.appendMessage(
@@ -153,63 +173,131 @@ class SendMessageUseCase @Inject constructor(
         val history = chatRepository.getMessages(convId)
             .filter { it.id != assistantId && it.content.isNotBlank() && it.status != MessageStatus.FAILED }
             .takeLast(AppConstants.MAX_CONTEXT_MESSAGES)
+
+        val systemPrompt = buildString {
+            if (model.params.systemPrompt.isNotBlank()) {
+                append(model.params.systemPrompt.trim())
+                append("\n\n")
+            }
+            if (toolsEnabled) {
+                append(AgentToolCatalog.systemPrompt(settings.workspaceName ?: "Workspace"))
+            }
+        }.trim()
+
         val turns = buildList {
-            if (provider.kind == ProviderKind.OPENAI_COMPATIBLE && model.params.systemPrompt.isNotBlank()) {
-                add(ChatTurn(MessageRole.SYSTEM, model.params.systemPrompt))
+            // OpenAI-compatible endpoints take the system prompt as a message;
+            // Anthropic receives it through the `system` field instead.
+            if (provider.kind == ProviderKind.OPENAI_COMPATIBLE && systemPrompt.isNotBlank()) {
+                add(ChatTurn(MessageRole.SYSTEM, systemPrompt))
             }
             history.forEach { add(ChatTurn(it.role, it.content)) }
-        }
+        }.toMutableList()
+
         taskRepository.finishStep(
             promptStep,
             TaskStepStatus.SUCCEEDED,
-            detail = "${turns.size} turns",
+            detail = "${history.size} turns" + if (toolsEnabled) " · ${AgentToolCatalog.tools.size} tools" else "",
         )
 
-        // ---- 4. Stream -------------------------------------------------------
+        // ---- 4. Agent loop ---------------------------------------------------
         val streaming = settings.streamingEnabled && model.params.streaming
-        val request = ChatRequest(
-            kind = provider.kind,
-            baseUrl = provider.baseUrl,
-            apiKey = apiKey,
-            modelId = model.remoteId,
-            messages = turns,
-            params = model.params.copy(streaming = streaming),
+        val params = model.params.copy(
+            streaming = streaming,
+            systemPrompt = if (provider.kind == ProviderKind.ANTHROPIC) systemPrompt else "",
         )
-        val sendStep = taskRepository.startStep(taskId, TaskStepName.SEND_REQUEST)
-        val receiveStep = taskRepository.startStep(taskId, TaskStepName.RECEIVE_RESPONSE)
+        val tools = if (toolsEnabled) AgentToolCatalog.tools else emptyList()
 
-        val buffer = StringBuilder()
+        val answer = StringBuilder()
+        val toolSummaries = mutableListOf<String>()
         var tokensIn: Int? = null
         var tokensOut: Int? = null
+        var round = 0
 
         try {
-            clients.forKind(provider.kind).stream(request).collect { chunk ->
-                when (chunk) {
-                    is ChatChunk.Delta -> {
-                        if (chunk.text.isNotEmpty()) {
-                            buffer.append(chunk.text)
+            while (true) {
+                round++
+                val request = ChatRequest(
+                    kind = provider.kind,
+                    baseUrl = provider.baseUrl,
+                    apiKey = apiKey,
+                    modelId = model.remoteId,
+                    messages = turns.toList(),
+                    params = params,
+                    tools = tools,
+                )
+
+                val sendStep = taskRepository.startStep(taskId, TaskStepName.SEND_REQUEST)
+                val receiveStep = taskRepository.startStep(taskId, TaskStepName.RECEIVE_RESPONSE)
+                val roundText = StringBuilder()
+                val roundCalls = mutableListOf<ToolCall>()
+
+                clients.forKind(provider.kind).stream(request).collect { chunk ->
+                    when (chunk) {
+                        is ChatChunk.Delta -> if (chunk.text.isNotEmpty()) {
+                            roundText.append(chunk.text)
                             emit(SendMessageEvent.Delta(chunk.text))
                         }
+
+                        is ChatChunk.Usage -> {
+                            tokensIn = chunk.tokenIn ?: tokensIn
+                            tokensOut = chunk.tokenOut ?: tokensOut
+                        }
+
+                        is ChatChunk.ToolCallChunk -> roundCalls += chunk.call
+                        ChatChunk.Completed -> Unit
                     }
-                    is ChatChunk.Usage -> {
-                        tokensIn = chunk.tokenIn ?: tokensIn
-                        tokensOut = chunk.tokenOut ?: tokensOut
-                    }
-                    ChatChunk.Completed -> Unit
+                }
+
+                taskRepository.finishStep(sendStep, TaskStepStatus.SUCCEEDED, detail = "${provider.name} · round $round")
+                taskRepository.finishStep(
+                    receiveStep,
+                    TaskStepStatus.SUCCEEDED,
+                    detail = "${roundText.length} chars" + if (roundCalls.isNotEmpty()) " · ${roundCalls.size} tool(s)" else "",
+                )
+
+                if (roundCalls.isEmpty()) {
+                    if (roundText.isNotBlank()) answer.append(roundText)
+                    break
+                }
+
+                if (round >= AppConstants.MAX_AGENT_ROUNDS) {
+                    throw ProviderException(AppError.Unknown("agent_round_limit"))
+                }
+
+                // The assistant turn that requested the tools, then one turn per result.
+                turns += ChatTurn(
+                    role = MessageRole.ASSISTANT,
+                    content = roundText.toString(),
+                    toolCalls = roundCalls,
+                )
+                if (roundText.isNotBlank()) {
+                    answer.append(roundText).append("\n\n")
+                }
+
+                for (call in roundCalls) {
+                    val path = argumentOf(call, "path")
+                    val step = taskRepository.startStep(taskId, TaskStepName.EXECUTE_TOOL)
+                    val result = toolExecutor.execute(call)
+                    taskRepository.finishStep(
+                        step,
+                        if (result.ok) TaskStepStatus.SUCCEEDED else TaskStepStatus.FAILED,
+                        detail = if (path.isBlank()) call.name else "$path",
+                    )
+                    emit(SendMessageEvent.ToolActivity(call.name, path, ok = result.ok))
+                    toolSummaries += "${call.name} ${path}".trim()
+                    turns += ChatTurn(
+                        role = MessageRole.TOOL,
+                        content = result.output,
+                        toolCallId = call.id,
+                    )
                 }
             }
 
-            val fullText = buffer.toString()
+            var fullText = answer.toString().trim()
             if (fullText.isBlank()) {
-                throw ProviderException(AppError.Parse)
+                if (toolSummaries.isEmpty()) throw ProviderException(AppError.Parse)
+                fullText = toolSummaries.joinToString("\n") { "✓ $it" }
             }
-
-            taskRepository.finishStep(sendStep, TaskStepStatus.SUCCEEDED, detail = provider.name)
-            taskRepository.finishStep(
-                receiveStep,
-                TaskStepStatus.SUCCEEDED,
-                detail = "${fullText.length} chars",
-            )
 
             val persistStep = taskRepository.startStep(taskId, TaskStepName.PERSIST_MESSAGE)
             chatRepository.updateAssistantMessage(
@@ -225,27 +313,21 @@ class SendMessageUseCase @Inject constructor(
 
             emit(SendMessageEvent.Completed(taskId, assistantId, fullText))
         } catch (cancelled: CancellationException) {
-            // Persist partial output before propagating cancellation.
             withContext(NonCancellable) {
-                val partial = buffer.toString()
                 chatRepository.updateAssistantMessage(
                     id = assistantId,
-                    content = partial,
+                    content = answer.toString().trim(),
                     status = MessageStatus.FAILED,
                     error = "cancelled",
                     tokenIn = tokensIn,
                     tokenOut = tokensOut,
                 )
-                taskRepository.finishStep(sendStep, TaskStepStatus.SKIPPED)
-                taskRepository.finishStep(receiveStep, TaskStepStatus.FAILED, detail = "cancelled")
                 taskRepository.finishTask(taskId, TaskStatus.CANCELLED, "cancelled", tokensIn, tokensOut)
             }
             throw cancelled
         } catch (e: Exception) {
             val error = (e as? ProviderException)?.error ?: e.toAppError()
-            val partial = buffer.toString()
-            taskRepository.finishStep(sendStep, TaskStepStatus.FAILED, detail = error.describe())
-            taskRepository.finishStep(receiveStep, TaskStepStatus.FAILED, detail = error.describe())
+            val partial = answer.toString().trim()
             chatRepository.updateAssistantMessage(
                 id = assistantId,
                 content = partial,
@@ -266,6 +348,14 @@ class SendMessageUseCase @Inject constructor(
         modelRepository.getDefaultModel()?.takeIf { it.enabled }?.let { return it }
         return modelRepository.firstEnabledModel()
     }
+
+    /** Reads a string field from the tool-call arguments without failing on bad JSON. */
+    private fun argumentOf(call: ToolCall, key: String): String = runCatching {
+        (json.parseToJsonElement(call.arguments) as? JsonObject)
+            ?.get(key)
+            ?.let { (it as? JsonPrimitive)?.contentOrNull }
+            .orEmpty()
+    }.getOrDefault("")
 }
 
 /** Stable, non-sensitive identifier for logs and the execution log screen. */
@@ -281,6 +371,7 @@ fun AppError.describe(): String = when (this) {
     is AppError.Server -> "server: $code"
     AppError.Parse -> "parse"
     AppError.Cancelled -> "cancelled"
+    AppError.NoWorkspace -> "no_workspace"
     AppError.SecureStorage -> "secure_storage"
     is AppError.Unknown -> "unknown: ${message ?: ""}"
 }

@@ -4,10 +4,12 @@ import com.personalaiagent.data.repository.ChatRepositoryImpl
 import com.personalaiagent.data.repository.ModelRepositoryImpl
 import com.personalaiagent.data.repository.ProviderRepositoryImpl
 import com.personalaiagent.data.repository.TaskRepositoryImpl
+import com.personalaiagent.data.workspace.SafWorkspaceRepository
 import com.personalaiagent.domain.repository.ChatRepository
 import com.personalaiagent.domain.repository.ModelRepository
 import com.personalaiagent.domain.repository.ProviderRepository
 import com.personalaiagent.domain.repository.TaskRepository
+import com.personalaiagent.domain.repository.WorkspaceRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -33,4 +35,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindTaskRepository(impl: TaskRepositoryImpl): TaskRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWorkspaceRepository(impl: SafWorkspaceRepository): WorkspaceRepository
 }

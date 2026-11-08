@@ -9,7 +9,9 @@ import com.personalaiagent.domain.model.ProviderKind
 import com.personalaiagent.domain.model.TaskStatus
 import com.personalaiagent.domain.model.TaskStepName
 import com.personalaiagent.domain.model.TaskStepStatus
+import com.personalaiagent.domain.usecase.agent.AgentToolExecutor
 import kotlinx.coroutines.flow.toList
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -39,6 +41,8 @@ class SendMessageUseCaseTest {
             taskRepository = taskRepository,
             settingsRepository = settings,
             clients = ProviderClientRouter(client, client),
+            toolExecutor = AgentToolExecutor(FakeWorkspaceRepository(), Json { ignoreUnknownKeys = true }),
+            json = Json { ignoreUnknownKeys = true },
             time = time,
             ids = ids,
         )
@@ -115,6 +119,8 @@ class SendMessageUseCaseTest {
             taskRepository = taskRepository,
             settingsRepository = settings,
             clients = ProviderClientRouter(FakeProviderClient(), FakeProviderClient()),
+            toolExecutor = AgentToolExecutor(FakeWorkspaceRepository(), Json { ignoreUnknownKeys = true }),
+            json = Json { ignoreUnknownKeys = true },
             time = time,
             ids = ids,
         )

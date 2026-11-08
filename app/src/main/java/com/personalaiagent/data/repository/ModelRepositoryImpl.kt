@@ -164,6 +164,31 @@ class ModelRepositoryImpl @Inject constructor(
         return entities.size
     }
 
+    override suspend fun applySelection(providerId: String, enabledRemoteIds: Set<String>) {
+        database.withTransaction {
+            val models = modelDao.getByProvider(providerId)
+            models.forEach { entity ->
+                val shouldEnable = entity.remoteId in enabledRemoteIds
+                if (entity.enabled != shouldEnable) modelDao.setEnabled(entity.id, shouldEnable)
+            }
+            // A default model that the user just unticked must not stay in use, and
+            // the app always needs at least one usable model.
+            val current = modelDao.getDefault()
+            if (current != null && !current.enabled) modelDao.clearDefaultFlags()
+            if (modelDao.getDefault() == null) {
+                val fallback = modelDao.firstEnabled()
+                if (fallback != null) {
+                    modelDao.markDefault(fallback.id)
+                } else {
+                    models.firstOrNull()?.let {
+                        modelDao.setEnabled(it.id, true)
+                        modelDao.markDefault(it.id)
+                    }
+                }
+            }
+        }
+    }
+
     override suspend fun clearAll() {
         modelDao.clear()
     }

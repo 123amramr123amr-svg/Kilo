@@ -356,4 +356,77 @@
     <string name="a11y_more">خيارات إضافية</string>
     <string name="a11y_toggle_enabled">تبديل التفعيل</string>
     <string name="a11y_current_model">النموذج الحالي</string>
+
+    <!-- Fetch models -->
+    <string name="providers_fetch_models">جلب النماذج</string>
+    <string name="providers_fetch_hint">أدخل عنوان الخدمة ومفتاح API أدناه، ثم اجلب أسماء النماذج من مزوّدك.</string>
+    <string name="providers_fetch_need_key">أدخل مفتاح API أولًا</string>
+    <string name="providers_fetch_success">تم العثور على %1$d نموذجًا</string>
+    <string name="providers_fetch_empty">لم يُرجع المزوّد أي نماذج</string>
+    <string name="providers_models_dialog_title">النماذج المتاحة (%1$d)</string>
+    <string name="providers_models_select_all">تحديد الكل</string>
+    <string name="providers_models_selected">%1$d محدَّد</string>
+    <string name="providers_models_apply">تطبيق التحديد</string>
+    <string name="providers_models_saved">تم حفظ اختيار النماذج</string>
+    <string name="providers_models_pending">ستُحفظ النماذج مع المزوّد</string>
+    <string name="providers_models_shown">النماذج</string>
+
+    <!-- Workspace -->
+    <string name="workspace_title">مساحة العمل</string>
+    <string name="workspace_subtitle">المجلد الذي يعمل فيه الوكيل</string>
+    <string name="workspace_choose">اختيار مجلد مساحة العمل</string>
+    <string name="workspace_change">تغيير المجلد</string>
+    <string name="workspace_connected">متصل: %1$s</string>
+    <string name="workspace_not_connected_title">لا توجد مساحة عمل بعد</string>
+    <string name="workspace_not_connected_body">اختر مجلدًا على هاتفك. سيتمكن الوكيل بعد ذلك من إنشاء الملفات وقراءتها وتعديلها داخله — ولا شيء خارج.</string>
+    <string name="workspace_allow_tools">السماح للوكيل بالعمل على الملفات</string>
+    <string name="workspace_allow_tools_body">عند التفعيل يستطيع المساعد إنشاء الملفات وقراءتها وتعديلها في هذا المجلد باستخدام الأدوات.</string>
+    <string name="workspace_new_file">ملف جديد</string>
+    <string name="workspace_new_folder">مجلد جديد</string>
+    <string name="workspace_empty">هذا المجلد فارغ</string>
+    <string name="workspace_file_name">اسم الملف</string>
+    <string name="workspace_folder_name">اسم المجلد</string>
+    <string name="workspace_created">تم الإنشاء</string>
+    <string name="workspace_deleted">تم الحذف</string>
+    <string name="workspace_delete_title">حذف هذا العنصر؟</string>
+    <string name="workspace_delete_body">سيُحذف نهائيًا من هاتفك.</string>
+    <string name="workspace_disconnect">فصل مساحة العمل</string>
+    <string name="workspace_open_error">تعذّر فتح المجلد</string>
+    <string name="workspace_no_permission">انتهت صلاحية الوصول إلى المجلد. اختر المجلد مرة أخرى.</string>
+    <string name="workspace_editor_title">تعديل الملف</string>
+    <string name="workspace_saved">تم الحفظ</string>
+    <string name="workspace_path_hint">مثال: notes/today.txt</string>
+    <string name="workspace_content_hint">محتوى الملف</string>
+    <string name="workspace_create">إنشاء</string>
+    <string name="workspace_file_too_large">هذا الملف كبير جدًا لتعديله هنا</string>
+    <string name="workspace_browse">تصفح الملفات</string>
+    <string name="workspace_tools_on">أدوات الملفات مُفعّلة</string>
+    <string name="workspace_tools_off">أدوات الملفات مُعطّلة</string>
+    <string name="workspace_saf_note">الوصول محدود بالمجلد الذي تختاره (إطار الوصول للتخزين). لا تُستخدم صلاحية الوصول الكامل للتخزين.</string>
+    <string name="workspace_root">جذر مساحة العمل</string>
+
+    <!-- Permissions: storage -->
+    <string name="perm_storage_name">الملفات والوسائط</string>
+    <string name="perm_storage_body">مطلوبة فقط على أندرويد 12 وما قبله للوصول إلى مجلد مختار. الإصدارات الأحدث تستخدم منتقي المجلدات في النظام.</string>
+    <string name="permissions_workspace_summary">مساحة العمل: %1$s</string>
+    <string name="permissions_workspace_none">غير متصلة</string>
+
+    <!-- Agent tools in chat -->
+    <string name="chat_tools_title">خطوات الوكيل</string>
+    <string name="chat_tools_hint">الوكيل يعمل في مساحة عملك</string>
+    <string name="chat_tool_running">يعمل…</string>
+    <string name="chat_tool_done">تم</string>
+    <string name="chat_tool_failed">فشل</string>
+    <string name="chat_open_workspace">فتح مساحة العمل</string>
+
+    <!-- Workspace settings rows -->
+    <string name="settings_workspace">مساحة العمل</string>
+    <string name="settings_workspace_desc">المجلد الذي يقرأ ويكتب فيه الوكيل</string>
+    <string name="settings_agent_tools">أدوات الملفات</string>
+    <string name="settings_agent_tools_body">السماح للوكيل بإنشاء الملفات وقراءتها وتعديلها في مساحة العمل.</string>
+
+    <string name="tasks_step_tool">تنفيذ أداة</string>
+    <string name="error_no_workspace">لا يوجد مجلد مساحة عمل متصل. افتح الإعدادات ← مساحة العمل لاختيار مجلد.</string>
+    <string name="error_tool_limit">وصل الوكيل إلى الحد الأقصى للخطوات. اطلب منه المتابعة.</string>
+    <string name="chat_workspace_prompt">امنح الوكيل مجلدًا على هذا الهاتف ليتمكن من إنشاء الملفات وتعديلها.</string>
 </resources>

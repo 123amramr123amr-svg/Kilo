@@ -33,6 +33,9 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Workspaces
+import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Refresh
@@ -82,6 +85,7 @@ import com.personalaiagent.ui.components.LoadingState
 import com.personalaiagent.ui.components.SectionCard
 import com.personalaiagent.ui.components.Tag
 import com.personalaiagent.ui.theme.BrandCyan
+import com.personalaiagent.ui.theme.BrandSuccess
 import com.personalaiagent.ui.theme.BrandTextSecondary
 import com.personalaiagent.ui.theme.LocalBrand
 import com.personalaiagent.ui.util.appErrorText
@@ -157,6 +161,14 @@ fun ChatScreen(
                             },
                         )
                         DropdownMenuItem(
+                            text = { Text(stringResource(R.string.settings_workspace)) },
+                            leadingIcon = { Icon(Icons.Rounded.Workspaces, contentDescription = null) },
+                            onClick = {
+                                showMenu = false
+                                onOpenWorkspace()
+                            },
+                        )
+                        DropdownMenuItem(
                             text = { Text(stringResource(R.string.settings_task_log)) },
                             leadingIcon = { Icon(Icons.Rounded.History, contentDescription = null) },
                             onClick = {
@@ -219,6 +231,86 @@ fun ChatScreen(
                             streaming = streaming,
                             streamingText = state.streamingText,
                             onRetry = viewModel::retryLastMessage,
+                        )
+                    }
+                }
+            }
+        }
+
+        AnimatedVisibility(visible = state.workspaceName == null && state.messages.isEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Rounded.Workspaces,
+                    contentDescription = null,
+                    tint = BrandCyan,
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = stringResource(R.string.chat_workspace_prompt),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onOpenWorkspace) {
+                    Text(stringResource(R.string.workspace_choose))
+                }
+            }
+        }
+
+        AnimatedVisibility(visible = state.toolsEnabled && state.isGenerating) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Rounded.TaskAlt,
+                    contentDescription = null,
+                    tint = BrandCyan,
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = "${stringResource(R.string.chat_tools_hint)} · ${state.workspaceName.orEmpty()}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = BrandCyan,
+                    maxLines = 1,
+                )
+            }
+        }
+
+        AnimatedVisibility(visible = state.toolActivity.isNotEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.chat_tools_title),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                state.toolActivity.takeLast(4).forEach { activity ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (activity.ok) Icons.Rounded.TaskAlt else Icons.Rounded.Error,
+                            contentDescription = null,
+                            tint = if (activity.ok) BrandSuccess else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(12.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = "${activity.toolName} ${activity.detail}".trim(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
                         )
                     }
                 }

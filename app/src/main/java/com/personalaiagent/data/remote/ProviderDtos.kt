@@ -8,9 +8,25 @@ import kotlinx.serialization.Serializable
 // ---------------------------------------------------------------------------
 
 @Serializable
+data class OpenAiToolCallFunctionDto(
+    val name: String? = null,
+    val arguments: String? = null,
+)
+
+@Serializable
+data class OpenAiToolCallDto(
+    val index: Int? = null,
+    val id: String? = null,
+    val type: String? = null,
+    val function: OpenAiToolCallFunctionDto? = null,
+)
+
+@Serializable
 data class OpenAiMessageDto(
     val role: String,
-    val content: String,
+    val content: String? = null,
+    @SerialName("tool_calls") val toolCalls: List<OpenAiToolCallDto> = emptyList(),
+    @SerialName("tool_call_id") val toolCallId: String? = null,
 )
 
 @Serializable
@@ -33,6 +49,7 @@ data class OpenAiChatRequestDto(
 data class OpenAiDeltaDto(
     val role: String? = null,
     val content: String? = null,
+    @SerialName("tool_calls") val toolCalls: List<OpenAiToolCallDto> = emptyList(),
 )
 
 @Serializable
@@ -92,6 +109,17 @@ data class AnthropicRequestDto(
 data class AnthropicDeltaDto(
     val type: String? = null,
     val text: String? = null,
+    @SerialName("partial_json") val partialJson: String? = null,
+    @SerialName("stop_reason") val stopReason: String? = null,
+)
+
+@Serializable
+data class AnthropicContentBlockDto(
+    val type: String? = null,
+    val id: String? = null,
+    val name: String? = null,
+    val text: String? = null,
+    val input: kotlinx.serialization.json.JsonElement? = null,
 )
 
 @Serializable
@@ -109,16 +137,18 @@ data class AnthropicContentDto(
 @Serializable
 data class AnthropicStreamEventDto(
     val type: String? = null,
+    val index: Int? = null,
     val delta: AnthropicDeltaDto? = null,
     val usage: AnthropicUsageDto? = null,
     val message: AnthropicMessageResponseDto? = null,
-    val content: List<AnthropicContentDto> = emptyList(),
+    @SerialName("content_block") val contentBlock: AnthropicContentBlockDto? = null,
+    val content: List<AnthropicContentBlockDto> = emptyList(),
 )
 
 @Serializable
 data class AnthropicMessageResponseDto(
     val id: String? = null,
-    val content: List<AnthropicContentDto> = emptyList(),
+    val content: List<AnthropicContentBlockDto> = emptyList(),
     val usage: AnthropicUsageDto? = null,
 )
 

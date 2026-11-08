@@ -9,7 +9,12 @@ import kotlinx.serialization.json.Json
  */
 class OpenAiStreamDecoder(private val json: Json) {
 
+    /** Tool-call fragments seen in the most recent [decode] call (may be parallel). */
+    var lastToolCallDeltas: List<OpenAiToolCallDto> = emptyList()
+        private set
+
     fun decode(event: SseEvent): ChatChunk? {
+        lastToolCallDeltas = emptyList()
         val data = event.data.trim()
         if (data.isEmpty()) return null
         if (data == SseStreamParser.DONE) return ChatChunk.Completed
@@ -19,6 +24,8 @@ class OpenAiStreamDecoder(private val json: Json) {
         } catch (e: Exception) {
             throw ProviderException(AppError.Parse, e)
         }
+        lastToolCallDeltas = chunk.choices.firstOrNull()?.delta?.toolCalls.orEmpty()
+
         val usage = chunk.usage
         if (usage?.promptTokens != null || usage?.completionTokens != null) {
             // Usage arrives on its own final chunk in OpenAI streams; emit text first.

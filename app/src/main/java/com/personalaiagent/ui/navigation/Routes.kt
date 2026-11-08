@@ -17,6 +17,7 @@ object Routes {
     const val TASKS = "tasks"
     const val TASK_DETAIL = "task_detail/{taskId}"
     const val VOICE = "voice"
+    const val WORKSPACE = "workspace"
 
     fun modelSettings(modelId: String) = "model_settings/$modelId"
     fun providerEdit(providerId: String?) =

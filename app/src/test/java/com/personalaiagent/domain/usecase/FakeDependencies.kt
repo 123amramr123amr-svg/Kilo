@@ -80,6 +80,10 @@ class FakeSettingsRepository(
     override suspend fun setStreamingEnabled(enabled: Boolean) = update { it.copy(streamingEnabled = enabled) }
     override suspend fun setOnboardingCompleted(completed: Boolean) = update { it.copy(onboardingCompleted = completed) }
     override suspend fun setDisplayName(name: String) = update { it.copy(displayName = name) }
+    override suspend fun setWorkspace(uri: String?, displayName: String?) =
+        update { it.copy(workspaceUri = uri, workspaceName = displayName) }
+    override suspend fun setAgentFileToolsEnabled(enabled: Boolean) =
+        update { it.copy(agentFileToolsEnabled = enabled) }
     override suspend fun clearAll() = update { AppSettings() }
 
     private fun update(transform: (AppSettings) -> AppSettings) {
@@ -226,6 +230,12 @@ class FakeProviderRepository(private var provider: Provider?) : ProviderReposito
     ): Outcome<com.personalaiagent.domain.model.ConnectionTestResult> =
         Outcome.Failure(AppError.Unknown("not used in this test"))
 
+    override suspend fun fetchAvailableModels(
+        providerId: String?,
+        draft: ProviderDraft,
+        apiKey: String?,
+    ): Outcome<List<RemoteModel>> = Outcome.Success(emptyList())
+
     override suspend fun clearAll() {
         provider = null
     }
@@ -244,6 +254,8 @@ class FakeModelRepository(private var model: AiModel?) : ModelRepository {
 
     override suspend fun refreshCatalog(providerId: String): Outcome<CatalogSyncResult> =
         Outcome.Success(CatalogSyncResult(0, fromRemote = true))
+
+    override suspend fun applySelection(providerId: String, enabledRemoteIds: Set<String>) = Unit
 
     override suspend fun clearAll() {
         model = null

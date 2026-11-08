@@ -8,6 +8,18 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Task execution notifications (Android 13+ runtime permission). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!--
+      The agent's workspace is a folder the user picks with the system folder picker
+      (Storage Access Framework). On Android 12L and older that picker refuses to hand
+      out a tree without this legacy permission, so it is declared with maxSdkVersion
+      and never requested on Android 13+. No broad storage access is used anywhere.
+    -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
 
     <uses-feature
         android:name="android.hardware.microphone"

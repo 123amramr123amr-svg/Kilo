@@ -13,7 +13,22 @@ enum class ProviderKind {
 
 enum class ProviderStatus { UNKNOWN, CONNECTED, ERROR }
 
-enum class MessageRole { USER, ASSISTANT, SYSTEM }
+enum class MessageRole {
+    USER,
+    ASSISTANT,
+    SYSTEM,
+    /** Result of a tool invocation; never shown as a chat bubble. */
+    TOOL;
+
+    /** Role name used by OpenAI-compatible endpoints. */
+    val wireName: String
+        get() = when (this) {
+            USER -> "user"
+            ASSISTANT -> "assistant"
+            SYSTEM -> "system"
+            TOOL -> "tool"
+        }
+}
 
 enum class MessageStatus { COMPLETE, STREAMING, FAILED }
 
@@ -22,7 +37,15 @@ enum class TaskStatus { QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED }
 enum class TaskStepStatus { PENDING, RUNNING, SUCCEEDED, FAILED, SKIPPED }
 
 /** Ordered steps recorded for every agent task. */
-enum class TaskStepName { RESOLVE_PROVIDER, BUILD_PROMPT, SEND_REQUEST, RECEIVE_RESPONSE, PERSIST_MESSAGE }
+enum class TaskStepName {
+    RESOLVE_PROVIDER,
+    BUILD_PROMPT,
+    SEND_REQUEST,
+    RECEIVE_RESPONSE,
+    PERSIST_MESSAGE,
+    /** One entry per tool the agent executed against the phone workspace. */
+    EXECUTE_TOOL,
+}
 
 enum class ModelCapability { TEXT, VISION, TOOLS, REASONING, CODE }
 

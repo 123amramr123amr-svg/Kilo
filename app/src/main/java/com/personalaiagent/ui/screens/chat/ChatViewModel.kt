@@ -43,9 +43,19 @@ data class ChatUiState(
     val error: AppError? = null,
     val ttsEnabled: Boolean = false,
     val streamingEnabled: Boolean = true,
+    val workspaceName: String? = null,
+    val toolsEnabled: Boolean = false,
+    val toolActivity: List<ToolActivityUi> = emptyList(),
 ) {
     val canSend: Boolean get() = input.isNotBlank() && activeModel != null && !isGenerating
 }
+
+data class ToolActivityUi(
+    val toolName: String,
+    val detail: String,
+    val ok: Boolean,
+    val done: Boolean = true,
+)
 
 sealed interface ChatEvent {
     data class SpeakAnswer(val text: String) : ChatEvent
@@ -119,6 +129,8 @@ class ChatViewModel @Inject constructor(
                         activeModel = active,
                         ttsEnabled = settings.ttsEnabled,
                         streamingEnabled = settings.streamingEnabled,
+                        workspaceName = settings.workspaceName,
+                        toolsEnabled = settings.hasWorkspace && settings.agentFileToolsEnabled,
                     )
                 }
             }
@@ -207,6 +219,7 @@ class ChatViewModel @Inject constructor(
                 error = null,
                 streamingText = "",
                 streamingMessageId = null,
+                toolActivity = emptyList(),
             )
         }
         val targetConversation = if (followLatestConversation) conversationId.value else null
@@ -231,6 +244,18 @@ class ChatViewModel @Inject constructor(
 
                     is SendMessageEvent.Delta -> {
                         _uiState.update { it.copy(streamingText = it.streamingText + event.text) }
+                    }
+
+                    is SendMessageEvent.ToolActivity -> {
+                        _uiState.update { current ->
+                            current.copy(
+                                toolActivity = current.toolActivity + ToolActivityUi(
+                                    toolName = event.toolName,
+                                    detail = event.detail,
+                                    ok = event.ok,
+                                ),
+                            )
+                        }
                     }
 
                     is SendMessageEvent.Completed -> {

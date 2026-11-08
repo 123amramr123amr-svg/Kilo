@@ -53,6 +53,7 @@ import com.personalaiagent.ui.screens.settings.SettingsScreen
 import com.personalaiagent.ui.screens.tasks.TaskDetailScreen
 import com.personalaiagent.ui.screens.tasks.TaskLogScreen
 import com.personalaiagent.ui.screens.voice.VoiceScreen
+import com.personalaiagent.ui.screens.workspace.WorkspaceScreen
 import com.personalaiagent.ui.theme.BrandBlue
 import com.personalaiagent.ui.theme.BrandCyan
 
@@ -124,6 +125,7 @@ fun AppNavHost(
                         onOpenVoice = { navController.navigate(Routes.VOICE) },
                         onOpenTaskLog = { navController.navigate(Routes.TASKS) },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                        onOpenWorkspace = { navController.navigate(Routes.WORKSPACE) },
                     )
                 }
 
@@ -173,7 +175,12 @@ fun AppNavHost(
                         onOpenTaskLog = { navController.navigate(Routes.TASKS) },
                         onOpenAccount = { navController.navigate(Routes.ACCOUNT) },
                         onOpenModels = { navController.navigate(Routes.MODELS) { launchSingleTop = true } },
+                        onOpenWorkspace = { navController.navigate(Routes.WORKSPACE) },
                     )
+                }
+
+                composable(Routes.WORKSPACE) {
+                    WorkspaceScreen(onBack = { navController.popBackStack() })
                 }
 
                 composable(Routes.ACCOUNT) {

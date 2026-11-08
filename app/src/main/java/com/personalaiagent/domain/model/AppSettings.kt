@@ -9,4 +9,11 @@ data class AppSettings(
     val onboardingCompleted: Boolean = false,
     val displayName: String = "",
     val createdAt: Long = 0L,
-)
+    /** SAF tree URI of the folder the agent may work in (null = not chosen). */
+    val workspaceUri: String? = null,
+    val workspaceName: String? = null,
+    /** Master switch for the file tools. */
+    val agentFileToolsEnabled: Boolean = true,
+) {
+    val hasWorkspace: Boolean get() = !workspaceUri.isNullOrBlank()
+}

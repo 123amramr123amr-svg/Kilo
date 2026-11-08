@@ -62,6 +62,22 @@ class SettingsRepositoryImpl(
         dataStore.edit { it[KEY_DISPLAY_NAME] = name.trim() }
     }
 
+    override suspend fun setWorkspace(uri: String?, displayName: String?) {
+        dataStore.edit { prefs ->
+            if (uri == null) {
+                prefs.remove(KEY_WORKSPACE_URI)
+                prefs.remove(KEY_WORKSPACE_NAME)
+            } else {
+                prefs[KEY_WORKSPACE_URI] = uri
+                prefs[KEY_WORKSPACE_NAME] = displayName ?: ""
+            }
+        }
+    }
+
+    override suspend fun setAgentFileToolsEnabled(enabled: Boolean) {
+        dataStore.edit { it[KEY_AGENT_TOOLS] = enabled }
+    }
+
     override suspend fun clearAll() {
         localeMirror.clear()
         dataStore.edit { it.clear() }
@@ -79,6 +95,9 @@ class SettingsRepositoryImpl(
         onboardingCompleted = this[KEY_ONBOARDING] ?: false,
         displayName = this[KEY_DISPLAY_NAME] ?: "",
         createdAt = this[KEY_CREATED_AT] ?: 0L,
+        workspaceUri = this[KEY_WORKSPACE_URI],
+        workspaceName = this[KEY_WORKSPACE_NAME],
+        agentFileToolsEnabled = this[KEY_AGENT_TOOLS] ?: true,
     )
 
     private fun systemLanguageTag(): String =
@@ -93,5 +112,8 @@ class SettingsRepositoryImpl(
         val KEY_ONBOARDING = booleanPreferencesKey("onboarding_completed")
         val KEY_DISPLAY_NAME = stringPreferencesKey("display_name")
         val KEY_CREATED_AT = longPreferencesKey("profile_created_at")
+        val KEY_WORKSPACE_URI = stringPreferencesKey("workspace_uri")
+        val KEY_WORKSPACE_NAME = stringPreferencesKey("workspace_name")
+        val KEY_AGENT_TOOLS = booleanPreferencesKey("agent_file_tools")
     }
 }

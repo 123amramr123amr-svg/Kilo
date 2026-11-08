@@ -15,6 +15,7 @@ import com.personalaiagent.domain.model.ConnectionTestResult
 import com.personalaiagent.domain.model.Provider
 import com.personalaiagent.domain.model.ProviderDraft
 import com.personalaiagent.domain.model.ProviderStatus
+import com.personalaiagent.domain.model.RemoteModel
 import com.personalaiagent.domain.repository.CredentialStore
 import com.personalaiagent.domain.repository.ProviderRepository
 import com.personalaiagent.domain.usecase.ProviderValidator
@@ -130,14 +131,13 @@ class ProviderRepositoryImpl @Inject constructor(
         return Outcome.Success(Unit)
     }
 
-    override suspend fun testConnection(
+    override suspend fun fetchAvailableModels(
         providerId: String?,
         draft: ProviderDraft,
         apiKey: String?,
-    ): Outcome<ConnectionTestResult> {
+    ): Outcome<List<RemoteModel>> {
         ProviderValidator.validate(draft)?.let { return Outcome.Failure(it) }
 
-        val stored = providerId?.let { providerDao.getById(it) }
         val kind = draft.kind
         val baseUrl = ProviderValidator.normalizeBaseUrl(draft.baseUrl)
         val key = apiKey?.takeIf { it.isNotBlank() }
@@ -153,10 +153,20 @@ class ProviderRepositoryImpl @Inject constructor(
             hasKey = true,
             status = ProviderStatus.UNKNOWN,
             lastCheckedAt = null,
-            createdAt = stored?.createdAt ?: time.now(),
+            createdAt = providerId?.let { providerDao.getById(it)?.createdAt } ?: time.now(),
         )
+        return clients.forKind(kind).fetchModels(provider, key, baseUrl)
+    }
 
-        val result = clients.forKind(kind).fetchModels(provider, key, baseUrl)
+    override suspend fun testConnection(
+        providerId: String?,
+        draft: ProviderDraft,
+        apiKey: String?,
+    ): Outcome<ConnectionTestResult> {
+        ProviderValidator.validate(draft)?.let { return Outcome.Failure(it) }
+
+        val providerName = draft.name.ifBlank { "provider" }
+        val result = fetchAvailableModels(providerId, draft, apiKey)
         providerId?.let { id ->
             providerDao.updateStatus(
                 id = id,
@@ -168,7 +178,7 @@ class ProviderRepositoryImpl @Inject constructor(
             is Outcome.Success -> Outcome.Success(
                 ConnectionTestResult(
                     modelsFound = result.value.size,
-                    providerName = draft.name.ifBlank { provider.name },
+                    providerName = providerName,
                 ),
             )
             is Outcome.Failure -> Outcome.Failure(result.error)

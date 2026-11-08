@@ -77,4 +77,8 @@ class SettingsViewModel @Inject constructor(
     fun setStreamingEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setStreamingEnabled(enabled) }
     }
+
+    fun setAgentFileToolsEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAgentFileToolsEnabled(enabled) }
+    }
 }

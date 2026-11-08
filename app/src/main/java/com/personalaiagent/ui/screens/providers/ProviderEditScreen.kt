@@ -6,13 +6,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.CloudDownload
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
@@ -20,7 +26,10 @@ import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -30,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -63,6 +73,8 @@ fun ProviderEditScreen(
     val savedMessage = stringResource(R.string.providers_saved)
     var showKey by remember { mutableStateOf(false) }
 
+    val modelsSavedTemplate = stringResource(R.string.providers_models_saved)
+
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
@@ -70,6 +82,8 @@ fun ProviderEditScreen(
                     snackbarHostState.showSnackbar(savedMessage)
                     onSaved()
                 }
+                is ProviderFormEvent.ModelsApplied ->
+                    snackbarHostState.showSnackbar("$modelsSavedTemplate (${event.count})")
             }
         }
     }
@@ -249,6 +263,65 @@ fun ProviderEditScreen(
                 )
             }
 
+            InfoBanner(
+                icon = Icons.Rounded.CloudDownload,
+                title = stringResource(R.string.providers_fetch_models),
+                body = stringResource(R.string.providers_fetch_hint),
+            )
+
+            GhostButton(
+                text = stringResource(R.string.providers_fetch_models),
+                onClick = viewModel::fetchModels,
+                enabled = !state.isFetchingModels,
+                icon = Icons.Rounded.CloudDownload,
+            )
+
+            state.fetchError?.let { error ->
+                ErrorBanner(message = appErrorText(error))
+            }
+
+            if (state.fetchedModels.isNotEmpty()) {
+                SectionCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)) {
+                    Text(
+                        text = stringResource(R.string.providers_models_shown),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = stringResource(R.string.providers_fetch_success, state.fetchedModels.size),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    state.fetchedModels.take(12).forEach { model ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (model.remoteId in state.selectedModelIds) "✓" else "•",
+                                color = if (model.remoteId in state.selectedModelIds) BrandSuccess else MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = model.displayName,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                    if (state.fetchedModels.size > 12) {
+                        Text(
+                            text = "+${state.fetchedModels.size - 12}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(onClick = { viewModel.showModelsDialogAction() }) {
+                        Text(stringResource(R.string.providers_models_apply))
+                    }
+                }
+            }
+
             state.testSuccessCount?.let { count ->
                 InfoBanner(
                     icon = Icons.Rounded.CheckCircle,
@@ -275,5 +348,78 @@ fun ProviderEditScreen(
 
             SnackbarHost(hostState = snackbarHostState)
         }
+    }
+
+    if (state.showModelsDialog) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissModelsDialog,
+            title = {
+                Text(stringResource(R.string.providers_models_dialog_title, state.fetchedModels.size))
+            },
+            text = {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { viewModel.selectAllModels(true) }) {
+                            Text(stringResource(R.string.providers_models_select_all))
+                        }
+                        TextButton(onClick = { viewModel.selectAllModels(false) }) {
+                            Text(stringResource(R.string.action_clear))
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            text = stringResource(R.string.providers_models_selected, state.selectedModelIds.size),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                        items(state.fetchedModels, key = { it.remoteId }) { model ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Checkbox(
+                                    checked = model.remoteId in state.selectedModelIds,
+                                    onCheckedChange = { viewModel.toggleModelSelection(model.remoteId) },
+                                )
+                                Column {
+                                    Text(
+                                        text = model.displayName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                    if (model.displayName != model.remoteId) {
+                                        Text(
+                                            text = model.remoteId,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (!state.isEditing) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.providers_models_pending),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = viewModel::applyModelSelection) {
+                    Text(stringResource(R.string.providers_models_apply))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissModelsDialog) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = MaterialTheme.shapes.large,
+        )
     }
 }

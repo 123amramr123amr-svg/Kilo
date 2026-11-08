@@ -356,4 +356,77 @@
     <string name="a11y_more">More options</string>
     <string name="a11y_toggle_enabled">Toggle enabled</string>
     <string name="a11y_current_model">Current model</string>
+
+    <!-- Fetch models -->
+    <string name="providers_fetch_models">Fetch models</string>
+    <string name="providers_fetch_hint">Enter the base URL and API key below, then fetch the model names from your provider.</string>
+    <string name="providers_fetch_need_key">Enter an API key first</string>
+    <string name="providers_fetch_success">%1$d models found</string>
+    <string name="providers_fetch_empty">The provider returned no models</string>
+    <string name="providers_models_dialog_title">Available models (%1$d)</string>
+    <string name="providers_models_select_all">Select all</string>
+    <string name="providers_models_selected">%1$d selected</string>
+    <string name="providers_models_apply">Apply selection</string>
+    <string name="providers_models_saved">Model selection saved</string>
+    <string name="providers_models_pending">Models will be saved with the provider</string>
+    <string name="providers_models_shown">Models</string>
+
+    <!-- Workspace -->
+    <string name="workspace_title">Workspace</string>
+    <string name="workspace_subtitle">The folder the agent can work in</string>
+    <string name="workspace_choose">Choose workspace folder</string>
+    <string name="workspace_change">Change folder</string>
+    <string name="workspace_connected">Connected: %1$s</string>
+    <string name="workspace_not_connected_title">No workspace yet</string>
+    <string name="workspace_not_connected_body">Pick a folder on your phone. The agent can then create, read and edit files inside it — and nowhere else.</string>
+    <string name="workspace_allow_tools">Let the agent work with files</string>
+    <string name="workspace_allow_tools_body">When enabled, the assistant can create, read and edit files in this folder using tools.</string>
+    <string name="workspace_new_file">New file</string>
+    <string name="workspace_new_folder">New folder</string>
+    <string name="workspace_empty">This folder is empty</string>
+    <string name="workspace_file_name">File name</string>
+    <string name="workspace_folder_name">Folder name</string>
+    <string name="workspace_created">Created</string>
+    <string name="workspace_deleted">Deleted</string>
+    <string name="workspace_delete_title">Delete this item?</string>
+    <string name="workspace_delete_body">It will be permanently removed from your phone.</string>
+    <string name="workspace_disconnect">Disconnect workspace</string>
+    <string name="workspace_open_error">Could not open the folder</string>
+    <string name="workspace_no_permission">The folder permission is no longer valid. Pick the folder again.</string>
+    <string name="workspace_editor_title">Edit file</string>
+    <string name="workspace_saved">Saved</string>
+    <string name="workspace_path_hint">e.g. notes/today.txt</string>
+    <string name="workspace_content_hint">File content</string>
+    <string name="workspace_create">Create</string>
+    <string name="workspace_file_too_large">This file is too large to edit here</string>
+    <string name="workspace_browse">Browse files</string>
+    <string name="workspace_tools_on">File tools enabled</string>
+    <string name="workspace_tools_off">File tools disabled</string>
+    <string name="workspace_saf_note">Access is limited to the folder you choose (Storage Access Framework). No full-storage permission is used.</string>
+    <string name="workspace_root">Workspace root</string>
+
+    <!-- Permissions: storage -->
+    <string name="perm_storage_name">Files &amp; media</string>
+    <string name="perm_storage_body">Only needed on Android 12 and older to reach a chosen folder. Newer versions use the system folder picker instead.</string>
+    <string name="permissions_workspace_summary">Workspace: %1$s</string>
+    <string name="permissions_workspace_none">not connected</string>
+
+    <!-- Agent tools in chat -->
+    <string name="chat_tools_title">Agent actions</string>
+    <string name="chat_tools_hint">The agent is working in your workspace</string>
+    <string name="chat_tool_running">Working…</string>
+    <string name="chat_tool_done">Done</string>
+    <string name="chat_tool_failed">Failed</string>
+    <string name="chat_open_workspace">Open workspace</string>
+
+    <!-- Workspace settings rows -->
+    <string name="settings_workspace">Workspace</string>
+    <string name="settings_workspace_desc">Folder the agent can read and write</string>
+    <string name="settings_agent_tools">File tools</string>
+    <string name="settings_agent_tools_body">Allow the agent to create, read and edit files in the workspace.</string>
+
+    <string name="tasks_step_tool">Tool execution</string>
+    <string name="error_no_workspace">No workspace folder is connected. Open Settings → Workspace to choose one.</string>
+    <string name="error_tool_limit">The agent reached the maximum number of steps. Ask it to continue.</string>
+    <string name="chat_workspace_prompt">Give the agent a folder on this phone so it can create and edit files.</string>
 </resources>

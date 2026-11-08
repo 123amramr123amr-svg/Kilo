@@ -37,6 +37,15 @@ object Formatters {
         else -> value.toString()
     }
 
+    /** Human readable byte size, e.g. `1.4 KB`. */
+    fun bytes(value: Long): String = when {
+        value < 0 -> "—"
+        value < 1024 -> "$value B"
+        value < 1024 * 1024 -> String.format(Locale.getDefault(), "%.1f KB", value / 1024f)
+        value < 1024L * 1024L * 1024L -> String.format(Locale.getDefault(), "%.1f MB", value / (1024f * 1024f))
+        else -> String.format(Locale.getDefault(), "%.1f GB", value / (1024f * 1024f * 1024f))
+    }
+
     fun initials(name: String): String = name.trim()
         .split(" ")
         .filter { it.isNotBlank() }

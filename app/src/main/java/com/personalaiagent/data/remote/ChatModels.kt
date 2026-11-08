@@ -1,8 +1,10 @@
 package com.personalaiagent.data.remote
 
+import com.personalaiagent.domain.model.AgentTool
 import com.personalaiagent.domain.model.ChatTurn
 import com.personalaiagent.domain.model.ModelParams
 import com.personalaiagent.domain.model.ProviderKind
+import com.personalaiagent.domain.model.ToolCall
 
 /** Everything a client needs to perform one completion. */
 data class ChatRequest(
@@ -12,12 +14,17 @@ data class ChatRequest(
     val modelId: String,
     val messages: List<ChatTurn>,
     val params: ModelParams,
+    /** Empty when the workspace is not connected or tools are disabled. */
+    val tools: List<AgentTool> = emptyList(),
 )
 
 /** Incremental output of a completion. */
 sealed interface ChatChunk {
     data class Delta(val text: String) : ChatChunk
     data class Usage(val tokenIn: Int?, val tokenOut: Int?) : ChatChunk
+
+    /** Complete tool call, emitted once the provider finished streaming it. */
+    data class ToolCallChunk(val call: ToolCall) : ChatChunk
     data object Completed : ChatChunk
 }
 

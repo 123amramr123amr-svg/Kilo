@@ -223,4 +223,5 @@ fun TaskStepName.label(): String = when (this) {
     TaskStepName.SEND_REQUEST -> stringResource(R.string.tasks_step_request)
     TaskStepName.RECEIVE_RESPONSE -> stringResource(R.string.tasks_step_stream)
     TaskStepName.PERSIST_MESSAGE -> stringResource(R.string.tasks_step_persist)
+    TaskStepName.EXECUTE_TOOL -> stringResource(R.string.tasks_step_tool)
 }

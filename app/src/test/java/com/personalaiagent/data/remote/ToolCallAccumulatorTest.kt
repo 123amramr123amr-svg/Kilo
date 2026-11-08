@@ -25,7 +25,7 @@ class ToolCallAccumulatorTest {
         val accumulator = OpenAiToolCallAccumulator()
         accumulator.add(0, "a", "list_files", "{\"path\":")
         accumulator.add(1, "b", "read_file", "{\"path\":\"x")
-        accumulator.add(0, null, null, "\"}")
+        accumulator.add(0, null, null, "\"\"}")
         accumulator.add(1, null, null, "\"}")
 
         val calls = accumulator.build()

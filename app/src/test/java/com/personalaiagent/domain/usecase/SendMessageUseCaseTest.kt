@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -81,7 +82,9 @@ class SendMessageUseCaseTest {
         useCase().invoke(null, "hello", null).toList()
 
         val names = taskRepository.steps.map { it.name }
-        assertTrue(names.containsAll(TaskStepName.entries))
+        // EXECUTE_TOOL only runs when the agent actually calls a file tool.
+        assertTrue(names.containsAll(TaskStepName.entries - TaskStepName.EXECUTE_TOOL))
+        assertFalse(names.contains(TaskStepName.EXECUTE_TOOL))
         assertTrue(taskRepository.steps.all { it.status == TaskStepStatus.SUCCEEDED })
     }
 

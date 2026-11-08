@@ -43,6 +43,14 @@ Verified in CI: build **success**, unit tests **56/56 passing** (see
 - **Voice assistant** screen using the system speech recogniser; optional spoken
   replies through the system TTS engine.
 - **Backup/restore** to a JSON file via the Storage Access Framework — keys excluded.
+- **«جلب النماذج» / Fetch models**: paste a base URL and API key, press one button and the
+  provider's model names appear as a checklist. Tick the ones you want; they are saved with
+  the provider and show up in the app immediately.
+- **The phone is the agent's workspace**: pick a folder with the system folder picker, then
+  the agent can *create, read, append to and delete* real files in it through six tools
+  (`list_files`, `read_file`, `write_file`, `append_file`, `create_folder`, `delete_path`).
+  Every tool call is shown in the chat and recorded as an `EXECUTE_TOOL` step in the
+  execution log.
 
 ## Requirements
 
@@ -114,8 +122,26 @@ docs/PHASE1.md                           implementation report & limitations
 - The account is explicitly **local**; "sign out" deletes local data. No cloud
   login or sync is implied anywhere in the UI.
 
+## Workspace & file permissions
+
+The agent never asks for broad storage access. You choose a folder with the system folder
+picker (`OpenDocumentTree`); the app keeps a *persistable* read/write grant for exactly that
+tree, and every path is normalised and checked so `..` or absolute paths cannot escape it.
+
+| Android version | What is requested |
+|---|---|
+| 13+ (API 33+) | Nothing for files — the Storage Access Framework grant is enough |
+| 8.0 – 12L (API 26–32) | `READ_EXTERNAL_STORAGE` is declared (maxSdkVersion 32) so the folder picker can hand out the tree; it is also listed on the Permissions screen |
+| Any | Microphone (voice), notifications (task results) — requested when you use them |
+
+`MANAGE_EXTERNAL_STORAGE` is deliberately **not** used: the app stays installable from Play
+and can only touch the folder you picked. Tools are on by default once a folder is
+connected; a switch in Settings → Workspace turns them off, and no tools are sent to the
+model at all while no folder is connected.
+
 ## Phase 1 scope
 
 See [`docs/PHASE1.md`](docs/PHASE1.md) for the screen map, architecture notes,
-compatibility constraints and the list of known limitations. Phase 2 work is not
-included per the current brief.
+compatibility constraints and the list of known limitations, and
+[`docs/PHASE2.md`](docs/PHASE2.md) for the fetch-models flow and the workspace agent
+(tool schemas, agent loop, safety rules).

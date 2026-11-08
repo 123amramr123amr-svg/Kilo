@@ -17,9 +17,9 @@ gradle :app:testDebugUnitTest
 | Item | Result |
 |---|---|
 | `:app:assembleDebug` | **SUCCESS** |
-| `:app:testDebugUnitTest` | **SUCCESS — 56 passed, 0 failed** |
-| APK | published as release asset `personal-ai-agent-debug.apk` (18.72 MB) |
-| Workflow run | `42183056392` (success) |
+| `:app:testDebugUnitTest` | **SUCCESS — 82 passed, 0 failed** |
+| APK | published as release asset `personal-ai-agent-debug.apk` (18.90 MB) |
+| Workflow run | `42518885347` (success) |
 
 Installable build:
 `https://github.com/123amramr123amr-svg/Kilo/releases/download/phase1-debug/personal-ai-agent-debug.apk`
@@ -45,7 +45,22 @@ found and fixed:
    the lazy list.
 6. **`[Dagger/MissingBinding]`** — the four repository implementations lacked
    `@Inject constructor`, so Hilt could not provide them.
-7. **Three failing unit tests**, two of them revealing real issues:
+7. **Phase 2 (fetch models + phone workspace agent) — defects the compiler caught:**
+   - **Missing error case:** `AppError.NoWorkspace` was referenced by the workspace
+     repository, the tool executor, the UI text mapper and the task log, but never
+     declared in the sealed `AppError` type (7 compile errors from one omission).
+   - **Missing screen parameter:** `ChatScreen` rendered a workspace shortcut but the
+     `onOpenWorkspace` callback was never added to its signature, so `AppNavHost`
+     could not pass it.
+   - **Composable call in a coroutine lambda:** the workspace snackbar collector called
+     `appErrorText()` (a `@Composable`) from `LaunchedEffect`; failures now travel through
+     view-model state and are rendered by the error banner instead.
+   - **Kotlin raw-string escapes in tests:** fragments that ended with a quote broke the
+     parser (`Expecting ')'`); rewritten as escaped strings.
+   - **Test expectations updated** for the new `EXECUTE_TOOL` step (only recorded when a
+     tool actually runs) and for streamed tool-call fragment concatenation.
+
+8. **Earlier round (phase 1), three failing unit tests**, two of them revealing real issues:
    - **Product fix:** the SSE parser dropped an explicit empty `data:` field instead of
      dispatching an empty event (spec behaviour); now tracked with a `hasData` flag.
    - **Test fix:** the fake cipher embedded the plaintext in its "ciphertext", making the
@@ -82,12 +97,18 @@ Earlier (pre-build) passes, kept as regression guards:
 | `BackupSerializationTest` | 4 | round-trip, Arabic content, no key material, future version detection |
 | `HttpEngineStreamingTest` | 5 | real SSE over MockWebServer, `Authorization` header, 401 → `Auth`, 429 → `RateLimit`, catalog, non-streaming |
 | `SendMessageUseCaseTest` | 10 | stream+persist+task success, all 5 steps recorded, request payload, blank input, missing key, no model, no provider, provider error, empty completion, conversation reuse |
+| `WorkspacePathsTest` | 7 | path normalisation, `..`/control-char/length rejection, parent/name/join helpers, safe file names |
+| `AgentToolExecutorTest` | 10 | write→read round trip, append, listing, missing file → `ERROR` result (no crash), traversal rejection, unknown tool, malformed JSON, no workspace, delete, tool schemas + system prompt |
+| `ToolCallAccumulatorTest` | 5 | OpenAI streamed `tool_calls` fragments, parallel calls with separate buffers, Anthropic `input_json_delta`, unnamed calls ignored, empty arguments |
+| `AgentLoopTest` | 4 | full tool round trip writes a real file and reports activity, failing tool is fed back and the model still answers, tools not advertised without a workspace, provider failure → `Failed` event |
 
 ## What is still not verified
 
 - **Runtime behaviour on a device**: first launch, RTL switching, Keystore round-trip,
-  speech recognition/TTS and SAF backup/restore need real hardware. Only static analysis
-  and JVM tests cover them today.
+  speech recognition/TTS, SAF backup/restore **and the new workspace file access** need
+  real hardware. Only static analysis and JVM tests cover them today.
+- **Real provider round trip with tools**: the agent loop is covered by scripted-client
+  tests, not by a live OpenAI/Anthropic call (no keys in CI by design).
 - **Instrumented tests**: none yet (Room DAOs, Keystore, `SpeechRecognizer`, SAF).
 - **Release build**: `:app:assembleRelease` (R8 + resource shrinking) has not been run
   in CI; only the debug variant is produced so far.

@@ -450,4 +450,6 @@
     <string name="attachment_failed">تعذر قراءة الملف</string>
     <string name="attachment_empty">لا يوجد محتوى قابل للقراءة في هذا الملف</string>
     <string name="chat_attach_hint">الصور وصفحات PDF تُرسل إلى نموذج يدعم الرؤية</string>
+    <string name="settings_review">مراجعة الطلبات</string>
+    <string name="settings_review_body">اسأل أسئلة توضيحية واعرض قائمة مهام قبل أن يبدأ الوكيل</string>
 </resources>

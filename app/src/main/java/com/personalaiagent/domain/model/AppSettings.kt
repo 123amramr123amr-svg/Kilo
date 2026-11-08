@@ -14,6 +14,8 @@ data class AppSettings(
     val workspaceName: String? = null,
     /** Master switch for the file tools. */
     val agentFileToolsEnabled: Boolean = true,
+    /** Ask clarifying questions and show a task list before starting work. */
+    val reviewRequests: Boolean = true,
 ) {
     val hasWorkspace: Boolean get() = !workspaceUri.isNullOrBlank()
 }

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Workspaces
 import androidx.compose.material.icons.rounded.Vibration
 import androidx.compose.material3.AlertDialog
@@ -148,6 +149,19 @@ fun SettingsScreen(
                         Switch(
                             checked = state.settings.agentFileToolsEnabled,
                             onCheckedChange = viewModel::setAgentFileToolsEnabled,
+                        )
+                    },
+                )
+                com.personalaiagent.ui.components.Divider()
+                SettingsRow(
+                    icon = Icons.Rounded.Tune,
+                    title = stringResource(R.string.settings_review),
+                    subtitle = stringResource(R.string.settings_review_body),
+                    onClick = null,
+                    trailing = {
+                        Switch(
+                            checked = state.settings.reviewRequests,
+                            onCheckedChange = viewModel::setReviewRequests,
                         )
                     },
                 )

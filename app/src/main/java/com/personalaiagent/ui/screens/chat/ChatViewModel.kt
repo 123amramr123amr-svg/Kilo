@@ -72,7 +72,7 @@ class ChatViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val providerRepository: ProviderRepository,
     private val modelRepository: ModelRepository,
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
     private val reviewDraft: ReviewDraftUseCase,
     private val runController: AgentRunController,
     private val attachmentLoader: AttachmentLoader,
@@ -140,6 +140,7 @@ class ChatViewModel @Inject constructor(
                         streamingEnabled = settings.streamingEnabled,
                         workspaceName = settings.workspaceName,
                         toolsEnabled = settings.hasWorkspace && settings.agentFileToolsEnabled,
+                        reviewFirst = settings.reviewRequests,
                     )
                 }
             }
@@ -200,7 +201,9 @@ class ChatViewModel @Inject constructor(
     }
 
     fun toggleReviewFirst() {
-        _uiState.update { it.copy(reviewFirst = !it.reviewFirst) }
+        val next = !_uiState.value.reviewFirst
+        _uiState.update { it.copy(reviewFirst = next) }
+        viewModelScope.launch { settingsRepository.setReviewRequests(next) }
     }
 
     fun clearError() {

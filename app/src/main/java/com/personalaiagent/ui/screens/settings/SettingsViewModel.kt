@@ -81,4 +81,8 @@ class SettingsViewModel @Inject constructor(
     fun setAgentFileToolsEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setAgentFileToolsEnabled(enabled) }
     }
+
+    fun setReviewRequests(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setReviewRequests(enabled) }
+    }
 }

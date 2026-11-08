@@ -162,5 +162,6 @@ interface SettingsRepository {
     suspend fun setDisplayName(name: String)
     suspend fun setWorkspace(uri: String?, displayName: String?)
     suspend fun setAgentFileToolsEnabled(enabled: Boolean)
+    suspend fun setReviewRequests(enabled: Boolean)
     suspend fun clearAll()
 }

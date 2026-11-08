@@ -78,6 +78,10 @@ class SettingsRepositoryImpl(
         dataStore.edit { it[KEY_AGENT_TOOLS] = enabled }
     }
 
+    override suspend fun setReviewRequests(enabled: Boolean) {
+        dataStore.edit { it[KEY_REVIEW_REQUESTS] = enabled }
+    }
+
     override suspend fun clearAll() {
         localeMirror.clear()
         dataStore.edit { it.clear() }
@@ -98,6 +102,7 @@ class SettingsRepositoryImpl(
         workspaceUri = this[KEY_WORKSPACE_URI],
         workspaceName = this[KEY_WORKSPACE_NAME],
         agentFileToolsEnabled = this[KEY_AGENT_TOOLS] ?: true,
+        reviewRequests = this[KEY_REVIEW_REQUESTS] ?: true,
     )
 
     private fun systemLanguageTag(): String =
@@ -115,5 +120,6 @@ class SettingsRepositoryImpl(
         val KEY_WORKSPACE_URI = stringPreferencesKey("workspace_uri")
         val KEY_WORKSPACE_NAME = stringPreferencesKey("workspace_name")
         val KEY_AGENT_TOOLS = booleanPreferencesKey("agent_file_tools")
+        val KEY_REVIEW_REQUESTS = booleanPreferencesKey("review_requests")
     }
 }

@@ -450,4 +450,6 @@
     <string name="attachment_failed">The file could not be read</string>
     <string name="attachment_empty">No readable content in this file</string>
     <string name="chat_attach_hint">Images and PDF pages are sent to a model that supports vision</string>
+    <string name="settings_review">Review requests</string>
+    <string name="settings_review_body">Ask clarifying questions and show a task list before the agent starts</string>
 </resources>

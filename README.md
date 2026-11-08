@@ -31,7 +31,9 @@ Verified in CI: build **success**, unit tests **56/56 passing** (see
 
 ## Feature highlights
 
-- **Dark branded UI** (black/navy + blue/purple), responsive for phones and tablets.
+- **Modern light UI by default** — white cards, soft lavender page, blue/purple accents,
+  rounded surfaces and rich typography (headings, lists, code) in answers. Dark (midnight)
+  and AMOLED themes remain one tap away in Settings. Responsive for phones and tablets.
 - **Arabic (RTL) and English (LTR)** — full string parity, mirrored layouts/icons,
   per-app language switching without restarting into a wrong direction.
 - **Streaming chat** with a composer, model picker, microphone and stop button.
@@ -43,6 +45,16 @@ Verified in CI: build **success**, unit tests **56/56 passing** (see
 - **Voice assistant** screen using the system speech recogniser; optional spoken
   replies through the system TTS engine.
 - **Backup/restore** to a JSON file via the Storage Access Framework — keys excluded.
+- **Plan before work**: the agent shows a task list and asks up to three clarifying
+  questions (with tap-to-answer chips) before starting, then keeps the checklist visible.
+- **Background execution**: tasks continue when you leave the app (foreground service +
+  app-scoped run controller) and a stop button is always on screen.
+- **Opens apps & searches**: `list_apps`, `open_app`, `web_search`, `open_url`.
+- **Reviews images and PDFs**: attach a photo or a PDF (pages are rasterised on device) and
+  a vision model reads it.
+- **Creates images**: `generate_image` calls `/images/generations` and saves the picture
+  into your workspace.
+- **Model switcher above the input**: every connected model, one tap, across providers.
 - **«جلب النماذج» / Fetch models**: paste a base URL and API key, press one button and the
   provider's model names appear as a checklist. Tick the ones you want; they are saved with
   the provider and show up in the app immediately.
@@ -134,6 +146,9 @@ tree, and every path is normalised and checked so `..` or absolute paths cannot 
 | 8.0 – 12L (API 26–32) | `READ_EXTERNAL_STORAGE` is declared (maxSdkVersion 32) so the folder picker can hand out the tree; it is also listed on the Permissions screen |
 | Any | Microphone (voice), notifications (task results) — requested when you use them |
 
+Background runs use a `dataSync` foreground service with a visible notification; the agent
+never reads other apps' screens (no accessibility service).
+
 `MANAGE_EXTERNAL_STORAGE` is deliberately **not** used: the app stays installable from Play
 and can only touch the folder you picked. Tools are on by default once a folder is
 connected; a switch in Settings → Workspace turns them off, and no tools are sent to the
@@ -142,6 +157,8 @@ model at all while no folder is connected.
 ## Phase 1 scope
 
 See [`docs/PHASE1.md`](docs/PHASE1.md) for the screen map, architecture notes,
-compatibility constraints and the list of known limitations, and
+compatibility constraints and the list of known limitations,
 [`docs/PHASE2.md`](docs/PHASE2.md) for the fetch-models flow and the workspace agent
-(tool schemas, agent loop, safety rules).
+(tool schemas, agent loop, safety rules), and
+[`docs/PHASE3.md`](docs/PHASE3.md) for the light theme, planning/questions flow,
+background runs, app/URL tools, image & PDF support and image generation.

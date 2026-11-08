@@ -17,9 +17,9 @@ gradle :app:testDebugUnitTest
 | Item | Result |
 |---|---|
 | `:app:assembleDebug` | **SUCCESS** |
-| `:app:testDebugUnitTest` | **SUCCESS — 82 passed, 0 failed** |
-| APK | published as release asset `personal-ai-agent-debug.apk` (18.90 MB) |
-| Workflow run | `42518885347` (success) |
+| `:app:testDebugUnitTest` | **SUCCESS — 98 passed, 0 failed** |
+| APK | published as release asset `personal-ai-agent-debug.apk` (18.99 MB) |
+| Workflow run | `42522590241` (success, then re-verified on newer commits) |
 
 Installable build:
 `https://github.com/123amramr123amr-svg/Kilo/releases/download/phase1-debug/personal-ai-agent-debug.apk`
@@ -60,7 +60,20 @@ found and fixed:
    - **Test expectations updated** for the new `EXECUTE_TOOL` step (only recorded when a
      tool actually runs) and for streamed tool-call fragment concatenation.
 
-8. **Earlier round (phase 1), three failing unit tests**, two of them revealing real issues:
+8. **Phase 3 (light theme, planning, background runs, device/media tools) — defects caught:**
+
+   - **Missing import:** `putJsonObject` was used for the new Anthropic image blocks in
+     `AnthropicClient` without the extension import → first compile error of the round.
+   - **Wrong Markdown capture group:** the inline parser's outer group wrapped the whole
+     alternative, so `match.groupValues[1]` returned `**bold**` (markers included) instead
+     of `bold`. The unit test caught it; markers are now trimmed explicitly.
+   - **Chunked reads sliced the wrong string:** `offset`/`limit` were applied to the
+     formatted output (header included) instead of the file content; the test asserting
+     `2345` from offset 2 failed and the slice moved into `readFile`.
+   - **Tool count drift:** `AgentLoopTest` still expected 6 tools after 5 were added — the
+     request now advertises 11 schemas.
+
+9. **Earlier round (phase 1), three failing unit tests**, two of them revealing real issues:
    - **Product fix:** the SSE parser dropped an explicit empty `data:` field instead of
      dispatching an empty event (spec behaviour); now tracked with a `hasData` flag.
    - **Test fix:** the fake cipher embedded the plaintext in its "ciphertext", making the
@@ -98,15 +111,21 @@ Earlier (pre-build) passes, kept as regression guards:
 | `HttpEngineStreamingTest` | 5 | real SSE over MockWebServer, `Authorization` header, 401 → `Auth`, 429 → `RateLimit`, catalog, non-streaming |
 | `SendMessageUseCaseTest` | 10 | stream+persist+task success, all 5 steps recorded, request payload, blank input, missing key, no model, no provider, provider error, empty completion, conversation reuse |
 | `WorkspacePathsTest` | 7 | path normalisation, `..`/control-char/length rejection, parent/name/join helpers, safe file names |
-| `AgentToolExecutorTest` | 10 | write→read round trip, append, listing, missing file → `ERROR` result (no crash), traversal rejection, unknown tool, malformed JSON, no workspace, delete, tool schemas + system prompt |
+| `AgentToolExecutorTest` | 16 | write→read round trip, append, listing, missing file → `ERROR` result (no crash), traversal rejection, unknown tool, malformed JSON, no workspace, delete, tool schemas + system prompt, open_app, unknown app, web search/URL, image generation into the workspace, chunked read |
 | `ToolCallAccumulatorTest` | 5 | OpenAI streamed `tool_calls` fragments, parallel calls with separate buffers, Anthropic `input_json_delta`, unnamed calls ignored, empty arguments |
 | `AgentLoopTest` | 4 | full tool round trip writes a real file and reports activity, failing tool is fed back and the model still answers, tools not advertised without a workspace, provider failure → `Failed` event |
+| `MarkdownLiteTest` | 6 | headings/bullets/numbered lists, fenced code with language, inline bold/italic/code runs, unclosed fence, empty input |
+| `ReviewDraftUseCaseTest` | 4 | model JSON inside prose/fences, garbage rejection, local fallback content, provider answer path |
 
 ## What is still not verified
 
-- **Runtime behaviour on a device**: first launch, RTL switching, Keystore round-trip,
-  speech recognition/TTS, SAF backup/restore **and the new workspace file access** need
-  real hardware. Only static analysis and JVM tests cover them today.
+- **Runtime behaviour on a device**: first launch, RTL switching, light-theme contrast,
+  Keystore round-trip, speech recognition/TTS, SAF backup/restore, workspace file access,
+  PDF rasterisation, app launching and background execution need real hardware. Only static
+  analysis and JVM tests cover them today.
+- **Image generation / vision**: request shapes are unit-tested through the clients, but no
+  live call is made in CI (no keys by design).
+- **Video generation**: not implemented — see `docs/PHASE3.md` for why.
 - **Real provider round trip with tools**: the agent loop is covered by scripted-client
   tests, not by a live OpenAI/Anthropic call (no keys in CI by design).
 - **Instrumented tests**: none yet (Room DAOs, Keystore, `SpeechRecognizer`, SAF).

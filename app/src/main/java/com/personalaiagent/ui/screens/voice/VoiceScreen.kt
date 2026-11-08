@@ -109,7 +109,7 @@ fun VoiceScreen(
                 else -> stringResource(R.string.voice_hint)
             },
             style = MaterialTheme.typography.bodyMedium,
-            color = BrandTextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
 

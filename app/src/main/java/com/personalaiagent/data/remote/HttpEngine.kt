@@ -87,6 +87,32 @@ class HttpEngine(private val client: OkHttpClient) {
         return execute(request)
     }
 
+    /** Downloads a small binary resource (e.g. a generated image URL). */
+    suspend fun getBytes(url: String): ByteArray {
+        val request = Request.Builder().url(url).get().build()
+        val call = client.newCall(request)
+        val response = suspendCancellableCoroutine { continuation ->
+            continuation.invokeOnCancellation { call.cancel() }
+            call.enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    if (continuation.isActive) {
+                        continuation.resumeWithException(
+                            if (call.isCanceled()) CancellationException("http cancelled") else e,
+                        )
+                    }
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    if (continuation.isActive) continuation.resume(response) else response.close()
+                }
+            })
+        }
+        response.use { resp ->
+            if (!resp.isSuccessful) throw ProviderException(httpStatusToAppError(resp.code))
+            return resp.body?.bytes() ?: throw ProviderException(com.personalaiagent.core.AppError.Parse)
+        }
+    }
+
     private suspend fun execute(request: Request): String {
         val call = client.newCall(request)
         val response = suspendCancellableCoroutine { continuation ->

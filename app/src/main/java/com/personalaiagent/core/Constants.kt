@@ -20,12 +20,15 @@ object AppConstants {
     /** Maximum model → tool → model round trips for a single user message. */
     const val MAX_AGENT_ROUNDS = 6
 
-    /** Largest file the agent may read in one call. */
-    const val MAX_TOOL_READ_BYTES = 60_000
+    /** Largest file the agent may read in one call (chunked via offset/limit). */
+    const val MAX_TOOL_READ_BYTES = 240_000
 
     /** Largest tool output forwarded back to the model. */
-    const val MAX_TOOL_OUTPUT_CHARS = 8_000
+    const val MAX_TOOL_OUTPUT_CHARS = 24_000
 
-    /** Largest file the workspace screen will display. */
-    const val MAX_EDITOR_BYTES = 400_000
+    /** Largest file the workspace screen will display/edit. */
+    const val MAX_EDITOR_BYTES = 1_200_000
+
+    /** Rounds of the agent loop when the model keeps calling tools. */
+    const val DEFAULT_AGENT_MAX_ROUNDS = 8
 }

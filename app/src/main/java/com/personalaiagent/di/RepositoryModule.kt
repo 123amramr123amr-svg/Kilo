@@ -4,7 +4,11 @@ import com.personalaiagent.data.repository.ChatRepositoryImpl
 import com.personalaiagent.data.repository.ModelRepositoryImpl
 import com.personalaiagent.data.repository.ProviderRepositoryImpl
 import com.personalaiagent.data.repository.TaskRepositoryImpl
+import com.personalaiagent.data.remote.RemoteImageGeneration
 import com.personalaiagent.data.workspace.SafWorkspaceRepository
+import com.personalaiagent.platform.AndroidDeviceControl
+import com.personalaiagent.domain.repository.DeviceControl
+import com.personalaiagent.domain.repository.ImageGeneration
 import com.personalaiagent.domain.repository.ChatRepository
 import com.personalaiagent.domain.repository.ModelRepository
 import com.personalaiagent.domain.repository.ProviderRepository
@@ -39,4 +43,12 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindWorkspaceRepository(impl: SafWorkspaceRepository): WorkspaceRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDeviceControl(impl: AndroidDeviceControl): DeviceControl
+
+    @Binds
+    @Singleton
+    abstract fun bindImageGeneration(impl: RemoteImageGeneration): ImageGeneration
 }

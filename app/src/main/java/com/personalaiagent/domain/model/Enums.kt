@@ -61,4 +61,8 @@ enum class AppLanguage(val tag: String) {
     }
 }
 
-enum class ThemeMode { MIDNIGHT, AMOLED }
+/**
+ * Visual themes. [LIGHT] is the default modern look (white cards, soft accents);
+ * the two dark variants stay available for users who prefer them.
+ */
+enum class ThemeMode { LIGHT, MIDNIGHT, AMOLED }

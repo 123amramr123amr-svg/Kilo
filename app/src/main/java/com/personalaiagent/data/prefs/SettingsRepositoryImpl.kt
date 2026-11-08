@@ -87,8 +87,8 @@ class SettingsRepositoryImpl(
         // Before the user picks a language, follow the device locale so the very
         // first launch is already in Arabic on an Arabic phone.
         language = AppLanguage.fromTag(this[KEY_LANGUAGE] ?: systemLanguageTag()),
-        theme = runCatching { ThemeMode.valueOf(this[KEY_THEME] ?: ThemeMode.MIDNIGHT.name) }
-            .getOrDefault(ThemeMode.MIDNIGHT),
+        theme = runCatching { ThemeMode.valueOf(this[KEY_THEME] ?: ThemeMode.LIGHT.name) }
+            .getOrDefault(ThemeMode.LIGHT),
         ttsEnabled = this[KEY_TTS] ?: false,
         hapticsEnabled = this[KEY_HAPTICS] ?: true,
         streamingEnabled = this[KEY_STREAMING] ?: true,

@@ -27,6 +27,7 @@ import com.personalaiagent.domain.repository.SettingsRepository
 import com.personalaiagent.domain.repository.TaskRepository
 import com.personalaiagent.domain.usecase.agent.AgentToolCatalog
 import com.personalaiagent.domain.usecase.agent.AgentToolExecutor
+import com.personalaiagent.domain.usecase.agent.ToolContext
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
@@ -95,9 +96,10 @@ class SendMessageUseCase @Inject constructor(
         conversationId: String?,
         text: String,
         preferredModelId: String?,
+        attachments: List<com.personalaiagent.domain.model.Attachment> = emptyList(),
     ): Flow<SendMessageEvent> = flow {
         val prompt = text.trim()
-        if (prompt.isEmpty()) {
+        if (prompt.isEmpty() && attachments.isEmpty()) {
             emit(SendMessageEvent.Failed(AppError.InvalidInput("empty"), null, ""))
             return@flow
         }
@@ -145,7 +147,13 @@ class SendMessageUseCase @Inject constructor(
                 id = ids.newId(),
                 conversationId = convId,
                 role = MessageRole.USER,
-                content = prompt,
+                content = buildString {
+                    append(prompt)
+                    if (attachments.isNotEmpty()) {
+                        if (isNotEmpty()) append("\n\n")
+                        append(attachments.joinToString("\n") { "📎 ${it.sourceLabel ?: it.name}" })
+                    }
+                },
                 createdAt = now,
                 status = MessageStatus.COMPLETE,
                 providerId = provider.id,
@@ -184,13 +192,23 @@ class SendMessageUseCase @Inject constructor(
             }
         }.trim()
 
+        val lastUserId = history.lastOrNull { it.role == MessageRole.USER }?.id
         val turns = buildList {
             // OpenAI-compatible endpoints take the system prompt as a message;
             // Anthropic receives it through the `system` field instead.
             if (provider.kind == ProviderKind.OPENAI_COMPATIBLE && systemPrompt.isNotBlank()) {
                 add(ChatTurn(MessageRole.SYSTEM, systemPrompt))
             }
-            history.forEach { add(ChatTurn(it.role, it.content)) }
+            history.forEach { message ->
+                add(
+                    ChatTurn(
+                        role = message.role,
+                        content = message.content,
+                        // Attachments only belong to the message that carried them.
+                        attachments = if (message.id == lastUserId) attachments else emptyList(),
+                    ),
+                )
+            }
         }.toMutableList()
 
         taskRepository.finishStep(
@@ -277,7 +295,10 @@ class SendMessageUseCase @Inject constructor(
                 for (call in roundCalls) {
                     val path = argumentOf(call, "path")
                     val step = taskRepository.startStep(taskId, TaskStepName.EXECUTE_TOOL)
-                    val result = toolExecutor.execute(call)
+                    val result = toolExecutor.execute(
+                        call,
+                        ToolContext(providerId = provider.id, modelId = model.remoteId),
+                    )
                     taskRepository.finishStep(
                         step,
                         if (result.ok) TaskStepStatus.SUCCEEDED else TaskStepStatus.FAILED,

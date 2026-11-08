@@ -64,6 +64,14 @@ class FakeWorkspaceRepository(
         )
     }
 
+    override suspend fun writeBytes(path: String, bytes: ByteArray, mimeType: String): Outcome<WorkspaceEntry> {
+        if (workspace == null) return Outcome.Failure(com.personalaiagent.core.AppError.NoWorkspace)
+        files[path] = "<binary ${bytes.size} bytes>"
+        return Outcome.Success(
+            WorkspaceEntry(path.substringAfterLast('/'), path, isDirectory = false, size = bytes.size.toLong(), lastModified = 0),
+        )
+    }
+
     override suspend fun createFolder(path: String): Outcome<WorkspaceEntry> {
         if (workspace == null) return Outcome.Failure(com.personalaiagent.core.AppError.NoWorkspace)
         val marker = "$path/.keep"

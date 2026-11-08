@@ -105,6 +105,9 @@ interface WorkspaceRepository {
     /** Creates or overwrites a text file, creating parent folders as needed. */
     suspend fun write(path: String, content: String, append: Boolean = false): Outcome<WorkspaceEntry>
 
+    /** Creates or overwrites a binary file (generated images, exports). */
+    suspend fun writeBytes(path: String, bytes: ByteArray, mimeType: String): Outcome<WorkspaceEntry>
+
     suspend fun createFolder(path: String): Outcome<WorkspaceEntry>
 
     suspend fun delete(path: String): Outcome<Unit>

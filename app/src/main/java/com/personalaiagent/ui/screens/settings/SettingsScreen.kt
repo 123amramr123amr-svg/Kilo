@@ -103,10 +103,10 @@ fun SettingsScreen(
                 SettingsRow(
                     icon = Icons.Rounded.DarkMode,
                     title = stringResource(R.string.settings_theme),
-                    subtitle = if (state.settings.theme == ThemeMode.AMOLED) {
-                        stringResource(R.string.settings_theme_amoled)
-                    } else {
-                        stringResource(R.string.settings_theme_midnight)
+                    subtitle = when (state.settings.theme) {
+                        ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
+                        ThemeMode.MIDNIGHT -> stringResource(R.string.settings_theme_midnight)
+                        ThemeMode.AMOLED -> stringResource(R.string.settings_theme_amoled)
                     },
                     onClick = { showThemeDialog = true },
                 )
@@ -302,10 +302,10 @@ fun SettingsScreen(
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
-                                text = if (theme == ThemeMode.AMOLED) {
-                                    stringResource(R.string.settings_theme_amoled)
-                                } else {
-                                    stringResource(R.string.settings_theme_midnight)
+                                text = when (theme) {
+                                    ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
+                                    ThemeMode.MIDNIGHT -> stringResource(R.string.settings_theme_midnight)
+                                    ThemeMode.AMOLED -> stringResource(R.string.settings_theme_amoled)
                                 },
                                 style = MaterialTheme.typography.bodyLarge,
                             )

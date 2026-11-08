@@ -429,4 +429,25 @@
     <string name="error_no_workspace">No workspace folder is connected. Open Settings → Workspace to choose one.</string>
     <string name="error_tool_limit">The agent reached the maximum number of steps. Ask it to continue.</string>
     <string name="chat_workspace_prompt">Give the agent a folder on this phone so it can create and edit files.</string>
+    <string name="settings_theme_light">Light (recommended)</string>
+    <string name="chat_models_connected">Connected models</string>
+    <string name="chat_attach">Attach image or PDF</string>
+    <string name="action_remove">Remove</string>
+    <string name="chat_review_toggle">Review my request</string>
+    <string name="chat_running_background">Agent is working — keeps running in the background</string>
+    <string name="chat_plan_title">Task list</string>
+    <string name="chat_plan_running">running</string>
+    <string name="chat_plan_done">done</string>
+    <string name="review_title">Before I start</string>
+    <string name="review_body">I read your request and prepared a plan. Answer what you like — it makes the result better.</string>
+    <string name="review_questions_title">A few quick questions</string>
+    <string name="review_improved_title">Sharper version of your request</string>
+    <string name="review_start">Start the task</string>
+    <string name="review_send_as_is">Send as is</string>
+    <string name="agent_run_notification_title">Personal AI Agent is working</string>
+    <string name="agent_run_notification_body">Your task continues in the background</string>
+    <string name="agent_run_channel">Agent runs</string>
+    <string name="attachment_failed">The file could not be read</string>
+    <string name="attachment_empty">No readable content in this file</string>
+    <string name="chat_attach_hint">Images and PDF pages are sent to a model that supports vision</string>
 </resources>

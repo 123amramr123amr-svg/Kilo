@@ -356,7 +356,7 @@ fun LoadingState(text: String, modifier: Modifier = Modifier) {
             modifier = Modifier.size(30.dp),
         )
         Spacer(Modifier.height(14.dp))
-        Text(text = text, style = MaterialTheme.typography.bodyMedium, color = BrandTextSecondary)
+        Text(text = text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

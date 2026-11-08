@@ -162,6 +162,26 @@ class AnthropicClient(
                         }
                     }
 
+                    turn.attachments.isNotEmpty() -> {
+                        put("role", "user")
+                        putJsonArray("content") {
+                            addJsonObject {
+                                put("type", "text")
+                                put("text", turn.content)
+                            }
+                            turn.attachments.forEach { attachment ->
+                                addJsonObject {
+                                    put("type", "image")
+                                    putJsonObject("source") {
+                                        put("type", "base64")
+                                        put("media_type", attachment.mimeType)
+                                        put("data", attachment.base64)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     else -> {
                         put("role", if (turn.role == MessageRole.ASSISTANT) "assistant" else "user")
                         put("content", turn.content)

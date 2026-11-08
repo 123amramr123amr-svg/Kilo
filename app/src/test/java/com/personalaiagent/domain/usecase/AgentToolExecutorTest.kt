@@ -3,6 +3,7 @@ package com.personalaiagent.domain.usecase
 import com.personalaiagent.domain.model.ToolCall
 import com.personalaiagent.domain.usecase.agent.AgentToolCatalog
 import com.personalaiagent.domain.usecase.agent.AgentToolExecutor
+import com.personalaiagent.domain.usecase.agent.ToolContext
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
@@ -13,7 +14,7 @@ import org.junit.Test
 class AgentToolExecutorTest {
 
     private val workspace = FakeWorkspaceRepository()
-    private val executor = AgentToolExecutor(workspace, Json { ignoreUnknownKeys = true })
+    private val executor = AgentToolExecutor(workspace, Json { ignoreUnknownKeys = true }, FakeDeviceControl(), FakeImageGeneration())
 
     private fun call(name: String, args: String) = ToolCall(id = "call-1", name = name, arguments = args)
 
@@ -74,7 +75,7 @@ class AgentToolExecutorTest {
 
     @Test
     fun `no workspace yields a helpful message`() = runTest {
-        val empty = AgentToolExecutor(FakeWorkspaceRepository(workspace = null), Json)
+        val empty = AgentToolExecutor(FakeWorkspaceRepository(workspace = null), Json, FakeDeviceControl(), FakeImageGeneration())
         val result = empty.execute(call(AgentToolCatalog.LIST_FILES, "{\"path\":\"\"}"))
         assertFalse(result.ok)
         assertTrue(result.output.contains("workspace", ignoreCase = true))
@@ -89,8 +90,70 @@ class AgentToolExecutorTest {
     }
 
     @Test
+    fun `open_app launches the requested app`() = runTest {
+        val device = FakeDeviceControl()
+        val executor = AgentToolExecutor(
+            workspace,
+            Json { ignoreUnknownKeys = true },
+            device,
+            FakeImageGeneration(),
+        )
+        val result = executor.execute(call(AgentToolCatalog.OPEN_APP, """{"app":"WhatsApp"}"""))
+        assertTrue(result.ok)
+        assertEquals(listOf("open_app:com.whatsapp"), device.actions)
+    }
+
+    @Test
+    fun `unknown app reports an error without crashing`() = runTest {
+        val device = FakeDeviceControl()
+        val executor = AgentToolExecutor(workspace, Json, device, FakeImageGeneration())
+        val result = executor.execute(call(AgentToolCatalog.OPEN_APP, """{"app":"Nope"}"""))
+        assertFalse(result.ok)
+        assertTrue(device.actions.isEmpty())
+    }
+
+    @Test
+    fun `web search and url open reach the device layer`() = runTest {
+        val device = FakeDeviceControl()
+        val executor = AgentToolExecutor(workspace, Json, device, FakeImageGeneration())
+        executor.execute(call(AgentToolCatalog.WEB_SEARCH, """{"query":"طقس الغردقة"}"""))
+        executor.execute(call(AgentToolCatalog.OPEN_URL, """{"url":"example.com"}"""))
+        assertEquals(listOf("web_search:طقس الغردقة", "open_url:example.com"), device.actions)
+    }
+
+    @Test
+    fun `generate_image saves the picture into the workspace`() = runTest {
+        val generator = FakeImageGeneration()
+        val executor = AgentToolExecutor(workspace, Json, FakeDeviceControl(), generator)
+        val result = executor.execute(
+            call(AgentToolCatalog.GENERATE_IMAGE, """{"prompt":"قطة زرقاء","file_name":"cat.png"}"""),
+            ToolContext(providerId = "p1", modelId = "gpt-image-1"),
+        )
+        assertTrue(result.ok)
+        assertEquals("قطة زرقاء", generator.lastPrompt)
+        assertTrue(workspace.files.keys.any { it == "generated/cat.png" })
+    }
+
+    @Test
+    fun `generate_image without a provider fails clearly`() = runTest {
+        val executor = AgentToolExecutor(workspace, Json, FakeDeviceControl(), FakeImageGeneration())
+        val result = executor.execute(call(AgentToolCatalog.GENERATE_IMAGE, """{"prompt":"x"}"""))
+        assertFalse(result.ok)
+    }
+
+    @Test
+    fun `read_file honours offset and limit`() = runTest {
+        workspace.files["long.txt"] = "0123456789"
+        val result = executor.execute(
+            call(AgentToolCatalog.READ_FILE, """{"path":"long.txt","offset":2,"limit":4}"""),
+        )
+        assertTrue(result.ok)
+        assertTrue(result.output.contains("2345"))
+    }
+
+    @Test
     fun `catalog exposes json schemas and a system prompt`() {
-        assertEquals(6, AgentToolCatalog.tools.size)
+        assertEquals(11, AgentToolCatalog.tools.size)
         AgentToolCatalog.tools.forEach { tool ->
             val schema = Json.parseToJsonElement(tool.parametersJson)
             assertTrue(schema.toString().contains("object"))

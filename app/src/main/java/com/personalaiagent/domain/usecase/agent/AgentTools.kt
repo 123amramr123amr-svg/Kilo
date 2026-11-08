@@ -8,6 +8,8 @@ import com.personalaiagent.domain.model.AgentTool
 import com.personalaiagent.domain.model.ToolCall
 import com.personalaiagent.domain.model.ToolResult
 import com.personalaiagent.domain.model.WorkspaceEntry
+import com.personalaiagent.domain.repository.DeviceControl
+import com.personalaiagent.domain.repository.ImageGeneration
 import com.personalaiagent.domain.repository.WorkspaceRepository
 import javax.inject.Inject
 import kotlinx.serialization.json.Json
@@ -29,6 +31,11 @@ object AgentToolCatalog {
     const val APPEND_FILE = "append_file"
     const val CREATE_FOLDER = "create_folder"
     const val DELETE_PATH = "delete_path"
+    const val LIST_APPS = "list_apps"
+    const val OPEN_APP = "open_app"
+    const val WEB_SEARCH = "web_search"
+    const val OPEN_URL = "open_url"
+    const val GENERATE_IMAGE = "generate_image"
 
     val tools: List<AgentTool> = listOf(
         AgentTool(
@@ -82,6 +89,51 @@ object AgentToolCatalog {
             """.trimIndent(),
         ),
         AgentTool(
+            name = GENERATE_IMAGE,
+            description = "Create a picture from a text prompt with an image-capable model and " +
+                "save it into the workspace. Use it when the user asks for an image to be drawn.",
+            parametersJson = """
+                {"type":"object","properties":{
+                  "prompt":{"type":"string","description":"Detailed description of the image"},
+                  "file_name":{"type":"string","description":"Optional file name, e.g. cat.png"},
+                  "size":{"type":"string","description":"1024x1024, 1024x1536 or 1536x1024","default":"1024x1024"}
+                },"required":["prompt"]}
+            """.trimIndent(),
+        ),
+        AgentTool(
+            name = LIST_APPS,
+            description = "List the apps installed on the phone that can be opened by name.",
+            parametersJson = """{"type":"object","properties":{}}""",
+        ),
+        AgentTool(
+            name = OPEN_APP,
+            description = "Open an app on the phone by its name or package, e.g. \"WhatsApp\".",
+            parametersJson = """
+                {"type":"object","properties":{
+                  "app":{"type":"string","description":"App name or package name"}
+                },"required":["app"]}
+            """.trimIndent(),
+        ),
+        AgentTool(
+            name = WEB_SEARCH,
+            description = "Search the web on the user's device, e.g. searching inside the " +
+                "browser for a query the user asked about.",
+            parametersJson = """
+                {"type":"object","properties":{
+                  "query":{"type":"string","description":"Search terms"}
+                },"required":["query"]}
+            """.trimIndent(),
+        ),
+        AgentTool(
+            name = OPEN_URL,
+            description = "Open a web link in the phone's browser.",
+            parametersJson = """
+                {"type":"object","properties":{
+                  "url":{"type":"string","description":"http or https address"}
+                },"required":["url"]}
+            """.trimIndent(),
+        ),
+        AgentTool(
             name = DELETE_PATH,
             description = "Delete a file or an empty folder from the workspace. " +
                 "Only use it when the user explicitly asks to delete something.",
@@ -106,20 +158,35 @@ object AgentToolCatalog {
         - Prefer small, complete file contents; do not truncate with placeholders.
         - Answer in the language the user writes in.
         - When the task is done, summarise briefly what changed and list the paths.
+
+        Phone actions you may take (use them only when asked):
+        - list_apps / open_app: open an installed app by name.
+        - web_search / open_url: start a search or open a link on the device.
+        - generate_image: draw a picture with an image model and save it in the workspace.
+        You can open apps and links, but you cannot tap inside another app's screens.
     """.trimIndent()
 }
+
+/** Per-run information the tools need (which provider/model to use). */
+data class ToolContext(
+    val providerId: String? = null,
+    val modelId: String? = null,
+)
 
 class AgentToolExecutor @Inject constructor(
     private val workspace: WorkspaceRepository,
     private val json: Json,
+    private val device: DeviceControl,
+    private val imageGeneration: ImageGeneration,
 ) {
 
     /** Executes one tool call and returns a compact, model-friendly result. */
-    suspend fun execute(call: ToolCall): ToolResult {
+    suspend fun execute(call: ToolCall, context: ToolContext = ToolContext()): ToolResult {
         val args = parseArguments(call.arguments)
         val outcome: Outcome<String> = when (call.name) {
             AgentToolCatalog.LIST_FILES -> withPath(argumentString(args, "path")) { listFiles(it) }
             AgentToolCatalog.READ_FILE -> withPath(argumentString(args, "path")) { readFile(it) }
+                .let { slice(it, args) }
             AgentToolCatalog.WRITE_FILE -> withPath(argumentString(args, "path")) { safe ->
                 writeFile(path = safe, content = argumentString(args, "content"), append = false)
             }
@@ -128,6 +195,11 @@ class AgentToolExecutor @Inject constructor(
             }
             AgentToolCatalog.CREATE_FOLDER -> withPath(argumentString(args, "path")) { createFolder(it) }
             AgentToolCatalog.DELETE_PATH -> withPath(argumentString(args, "path")) { deletePath(it) }
+            AgentToolCatalog.LIST_APPS -> listApps()
+            AgentToolCatalog.OPEN_APP -> device.openApp(argumentString(args, "app"))
+            AgentToolCatalog.WEB_SEARCH -> device.webSearch(argumentString(args, "query"))
+            AgentToolCatalog.OPEN_URL -> device.openUrl(argumentString(args, "url"))
+            AgentToolCatalog.GENERATE_IMAGE -> generateImage(args, context)
             else -> Outcome.Failure(com.personalaiagent.core.AppError.InvalidInput("unknown_tool"))
         }
 
@@ -204,6 +276,57 @@ class AgentToolExecutor @Inject constructor(
             is Outcome.Failure -> result
             is Outcome.Success -> Outcome.Success("Deleted $path.")
         }
+
+    private suspend fun listApps(): Outcome<String> {
+        val apps = device.launchableApps()
+        return if (apps.isEmpty()) {
+            Outcome.Success("No launchable apps are visible to the app.")
+        } else {
+            Outcome.Success(
+                "Installed apps (${apps.size}):\n" + apps.joinToString("\n") { "- ${it.label} (${it.packageName})" },
+            )
+        }
+    }
+
+    private suspend fun generateImage(args: JsonObject, context: ToolContext): Outcome<String> {
+        val generator = imageGeneration
+        val prompt = argumentString(args, "prompt")
+        if (prompt.isBlank()) return Outcome.Failure(AppError.InvalidInput("prompt"))
+        val provider = context.providerId ?: return Outcome.Failure(AppError.NoProvider)
+        val model = context.modelId ?: return Outcome.Failure(AppError.NoModel)
+        val size = argumentString(args, "size").ifBlank { "1024x1024" }
+        val name = argumentString(args, "file_name").ifBlank { "image-${System.currentTimeMillis()}.png" }
+
+        return when (val result = generator.generate(provider, model, prompt, size)) {
+            is Outcome.Failure -> result
+            is Outcome.Success -> {
+                val extension = if (result.value.mimeType == "image/jpeg") "jpg" else "png"
+                val fileName = if (name.contains('.')) name else "$name.$extension"
+                val path = WorkspacePaths.join("generated", fileName)
+                    ?: return Outcome.Failure(AppError.InvalidInput("name"))
+                when (val saved = workspace.writeBytes(path, result.value.bytes, result.value.mimeType)) {
+                    is Outcome.Failure -> saved
+                    is Outcome.Success -> Outcome.Success(
+                        "Generated an image and saved it to ${saved.value.path} (${saved.value.size} bytes).",
+                    )
+                }
+            }
+        }
+    }
+
+    /** Applies the optional `offset`/`limit` arguments of `read_file`. */
+    private fun slice(outcome: Outcome<String>, args: JsonObject): Outcome<String> {
+        if (outcome !is Outcome.Success) return outcome
+        val offset = ((args["offset"] as? JsonPrimitive)?.intOrNull ?: 0).coerceAtLeast(0)
+        val limit = (args["limit"] as? JsonPrimitive)?.intOrNull?.coerceIn(1, 120_000) ?: 24_000
+        val body = outcome.value
+        if (offset == 0 && body.length <= limit) return outcome
+        val from = offset.coerceAtMost(body.length)
+        val to = (from + limit).coerceAtMost(body.length)
+        val slice = body.substring(from, to)
+        val note = if (to < body.length) "\n----\n(more content: call read_file with offset=${to})" else ""
+        return Outcome.Success(slice + note)
+    }
 
     private fun describe(entry: WorkspaceEntry): String = buildString {
         append(if (entry.isDirectory) "[dir] " else "[file] ")

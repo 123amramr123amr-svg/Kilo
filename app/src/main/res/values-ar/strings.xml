@@ -429,4 +429,25 @@
     <string name="error_no_workspace">لا يوجد مجلد مساحة عمل متصل. افتح الإعدادات ← مساحة العمل لاختيار مجلد.</string>
     <string name="error_tool_limit">وصل الوكيل إلى الحد الأقصى للخطوات. اطلب منه المتابعة.</string>
     <string name="chat_workspace_prompt">امنح الوكيل مجلدًا على هذا الهاتف ليتمكن من إنشاء الملفات وتعديلها.</string>
+    <string name="settings_theme_light">فاتح (موصى به)</string>
+    <string name="chat_models_connected">النماذج المربوطة</string>
+    <string name="chat_attach">إرفاق صورة أو PDF</string>
+    <string name="action_remove">إزالة</string>
+    <string name="chat_review_toggle">راجع طلبي</string>
+    <string name="chat_running_background">الوكيل يعمل — يكمل في الخلفية</string>
+    <string name="chat_plan_title">قائمة المهام</string>
+    <string name="chat_plan_running">جارٍ</string>
+    <string name="chat_plan_done">تم</string>
+    <string name="review_title">قبل أن أبدأ</string>
+    <string name="review_body">قرأت طلبك وجهّزت خطة. أجب عمّا تريد لتكون النتيجة أدق.</string>
+    <string name="review_questions_title">أسئلة سريعة</string>
+    <string name="review_improved_title">صياغة أوضح لطلبك</string>
+    <string name="review_start">ابدأ التنفيذ</string>
+    <string name="review_send_as_is">أرسل كما هو</string>
+    <string name="agent_run_notification_title">المساعد الذكي يعمل</string>
+    <string name="agent_run_notification_body">مهمتك تكمل في الخلفية</string>
+    <string name="agent_run_channel">تشغيل الوكيل</string>
+    <string name="attachment_failed">تعذر قراءة الملف</string>
+    <string name="attachment_empty">لا يوجد محتوى قابل للقراءة في هذا الملف</string>
+    <string name="chat_attach_hint">الصور وصفحات PDF تُرسل إلى نموذج يدعم الرؤية</string>
 </resources>

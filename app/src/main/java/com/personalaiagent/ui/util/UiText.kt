@@ -34,6 +34,10 @@ fun appErrorText(error: AppError): String = when (error) {
         "agent_round_limit" -> stringResource(R.string.error_tool_limit)
         "workspace_permission_denied" -> stringResource(R.string.workspace_no_permission)
         "not_found" -> stringResource(R.string.state_empty)
+        "attachment_failed", "unreadable", "unsupported_type" ->
+            stringResource(R.string.attachment_failed)
+        "attachment_empty" -> stringResource(R.string.attachment_empty)
+        "app_no_launcher", "app_not_found" -> stringResource(R.string.error_unknown)
         else -> stringResource(R.string.error_unknown)
     }
 }

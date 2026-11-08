@@ -36,6 +36,8 @@ data class ChatTurn(
     val toolCalls: List<ToolCall> = emptyList(),
     /** Set on [MessageRole.TOOL] turns: the call this result belongs to. */
     val toolCallId: String? = null,
+    /** Images/PDF pages attached to a user turn (vision models only). */
+    val attachments: List<Attachment> = emptyList(),
 )
 
 /** A single tool invocation requested by the model. */

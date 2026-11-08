@@ -136,6 +136,24 @@ class OpenAiCompatibleClient(
                 }
             }
 
+            turn.attachments.isNotEmpty() -> {
+                // Vision input: a content array of text + inline images.
+                putJsonArray("content") {
+                    addJsonObject {
+                        put("type", "text")
+                        put("text", turn.content)
+                    }
+                    turn.attachments.forEach { attachment ->
+                        addJsonObject {
+                            put("type", "image_url")
+                            putJsonObject("image_url") {
+                                put("url", "data:${attachment.mimeType};base64,${attachment.base64}")
+                            }
+                        }
+                    }
+                }
+            }
+
             else -> put("content", turn.content)
         }
     }

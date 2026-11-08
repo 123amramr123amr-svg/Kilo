@@ -176,6 +176,43 @@ class SafWorkspaceRepository @Inject constructor(
         }.getOrElse { Outcome.Failure(AppError.Unknown(it.message)) }
     }
 
+    override suspend fun writeBytes(path: String, bytes: ByteArray, mimeType: String): Outcome<WorkspaceEntry> {
+        val normalized = WorkspacePaths.normalize(path)
+            ?: return Outcome.Failure(AppError.InvalidInput("path"))
+        if (normalized.isEmpty()) return Outcome.Failure(AppError.InvalidInput("path"))
+        return runCatching {
+            val tree = currentTree() ?: return Outcome.Failure(AppError.NoWorkspace)
+            val name = WorkspacePaths.nameOf(normalized)
+            if (!WorkspacePaths.isSafeName(name)) return Outcome.Failure(AppError.InvalidInput("name"))
+            val parent = ensureDirectory(tree, WorkspacePaths.parentOf(normalized))
+                ?: return Outcome.Failure(AppError.Unknown("parent"))
+            val existing = findChild(tree, DocumentsContract.getDocumentId(parent), name)
+            val documentUri = existing ?: DocumentsContract.createDocument(
+                contentResolver,
+                parent,
+                mimeType,
+                name,
+            ) ?: return Outcome.Failure(AppError.Unknown("create_failed"))
+
+            val stream = runCatching { contentResolver.openOutputStream(documentUri, "wt") }.getOrNull()
+                ?: runCatching { contentResolver.openOutputStream(documentUri, "w") }.getOrNull()
+                ?: return Outcome.Failure(AppError.Unknown("write_failed"))
+            stream.use {
+                it.write(bytes)
+                it.flush()
+            }
+            Outcome.Success(
+                WorkspaceEntry(
+                    name = name,
+                    path = normalized,
+                    isDirectory = false,
+                    size = bytes.size.toLong(),
+                    lastModified = System.currentTimeMillis(),
+                ),
+            )
+        }.getOrElse { Outcome.Failure(AppError.Unknown(it.message)) }
+    }
+
     override suspend fun createFolder(path: String): Outcome<WorkspaceEntry> {
         val normalized = WorkspacePaths.normalize(path)
             ?: return Outcome.Failure(AppError.InvalidInput("path"))

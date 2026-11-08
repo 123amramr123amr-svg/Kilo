@@ -259,7 +259,7 @@ class BackupManager(
         bundle.settings?.let { settings ->
             settingsRepository.setLanguage(AppLanguage.fromTag(settings.language))
             settingsRepository.setTheme(
-                runCatching { ThemeMode.valueOf(settings.theme) }.getOrDefault(ThemeMode.MIDNIGHT),
+                runCatching { ThemeMode.valueOf(settings.theme) }.getOrDefault(ThemeMode.LIGHT),
             )
             settingsRepository.setTtsEnabled(settings.ttsEnabled)
             settingsRepository.setHapticsEnabled(settings.hapticsEnabled)

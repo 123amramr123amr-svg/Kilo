@@ -185,8 +185,13 @@ class AgentToolExecutor @Inject constructor(
         val args = parseArguments(call.arguments)
         val outcome: Outcome<String> = when (call.name) {
             AgentToolCatalog.LIST_FILES -> withPath(argumentString(args, "path")) { listFiles(it) }
-            AgentToolCatalog.READ_FILE -> withPath(argumentString(args, "path")) { readFile(it) }
-                .let { slice(it, args) }
+            AgentToolCatalog.READ_FILE -> withPath(argumentString(args, "path")) {
+                readFile(
+                    path = it,
+                    offset = ((args["offset"] as? JsonPrimitive)?.intOrNull ?: 0).coerceAtLeast(0),
+                    limit = ((args["limit"] as? JsonPrimitive)?.intOrNull ?: 20_000).coerceIn(1, 120_000),
+                )
+            }
             AgentToolCatalog.WRITE_FILE -> withPath(argumentString(args, "path")) { safe ->
                 writeFile(path = safe, content = argumentString(args, "content"), append = false)
             }
@@ -240,17 +245,25 @@ class AgentToolExecutor @Inject constructor(
             }
         }
 
-    private suspend fun readFile(path: String): Outcome<String> =
+    private suspend fun readFile(path: String, offset: Int, limit: Int): Outcome<String> =
         when (val result = workspace.read(path)) {
             is Outcome.Failure -> result
             is Outcome.Success -> {
                 val file = result.value
+                val start = offset.coerceIn(0, file.content.length)
+                val end = (start + limit).coerceAtMost(file.content.length)
                 buildString {
                     append("File: ${file.path} (${file.size} bytes")
-                    if (file.truncated) append(", truncated")
-                    append(")\n-----\n")
-                    append(file.content)
-                    if (file.truncated) append("\n-----\n(truncated; read a smaller part if needed)")
+                    if (file.truncated) append(", truncated to ${file.content.length} chars")
+                    append(")\n")
+                    if (start > 0 || end < file.content.length) {
+                        append("Showing characters $start..$end of ${file.content.length}\n")
+                    }
+                    append("-----\n")
+                    append(file.content.substring(start, end))
+                    if (end < file.content.length) {
+                        append("\n----\n(more content: call read_file with offset=$end)")
+                    }
                 }.let { Outcome.Success(it) }
             }
         }
@@ -314,19 +327,6 @@ class AgentToolExecutor @Inject constructor(
         }
     }
 
-    /** Applies the optional `offset`/`limit` arguments of `read_file`. */
-    private fun slice(outcome: Outcome<String>, args: JsonObject): Outcome<String> {
-        if (outcome !is Outcome.Success) return outcome
-        val offset = ((args["offset"] as? JsonPrimitive)?.intOrNull ?: 0).coerceAtLeast(0)
-        val limit = (args["limit"] as? JsonPrimitive)?.intOrNull?.coerceIn(1, 120_000) ?: 24_000
-        val body = outcome.value
-        if (offset == 0 && body.length <= limit) return outcome
-        val from = offset.coerceAtMost(body.length)
-        val to = (from + limit).coerceAtMost(body.length)
-        val slice = body.substring(from, to)
-        val note = if (to < body.length) "\n----\n(more content: call read_file with offset=${to})" else ""
-        return Outcome.Success(slice + note)
-    }
 
     private fun describe(entry: WorkspaceEntry): String = buildString {
         append(if (entry.isDirectory) "[dir] " else "[file] ")

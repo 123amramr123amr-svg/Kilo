@@ -110,18 +110,19 @@ object MarkdownLite {
                 if (match == null) break
             } else {
                 flush()
+                val raw = match.value
                 val style = when {
-                    match.value.startsWith("**") -> MdStyle.BOLD
-                    match.value.startsWith("`") -> MdStyle.CODE
+                    raw.startsWith("**") -> MdStyle.BOLD
+                    raw.startsWith("`") -> MdStyle.CODE
                     else -> MdStyle.ITALIC
                 }
-                result += MdInline(match.groupValues[1], style)
-                index += match.value.length
+                result += MdInline(raw.trim('*').trim('`'), style)
+                index += raw.length
             }
         }
         flush()
         return result.ifEmpty { listOf(MdInline(text)) }
     }
 
-    private val PATTERN = Regex("(\\*\\*[^*]+\\*\\*|`[^`]+`|\\*[^*]+\\*)")
+    private val PATTERN = Regex("\\*\\*[^*]+\\*\\*|`[^`]+`|\\*[^*]+\\*")
 }

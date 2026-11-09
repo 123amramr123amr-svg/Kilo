@@ -203,8 +203,24 @@ class ProviderEditViewModel @Inject constructor(
                         if (state.fetchedModels.isNotEmpty() && state.selectedModelIds.isNotEmpty()) {
                             modelRepository.applySelection(created.providerId, state.selectedModelIds)
                         }
-                        _uiState.update { current -> current.copy(isSaving = false, apiKey = "") }
-                        eventChannel.send(ProviderFormEvent.Saved)
+                        val catalogError = created.catalogError
+                        if (catalogError == null) {
+                            _uiState.update { current -> current.copy(isSaving = false, apiKey = "") }
+                            eventChannel.send(ProviderFormEvent.Saved)
+                        } else {
+                            // The provider exists now, but its model list could not be
+                            // pulled. Stay on the screen in EDIT mode so a retry updates
+                            // this provider instead of creating a duplicate, and say why.
+                            _uiState.update { current ->
+                                current.copy(
+                                    isSaving = false,
+                                    apiKey = "",
+                                    providerId = created.providerId,
+                                    hasStoredKey = true,
+                                    fetchError = catalogError,
+                                )
+                            }
+                        }
                     },
                     onFailure = { error ->
                         _uiState.update { current ->

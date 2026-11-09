@@ -227,4 +227,31 @@ class ProviderEditViewModelTest {
         assertEquals(false, viewModel.uiState.value.isEditing)
         assertEquals(AppError.NotFound, viewModel.uiState.value.formError)
     }
+
+    @Test
+    fun `a created provider whose catalog failed stays on the screen in edit mode`() =
+        runTest(dispatcher) {
+            // The provider row is created, but the model list could not be pulled (a
+            // 404 on /models, wrong key...). Leaving the screen would silently produce a
+            // provider you cannot chat with, and retrying in "add" mode would create a
+            // duplicate — so the screen switches to editing the provider it just made.
+            val providerRepository = FakeProviderRepository(null)
+            val modelRepository = FakeModelRepository(null, failRefresh = AppError.HttpNotFound)
+            val viewModel = viewModel(providerRepository, modelRepository, providerId = null)
+            advanceUntilIdle()
+            assertEquals(false, viewModel.uiState.value.isEditing)
+
+            viewModel.onNameChange("test")
+            viewModel.onBaseUrlChange("https://inference.dahl.global/v1")
+            viewModel.onApiKeyChange("sk-test")
+            viewModel.save()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(1, providerRepository.addedDrafts.size)
+            assertEquals(AppError.HttpNotFound, state.fetchError)
+            assertEquals("p-new", state.providerId)
+            assertEquals(true, state.isEditing)
+            assertEquals(false, state.isSaving)
+        }
 }

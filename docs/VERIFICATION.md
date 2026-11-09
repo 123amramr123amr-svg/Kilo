@@ -19,7 +19,7 @@ gradle :app:testDebugUnitTest
 | `:app:assembleDebug` | **SUCCESS** |
 | `:app:testDebugUnitTest` | **SUCCESS — 116 passed, 0 failed** |
 | APK | published as release asset `personal-ai-agent-debug.apk` (18.99 MB) |
-| Workflow run | `42578922063` (success) — see also `docs/PHASE4.md` |
+| Workflow run | `42579957713` (success) — see also `docs/PHASE4.md` |
 
 Installable build:
 `https://github.com/123amramr123amr-svg/Kilo/releases/download/phase1-debug/personal-ai-agent-debug.apk`

@@ -14,6 +14,7 @@ import com.personalaiagent.data.remote.ProviderClientRouter
 import com.personalaiagent.domain.model.AiModel
 import com.personalaiagent.domain.model.ModelParams
 import com.personalaiagent.domain.model.ProviderStatus
+import com.personalaiagent.domain.model.RemoteModel
 import com.personalaiagent.domain.repository.CatalogSyncResult
 import com.personalaiagent.domain.repository.CredentialStore
 import com.personalaiagent.domain.repository.ModelRepository

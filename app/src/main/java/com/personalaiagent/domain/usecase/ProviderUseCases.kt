@@ -2,6 +2,7 @@ package com.personalaiagent.domain.usecase
 
 import com.personalaiagent.core.AppError
 import com.personalaiagent.core.Outcome
+import com.personalaiagent.core.fold
 import com.personalaiagent.domain.repository.CatalogSyncResult
 import com.personalaiagent.domain.repository.ChatRepository
 import com.personalaiagent.domain.repository.CredentialStore

@@ -164,4 +164,5 @@ compatibility constraints and the list of known limitations,
 background runs, app/URL tools, image & PDF support and image generation, and
 [`docs/PHASE4.md`](docs/PHASE4.md) for the provider/model-saving fixes (real HTTP
 status codes instead of a generic error, applying model ticks without a second
-network call).
+network call), and [`docs/PHASE5.md`](docs/PHASE5.md) for the model picker before a
+new chat, conversation memory, run recovery and the agent-activity panel.

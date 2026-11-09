@@ -65,3 +65,43 @@ New regression tests (11 added in this phase, 98 → 109):
 Note on `inference.dahl.global`: it is a third-party relay. If it returns 404 for `/v1/models` while
 its own dashboard works, try `https://inference.dahl.global/v1` exactly, or ask that service for the
 OpenAI-compatible base path. The app now reports the status code instead of hiding it.
+
+## Phase 4b — «provider not found»: the provider screen could not create a provider
+
+Second report, same screen: «تعديل المزود» opens with a red banner `حدث خطأ: provider not found`,
+so nothing can be saved.
+
+**Root cause (navigation, not the network).** The chat setup card («أضفه الآن») navigated with
+`navController.navigate(Routes.PROVIDER_EDIT)` — the *route pattern itself*,
+`provider_edit?providerId={providerId}`. Navigation matched it and filled the argument with the
+literal text `{providerId}`. The ViewModel therefore believed it was editing, opened the edit form
+for a row that does not exist, and `ProviderRepositoryImpl.updateProvider` answered
+`AppError.Unknown("provider not found")` on every save. The create path (`addProvider`) was
+unreachable from that button, so the provider was never created.
+
+A second, misleading detail: the blue «مفتاح مشفّر محفوظ على هذا الجهاز» banner was rendered
+unconditionally, so a brand new provider looked like a stored one.
+
+### Fixes
+
+| File | Change |
+|---|---|
+| `ui/navigation/AppNavHost.kt` | the chat card navigates to `Routes.providerEdit(null)` |
+| `ui/navigation/Routes.kt` | `providerEdit(null)`/blank → `provider_edit`; ids are percent-encoded (also `modelSettings`, `taskDetail`) with a dependency-free encoder, so an id can never corrupt a route |
+| `ui/screens/providers/ProviderEditViewModel.kt` | an id that no longer resolves (deleted row, stale argument) degrades to the **add** form with an explanation instead of a dead edit screen; and if a **new** provider is created but its catalog cannot be fetched, the screen switches to editing that provider and shows the reason — no silent provider without models, no duplicate row on retry |
+| `ui/screens/providers/ProviderEditScreen.kt` | the "key stored" banner only appears when a key really is stored |
+| `res/values{,-ar}/strings.xml` | `error_not_found` now explains that the add form was opened |
+
+### Verification
+
+| Item | Result |
+|---|---|
+| `:app:assembleDebug` | **SUCCESS** |
+| `:app:testDebugUnitTest` | **SUCCESS — 116 passed, 0 failed** |
+| Workflow run | `42578922063` (success) |
+| APK | 18,999,730 B, re-published on `phase1-debug` |
+
+New tests (7): `RoutesTest` — no id for a new provider, ids are encoded, plain UUIDs stay readable,
+non-ASCII stays escaped; `ProviderEditViewModelTest` — an unknown id degrades to adding a provider
+(the save calls `addProvider`, never `updateProvider`), a deleted row falls back the same way, and a
+created provider whose catalog failed stays on screen in edit mode with the error.

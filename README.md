@@ -1,13 +1,14 @@
-# Personal AI Agent — المساعد الذكي الشخصي
+# AURA — أورا
 
-A native Android app (Kotlin + Jetpack Compose + Material 3) that talks to the AI
+**AURA** is a native Android app (Kotlin + Jetpack Compose + Material 3) with the calm of an
+old museum: sand, parchment, ink and one gold. It talks to the AI
 providers **you** configure. Conversations, providers and logs stay in a local
 database; API keys are encrypted with the Android Keystore and never leave the
 device. There is no first-party server, no account, no analytics.
 
 <p align="center">
-  <em>Phase 1: full UI, local data layer, provider clients, execution log, tests.</em><br/>
-  <a href="https://github.com/123amramr123amr-svg/Kilo/actions/workflows/android.yml"><img alt="Android CI" src="https://github.com/123amramr123amr-svg/Kilo/actions/workflows/android.yml/badge.svg?branch=arena%2F93372d4c-kilo"/></a>
+  <em>Nine screens, a pyramid mark, a live “what is the agent doing” panel, and a real test suite.</em><br/>
+  <a href="https://github.com/123amramr123amr-svg/Kilo/actions/workflows/android.yml"><img alt="Android CI" src="https://github.com/123amramr123amr-svg/Kilo/actions/workflows/android.yml/badge.svg?branch=arena%2F89eb7ff1-kilo"/></a>
 </p>
 
 ## Try it on your phone (no build needed)
@@ -16,7 +17,7 @@ device. There is no first-party server, no account, no analytics.
    <https://github.com/123amramr123amr-svg/Kilo/releases/download/phase1-debug/personal-ai-agent-debug.apk>
 2. Allow your browser to install unknown apps when prompted
    (Settings → Apps → Special access → Install unknown apps).
-3. Install and open **Personal AI Agent** (debug build, `com.personalaiagent.debug`,
+3. Install and open **AURA** (debug build, `com.personalaiagent.debug`,
    Android 8.0 / API 26 or newer).
 4. Pick العربية or English → **المحادثة → تهيئة المزوّد** → choose a preset (OpenAI,
    Anthropic, Gemini, Groq, DeepSeek) → paste your own API key → **اختبار الاتصال** → save.
@@ -26,14 +27,21 @@ The APK is rebuilt and re-published by CI on every push to this branch. It is a
 **debug-signed** build and it contains **no API keys** — you add your own provider key
 inside the app, where it is encrypted with the Android Keystore.
 
-Verified in CI: build **success**, unit tests **56/56 passing** (see
+Verified in CI: build **success**, unit tests **122/122 passing** (see
 [`docs/VERIFICATION.md`](docs/VERIFICATION.md)).
 
 ## Feature highlights
 
-- **Modern light UI by default** — white cards, soft lavender page, blue/purple accents,
-  rounded surfaces and rich typography (headings, lists, code) in answers. Dark (midnight)
-  and AMOLED themes remain one tap away in Settings. Responsive for phones and tablets.
+- **The AURA look** — sand page, parchment cards, ink text and old gold accents, with a serif
+  display face for headings; the pyramid mark (Canvas) is the launcher icon, the splash and the
+  in-app emblem. Dark (burnt umber) and AMOLED themes remain one tap away in Settings.
+  Responsive for phones and tablets.
+- **Show me what the model is doing** — the panel above the composer streams the model's own
+  reasoning (`reasoning_content`), the plan, and every tool step with what went in (`→`) and
+  what came back (`←`). Hide it from the panel or from Settings; the choice is remembered.
+- **Fewer wasted round trips** — the “review before answering” step is now opt-in, so replies
+  start immediately; a stream cut off without its terminator is retried instead of saved, and a
+  truncated answer can be continued with «أكمل الإجابة».
 - **Arabic (RTL) and English (LTR)** — full string parity, mirrored layouts/icons,
   per-app language switching without restarting into a wrong direction.
 - **Streaming chat** with a composer, model picker, microphone and stop button.
@@ -165,4 +173,8 @@ background runs, app/URL tools, image & PDF support and image generation, and
 [`docs/PHASE4.md`](docs/PHASE4.md) for the provider/model-saving fixes (real HTTP
 status codes instead of a generic error, applying model ticks without a second
 network call), and [`docs/PHASE5.md`](docs/PHASE5.md) for the model picker before a
-new chat, conversation memory, run recovery and the agent-activity panel.
+new chat, conversation memory, run recovery and the agent-activity panel, and
+[`docs/PHASE6.md`](docs/PHASE6.md) for the AURA identity (sand/ink/gold, serif type, pyramid
+icon), the rewritten activity panel with the model's reasoning, the request to hide it, and the
+speed/connection fixes. The design page from that phase lives at
+[`design/aura-preview.html`](design/aura-preview.html).

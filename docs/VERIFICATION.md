@@ -17,9 +17,9 @@ gradle :app:testDebugUnitTest
 | Item | Result |
 |---|---|
 | `:app:assembleDebug` | **SUCCESS** |
-| `:app:testDebugUnitTest` | **SUCCESS — 120 passed, 0 failed** |
-| APK | published as release asset `personal-ai-agent-debug.apk` (18.99 MB) |
-| Workflow run | `42637757363` (success) — see also `docs/PHASE4.md` and `docs/PHASE5.md` |
+| `:app:testDebugUnitTest` | **SUCCESS — 122 passed, 0 failed** |
+| APK | published as release asset `personal-ai-agent-debug.apk` (19,053,170 B) |
+| Workflow run | `42645214520` (success) — see also `docs/PHASE4.md`, `docs/PHASE5.md`, `docs/PHASE6.md` |
 
 Installable build:
 `https://github.com/123amramr123amr-svg/Kilo/releases/download/phase1-debug/personal-ai-agent-debug.apk`
@@ -103,7 +103,7 @@ Earlier (pre-build) passes, kept as regression guards:
 | File | Tests | Covers |
 |---|---|---|
 | `SseStreamParserTest` | 7 | SSE framing: multi-line data, named events, comments, empty data field, flush, reset |
-| `StreamDecoderTest` | 10 | OpenAI & Anthropic chunk decoding, usage, `[DONE]`, malformed JSON → `Parse`, Anthropic error events |
+| `StreamDecoderTest` | 12 | OpenAI & Anthropic chunk decoding, usage, `[DONE]`, malformed JSON → `Parse`, Anthropic error events, `reasoning_content` / `reasoning` split from the answer |
 | `ModelCatalogTest` | 8 | non-chat filtering, unknown ids kept, dedupe, capability inference, context windows, fallback |
 | `ProviderValidatorTest` | 8 | https ok, http public rejected, loopback/private http allowed, normalisation, malformed URLs |
 | `EncryptedCredentialStoreTest` | 4 | ciphertext-only persistence, lifecycle, corrupt payload → `null`, clear |

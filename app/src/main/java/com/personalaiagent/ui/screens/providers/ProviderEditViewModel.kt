@@ -188,14 +188,10 @@ class ProviderEditViewModel @Inject constructor(
                 // network round trip that could fail after a successful fetch.
                 addProvider(draft(), state.apiKey, state.fetchedModels).fold(
                     onSuccess = { created ->
-                        if (state.fetchedModels.isNotEmpty()) {
-                            modelRepository.storeCatalog(
-                                created.providerId,
-                                state.fetchedModels,
-                                state.selectedModelIds.ifEmpty {
-                                    state.fetchedModels.map { it.remoteId }.toSet()
-                                },
-                            )
+                        // The use case already stored the fetched catalog; only the
+                        // user's ticks need applying.
+                        if (state.fetchedModels.isNotEmpty() && state.selectedModelIds.isNotEmpty()) {
+                            modelRepository.applySelection(created.providerId, state.selectedModelIds)
                         }
                         _uiState.update { current -> current.copy(isSaving = false, apiKey = "") }
                         eventChannel.send(ProviderFormEvent.Saved)

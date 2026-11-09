@@ -41,7 +41,7 @@ name `deepseek-ai/DeepSeek-V4-Flash-0731`, OpenAI-compatible, key typed. Fetchin
 |---|---|
 | `:app:assembleDebug` | **SUCCESS** |
 | `:app:testDebugUnitTest` | **SUCCESS — 109 passed, 0 failed** |
-| Workflow run | `42569047611` (success) |
+| Workflow run | `42569939319` (success) |
 | APK | 18,999,678 B, re-published on `phase1-debug` |
 
 New regression tests (11 added in this phase, 98 → 109):

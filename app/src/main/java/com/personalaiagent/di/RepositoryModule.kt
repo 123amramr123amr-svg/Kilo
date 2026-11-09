@@ -1,0 +1,54 @@
+package com.personalaiagent.di
+
+import com.personalaiagent.data.repository.ChatRepositoryImpl
+import com.personalaiagent.data.repository.ModelRepositoryImpl
+import com.personalaiagent.data.repository.ProviderRepositoryImpl
+import com.personalaiagent.data.repository.TaskRepositoryImpl
+import com.personalaiagent.data.remote.RemoteImageGeneration
+import com.personalaiagent.data.workspace.SafWorkspaceRepository
+import com.personalaiagent.platform.AndroidDeviceControl
+import com.personalaiagent.domain.repository.DeviceControl
+import com.personalaiagent.domain.repository.ImageGeneration
+import com.personalaiagent.domain.repository.ChatRepository
+import com.personalaiagent.domain.repository.ModelRepository
+import com.personalaiagent.domain.repository.ProviderRepository
+import com.personalaiagent.domain.repository.TaskRepository
+import com.personalaiagent.domain.repository.WorkspaceRepository
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindProviderRepository(impl: ProviderRepositoryImpl): ProviderRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindModelRepository(impl: ModelRepositoryImpl): ModelRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindChatRepository(impl: ChatRepositoryImpl): ChatRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTaskRepository(impl: TaskRepositoryImpl): TaskRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWorkspaceRepository(impl: SafWorkspaceRepository): WorkspaceRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDeviceControl(impl: AndroidDeviceControl): DeviceControl
+
+    @Binds
+    @Singleton
+    abstract fun bindImageGeneration(impl: RemoteImageGeneration): ImageGeneration
+}

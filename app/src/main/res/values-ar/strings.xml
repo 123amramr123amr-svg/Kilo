@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="ar">
+
+    <string name="app_name">المساعد الذكي الشخصي</string>
+    <string name="app_tagline">مساعدك الذكي للتحكم في جهازك</string>
+
+    <!-- Global actions -->
+    <string name="action_start">ابدأ الآن</string>
+    <string name="action_skip">تخطي</string>
+    <string name="action_continue">متابعة</string>
+    <string name="action_back">رجوع</string>
+    <string name="action_next">التالي</string>
+    <string name="action_done">تم</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_save">حفظ</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_edit">تعديل</string>
+    <string name="action_add">إضافة</string>
+    <string name="action_retry">إعادة المحاولة</string>
+    <string name="action_search">بحث</string>
+    <string name="action_close">إغلاق</string>
+    <string name="action_confirm">تأكيد</string>
+    <string name="action_clear">تفريغ</string>
+    <string name="action_send">إرسال</string>
+    <string name="action_stop">إيقاف</string>
+    <string name="action_open_settings">فتح إعدادات النظام</string>
+    <string name="action_allow">السماح</string>
+    <string name="action_test">اختبار الاتصال</string>
+    <string name="action_refresh">تحديث</string>
+    <string name="action_export">تصدير</string>
+    <string name="action_import">استيراد</string>
+    <string name="action_manage">إدارة</string>
+    <string name="action_dismiss">تجاهل</string>
+    <string name="cd_back">رجوع</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_headline">المساعد الذكي الشخصي</string>
+    <string name="onboarding_subheadline">مساعدك الذكي للتحكم في هاتفك</string>
+    <string name="onboarding_language_title">اختر لغتك</string>
+    <string name="onboarding_language_body">تُستخدم هذه اللغة في الواجهة وفي ردود المساعد. يمكنك تغييرها لاحقًا من الإعدادات.</string>
+    <string name="onboarding_privacy_title">خصوصية بالتصميم</string>
+    <string name="onboarding_privacy_body">لا حساب ولا مزامنة سحابية. تبقى المحادثات في قاعدة بيانات محلية، وتُشفَّر مفاتيح API باستخدام Android Keystore.</string>
+    <string name="onboarding_features_title">ماذا يمكنك أن تفعل</string>
+    <string name="onboarding_feature_chat">تحدّث مع النموذج الذي تختاره</string>
+    <string name="onboarding_feature_voice">أملِ طلبك بصوتك</string>
+    <string name="onboarding_feature_models">مزودون متعددون، بالعربية والإنجليزية</string>
+    <string name="onboarding_terms">بالمتابعة أنت تؤكد أنك تملك مفاتيح API التي تُدخلها وأنك توافق على شروط مزوّدك.</string>
+    <string name="language_arabic">العربية</string>
+    <string name="language_english">English</string>
+    <string name="language_name_arabic">العربية</string>
+    <string name="language_name_english">الإنجليزية</string>
+
+    <!-- Navigation -->
+    <string name="nav_chat">المحادثة</string>
+    <string name="nav_models">النماذج</string>
+    <string name="nav_settings">الإعدادات</string>
+
+    <!-- Chat -->
+    <string name="chat_subtitle_ready">متصل</string>
+    <string name="chat_subtitle_setup">لا يوجد مزوّد مُهيّأ</string>
+    <string name="chat_stop_generating">إيقاف التوليد</string>
+    <string name="chat_input_hint">اسأل أي شيء، أو اطلب من المساعد تنفيذ مهمة</string>
+    <string name="chat_empty_title">ابدأ محادثة</string>
+    <string name="chat_empty_body">اكتب رسالة أو استخدم الميكروفون. تظهر الإجابات هنا أثناء توليدها.</string>
+    <string name="chat_new">محادثة جديدة</string>
+    <string name="chat_listen">أستمع الآن…</string>
+    <string name="chat_thinking">أفكر…</string>
+    <string name="chat_message_failed">فشل إرسال الرسالة</string>
+    <string name="chat_retry_failed">إعادة المحاولة</string>
+    <string name="chat_setup_title">أضف مزوّدًا للبدء</string>
+    <string name="chat_setup_body">تُرسَل رسائلك مباشرة من هذا الجهاز إلى المزوّد الذي تُهيّئه.</string>
+    <string name="chat_setup_action">تهيئة المزوّد</string>
+    <string name="chat_mic_permission_title">إذن الميكروفون مطلوب</string>
+    <string name="chat_mic_permission_body">يستخدم الإدخال الصوتي محرّك التعرف على الكلام في النظام. امنح الإذن من شاشة الصلاحيات.</string>
+    <string name="chat_you">أنت</string>
+    <string name="chat_assistant">المساعد الذكي</string>
+    <string name="chat_scroll_bottom">الانتقال إلى الأحدث</string>
+    <string name="chat_delete_conversation">حذف المحادثة</string>
+    <string name="chat_conversation_deleted">تم حذف المحادثة</string>
+    <string name="chat_task_running">مهمة قيد التنفيذ</string>
+    <string name="chat_model_picker">النموذج</string>
+    <string name="chat_no_models">لا يوجد نموذج مُفعّل</string>
+
+    <!-- Models -->
+    <string name="models_title">النماذج</string>
+    <string name="models_search_hint">البحث في النماذج…</string>
+    <string name="models_filter_all">الكل</string>
+    <string name="models_empty_title">لا توجد نماذج</string>
+    <string name="models_empty_body">أضف مزوّدًا أولًا، أو فعّل نموذجًا من الكتالوج.</string>
+    <string name="models_active">مُستخدم</string>
+    <string name="models_enabled">مُفعّل</string>
+    <string name="models_disabled">مُعطّل</string>
+    <string name="models_cap_text">نص</string>
+    <string name="models_cap_vision">رؤية</string>
+    <string name="models_cap_tools">أدوات</string>
+    <string name="models_cap_reasoning">استدلال</string>
+    <string name="models_cap_code">برمجة</string>
+    <string name="models_context">سياق %1$s</string>
+    <string name="models_context_window">حجم السياق</string>
+    <string name="models_settings_title">إعدادات النموذج</string>
+    <string name="models_temperature">درجة الحرارة</string>
+    <string name="models_temperature_body">القيم الأعلى تجعل الإجابات أكثر إبداعًا.</string>
+    <string name="models_max_tokens">أقصى عدد توكنات للإخراج</string>
+    <string name="models_top_p">أعلى احتمال تراكمي (Top P)</string>
+    <string name="models_system_prompt">التعليمات الأساسية</string>
+    <string name="models_system_prompt_hint">صف كيف يجب أن يتصرف المساعد…</string>
+    <string name="models_streaming">بث الردود</string>
+    <string name="models_streaming_body">إظهار الإجابة أثناء توليدها.</string>
+    <string name="models_enable">تفعيل النموذج</string>
+    <string name="models_enable_body">النماذج المُعطّلة لا تظهر في قائمة المحادثة.</string>
+    <string name="models_reset">استعادة القيم الافتراضية</string>
+    <string name="models_saved">تم حفظ إعدادات النموذج</string>
+    <string name="models_set_default">تعيين كافتراضي</string>
+    <string name="models_default">افتراضي</string>
+    <string name="models_provider_missing">تم حذف المزوّد</string>
+
+    <!-- Providers -->
+    <string name="providers_title">مزودو الذكاء الاصطناعي</string>
+    <string name="providers_add">إضافة مزوّد جديد</string>
+    <string name="providers_empty_title">لا يوجد مزودون بعد</string>
+    <string name="providers_empty_body">اربط نقطة نهاية متوافقة مع OpenAI أو Anthropic. تُشفَّر المفاتيح على هذا الجهاز.</string>
+    <string name="providers_status_connected">متصل</string>
+    <string name="providers_status_error">فشل الاتصال</string>
+    <string name="providers_status_unknown">لم يُختبر</string>
+    <string name="providers_set_default">تعيين كافتراضي</string>
+    <string name="providers_default">افتراضي</string>
+    <string name="providers_delete_title">حذف المزوّد؟</string>
+    <string name="providers_delete_body">سيُحذف مفتاح API المشفّر ونماذج هذا المزوّد من هذا الجهاز.</string>
+    <string name="providers_add_title">مزوّد جديد</string>
+    <string name="providers_edit_title">تعديل المزوّد</string>
+    <string name="providers_name">اسم العرض</string>
+    <string name="providers_kind">نوع المزوّد</string>
+    <string name="providers_kind_openai">متوافق مع OpenAI</string>
+    <string name="providers_kind_anthropic">Anthropic</string>
+    <string name="providers_base_url">عنوان الخدمة (Base URL)</string>
+    <string name="providers_base_url_hint">https://api.openai.com/v1</string>
+    <string name="providers_api_key">مفتاح API</string>
+    <string name="providers_api_key_hint">الصق مفتاحك</string>
+    <string name="providers_api_key_keep">اتركه فارغًا للإبقاء على المفتاح المحفوظ</string>
+    <string name="providers_key_stored">مفتاح مشفّر محفوظ على هذا الجهاز</string>
+    <string name="providers_key_missing">لا يوجد مفتاح محفوظ</string>
+    <string name="providers_test_success">تم الاتصال · %1$d نموذجًا متاحًا</string>
+    <string name="providers_test_failure">تعذّر الوصول إلى المزوّد: %1$s</string>
+    <string name="providers_error_name">أدخل اسم عرض</string>
+    <string name="providers_error_url">أدخل عنوان http(s) صالحًا</string>
+    <string name="providers_error_key">مفتاح API مطلوب</string>
+    <string name="providers_saved">تم حفظ المزوّد</string>
+    <string name="providers_deleted">تم حذف المزوّد</string>
+    <string name="providers_key_deleted">تم حذف مفتاح API</string>
+    <string name="providers_added">تمت إضافة المزوّد</string>
+    <string name="providers_presets">بداية سريعة</string>
+    <string name="providers_preset_openai">OpenAI</string>
+    <string name="providers_preset_anthropic">Anthropic</string>
+    <string name="providers_preset_gemini">Gemini (توافق OpenAI)</string>
+    <string name="providers_preset_groq">Groq</string>
+    <string name="providers_preset_deepseek">DeepSeek</string>
+
+    <!-- Account -->
+    <string name="account_title">الحساب</string>
+    <string name="account_local_badge">حساب محلي</string>
+    <string name="account_profile">الملف الشخصي المحلي</string>
+    <string name="account_profile_desc">محفوظ على هذا الجهاز فقط</string>
+    <string name="account_privacy">الخصوصية والأمان</string>
+    <string name="account_privacy_desc">التشفير والسجلات وأدوات البيانات</string>
+    <string name="account_api_keys">مفاتيح API</string>
+    <string name="account_api_keys_desc">بيانات اعتماد مشفّرة لكل مزوّد</string>
+    <string name="account_backup">النسخ الاحتياطي</string>
+    <string name="account_backup_desc">تصدير أو استيراد البيانات المحلية</string>
+    <string name="account_about">حول التطبيق</string>
+    <string name="account_version">الإصدار %1$s</string>
+    <string name="account_display_name">الاسم المعروض</string>
+    <string name="account_display_name_hint">كيف يناديك المساعد</string>
+    <string name="account_locale">لغة الواجهة</string>
+    <string name="account_profile_saved">تم حفظ الملف الشخصي</string>
+    <string name="account_name_required">لا يمكن أن يكون الاسم فارغًا</string>
+    <string name="account_since">محلي منذ %1$s</string>
+    <string name="account_no_cloud_title">لا يوجد حساب سحابي</string>
+    <string name="account_no_cloud_body">هذا الإصدار لا يحتوي على حساب على خادم أو تسجيل دخول أو مزامنة. كل شيء محفوظ محليًا على هذا الجهاز.</string>
+    <string name="account_sign_out">تسجيل الخروج</string>
+    <string name="account_sign_out_desc">حذف الملف المحلي والمحادثات والمفاتيح والإعدادات</string>
+    <string name="account_sign_out_title">حذف كل البيانات المحلية؟</string>
+    <string name="account_sign_out_body">ستُحذف المحادثات والمزودون والمفاتيح المشفّرة وسجلات المهام والتفضيلات من هذا الجهاز. لا يمكن التراجع عن ذلك.</string>
+    <string name="account_sign_out_confirm">حذف كل شيء</string>
+    <string name="account_sign_out_done">تم حذف البيانات المحلية</string>
+
+    <!-- Privacy -->
+    <string name="privacy_title">الخصوصية والأمان</string>
+    <string name="privacy_network_title">إلى أين تذهب بياناتك</string>
+    <string name="privacy_network_body">تُرسَل الرسائل فقط إلى المزوّد الذي هيّأته باستخدام المفتاح الذي حفظته. لا يوجد خادم خاص بالتطبيق ولا حزم تحليلات أو إعلانات.</string>
+    <string name="privacy_storage_title">التخزين المحلي</string>
+    <string name="privacy_storage_body">المحادثات والمزودون وسجلات المهام في قاعدة بيانات SQLite محلية. تُشفَّر مفاتيح API بخوارزمية AES-256-GCM بمفتاح غير قابل للتصدير من Android Keystore.</string>
+    <string name="privacy_backup_title">النسخ الاحتياطي</string>
+    <string name="privacy_backup_body">النسخ السحابي التلقائي مُعطّل. النسخ اليدوي لا يتضمن مفاتيح API أبدًا.</string>
+    <string name="privacy_logs_title">السجلات</string>
+    <string name="privacy_logs_body">لا تُكتب المفاتيح أو نصوص الرسائل في سجلات النظام (logcat) أبدًا، وتسجيل محتوى HTTP مُعطّل في إصدارات الإنتاج.</string>
+    <string name="privacy_clear_chat">حذف كل المحادثات</string>
+    <string name="privacy_clear_logs">حذف سجلات المهام</string>
+    <string name="privacy_clear_chat_done">تم حذف المحادثات</string>
+    <string name="privacy_clear_logs_done">تم حذف سجلات المهام</string>
+    <string name="privacy_clear_chat_body">سيتم حذف كل محادثة ورسالة محفوظة على هذا الجهاز.</string>
+
+    <!-- API keys -->
+    <string name="api_keys_title">مفاتيح API</string>
+    <string name="api_keys_body">تُشفَّر المفاتيح على الجهاز ولا تُسجَّل أبدًا. يعرض التطبيق وجود المفتاح فقط ولا يعرض قيمته.</string>
+    <string name="api_keys_empty_title">لا يوجد مزودون مُهيّؤون</string>
+    <string name="api_keys_empty_body">أضف مزوّدًا لتخزين مفتاح API.</string>
+    <string name="api_keys_not_set">غير محفوظ</string>
+    <string name="api_keys_set">مشفّر</string>
+    <string name="api_keys_add">إضافة مفتاح</string>
+    <string name="api_keys_update">تحديث المفتاح</string>
+    <string name="api_keys_delete">حذف المفتاح</string>
+    <string name="api_keys_delete_title">حذف هذا المفتاح؟</string>
+    <string name="api_keys_delete_body">ستفشل الطلبات إلى هذا المزوّد حتى تُضيف مفتاحًا جديدًا.</string>
+    <string name="api_keys_dialog_title">مفتاح API الخاص بـ %1$s</string>
+    <string name="api_keys_saved">تم حفظ المفتاح بأمان</string>
+    <string name="api_keys_unavailable">التخزين الآمن غير متاح على هذا الجهاز، لذلك لم يُحفظ المفتاح.</string>
+
+    <!-- Backup -->
+    <string name="backup_title">النسخ الاحتياطي</string>
+    <string name="backup_body">أنشئ ملف JSON يحتوي المحادثات والمزوّدين (بدون مفاتيح) والنماذج وسجلات المهام والإعدادات.</string>
+    <string name="backup_export_title">تصدير نسخة احتياطية</string>
+    <string name="backup_export_body">يشمل كل شيء ما عدا مفاتيح API.</string>
+    <string name="backup_import_title">استيراد نسخة احتياطية</string>
+    <string name="backup_import_body">تُستبدَل البيانات المحلية الحالية بمحتوى النسخة.</string>
+    <string name="backup_export_success">تم حفظ النسخة الاحتياطية</string>
+    <string name="backup_export_failed">تعذّر كتابة ملف النسخة الاحتياطية</string>
+    <string name="backup_import_success">تم استيراد النسخة الاحتياطية</string>
+    <string name="backup_import_failed">ملف نسخة غير صالح: %1$s</string>
+    <string name="backup_keys_excluded">مفاتيح API غير مشمولة</string>
+    <string name="backup_restore_note">بعد الاستيراد يجب إعادة إدخال مفاتيح API لكل مزوّد.</string>
+    <string name="backup_include_logs">تضمين سجلات المهام</string>
+
+    <!-- Settings -->
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_language">اللغة</string>
+    <string name="settings_language_desc">العربية / الإنجليزية</string>
+    <string name="settings_appearance">المظهر</string>
+    <string name="settings_theme">السمة</string>
+    <string name="settings_theme_midnight">أزرق منتصف الليل</string>
+    <string name="settings_theme_amoled">أسود كامل (AMOLED)</string>
+    <string name="settings_providers">مزودو الذكاء الاصطناعي</string>
+    <string name="settings_providers_desc">إدارة المزوّدين والنماذج</string>
+    <string name="settings_voice">الصوت</string>
+    <string name="settings_voice_desc">الإدخال الصوتي والردود المنطوقة</string>
+    <string name="settings_tts">نطق الردود</string>
+    <string name="settings_tts_body">قراءة إجابات المساعد بصوت محرّك النطق في النظام.</string>
+    <string name="settings_haptics">الاهتزاز</string>
+    <string name="settings_haptics_body">اهتزاز عند الإرسال والإيقاف والتأكيدات.</string>
+    <string name="settings_streaming">بث الردود</string>
+    <string name="settings_streaming_body">عرض النص أثناء وصوله.</string>
+    <string name="settings_permissions">الصلاحيات</string>
+    <string name="settings_permissions_desc">الميكروفون والإشعارات</string>
+    <string name="settings_task_log">سجل تنفيذ المهام</string>
+    <string name="settings_task_log_desc">مراجعة ما نفّذه المساعد</string>
+    <string name="settings_account">الحساب</string>
+    <string name="settings_account_desc">الملف الشخصي والخصوصية والنسخ الاحتياطي</string>
+    <string name="settings_about">حول التطبيق</string>
+    <string name="settings_version_row">الإصدار</string>
+    <string name="settings_default_model">النموذج الافتراضي</string>
+    <string name="settings_default_model_desc">يُستخدم في المحادثات الجديدة</string>
+    <string name="settings_data">التحكم في البيانات</string>
+    <string name="settings_theme_dialog">اختر السمة</string>
+    <string name="settings_language_dialog">اختر اللغة</string>
+    <string name="settings_applied">تم تحديث الإعدادات</string>
+    <string name="settings_general">عام</string>
+    <string name="settings_ai">الذكاء الاصطناعي</string>
+    <string name="settings_security">الأمان</string>
+
+    <!-- Permissions -->
+    <string name="permissions_title">الصلاحيات</string>
+    <string name="permissions_body">يطلب التطبيق ما تحتاجه الميزة فقط. يمكنك سحب أي صلاحية من إعدادات النظام.</string>
+    <string name="permissions_granted">ممنوحة</string>
+    <string name="permissions_denied">غير ممنوحة</string>
+    <string name="permissions_blocked">محظورة في إعدادات النظام</string>
+    <string name="permissions_rationale">مطلوبة لهذه الميزة</string>
+    <string name="perm_mic_name">الميكروفون</string>
+    <string name="perm_mic_body">تحويل الكلام إلى نص لحقل الكتابة والمساعد الصوتي.</string>
+    <string name="perm_notif_name">الإشعارات</string>
+    <string name="perm_notif_body">تقدم تنفيذ المهام ونتائجها.</string>
+    <string name="perm_network_name">الإنترنت</string>
+    <string name="perm_network_body">مطلوب للوصول إلى مزوّد الذكاء الاصطناعي. تُمنح عند التثبيت.</string>
+    <string name="permissions_grant_all">منح الصلاحيات الناقصة</string>
+    <string name="permissions_note_title">لماذا هذه الصلاحيات</string>
+    <string name="permissions_note_body">لا يطلب التطبيق جهات الاتصال أو الموقع أو الكاميرا أو الرسائل أو سجل المكالمات أو الوصول الكامل للتخزين.</string>
+    <string name="permissions_summary">%1$d من %2$d ممنوحة</string>
+    <string name="permissions_request_hint">اضغط على صلاحية لمنحها أو مراجعتها.</string>
+
+    <!-- Voice -->
+    <string name="voice_title">المساعد الصوتي</string>
+    <string name="voice_listening">أستمع الآن…</string>
+    <string name="voice_hint">انطق طلبك ثم انتظر المساعد.</string>
+    <string name="voice_unavailable">التعرّف على الكلام غير متاح على هذا الجهاز.</string>
+    <string name="voice_error">تعذّر التعرف على الكلام. حاول مرة أخرى.</string>
+    <string name="voice_stop">إيقاف الاستماع</string>
+    <string name="voice_processing">جارٍ المعالجة…</string>
+    <string name="voice_permission_required">إذن الميكروفون مطلوب للإدخال الصوتي.</string>
+    <string name="voice_result_hint">يُدرَج النص المتعرَّف عليه في حقل الكتابة.</string>
+    <string name="voice_retry">تحدّث مرة أخرى</string>
+
+    <!-- Task log -->
+    <string name="tasks_title">سجل تنفيذ المهام</string>
+    <string name="tasks_empty_title">لا توجد مهام بعد</string>
+    <string name="tasks_empty_body">كل رسالة ترسلها تصبح مهمة، وتُسجَّل خطواتها هنا.</string>
+    <string name="tasks_search_hint">البحث في المهام…</string>
+    <string name="tasks_status_queued">في الانتظار</string>
+    <string name="tasks_status_running">قيد التنفيذ</string>
+    <string name="tasks_status_succeeded">ناجحة</string>
+    <string name="tasks_status_failed">فاشلة</string>
+    <string name="tasks_status_cancelled">ملغاة</string>
+    <string name="tasks_detail_title">تفاصيل المهمة</string>
+    <string name="tasks_prompt">الطلب</string>
+    <string name="tasks_steps">الخطوات</string>
+    <string name="tasks_started">بدأت</string>
+    <string name="tasks_finished">انتهت</string>
+    <string name="tasks_duration">المدة</string>
+    <string name="tasks_model">النموذج</string>
+    <string name="tasks_error">الخطأ</string>
+    <string name="tasks_clear_all">تفريغ السجل</string>
+    <string name="tasks_clear_title">تفريغ سجل التنفيذ؟</string>
+    <string name="tasks_clear_body">ستُحذف الخطوات المسجلة لكل المهام.</string>
+    <string name="tasks_cleared">تم تفريغ سجل التنفيذ</string>
+    <string name="tasks_tokens">التوكنات (دخل / خرج)</string>
+    <string name="tasks_step_resolve">تحديد المزوّد والنموذج</string>
+    <string name="tasks_step_prompt">بناء الطلب</string>
+    <string name="tasks_step_request">إرسال الطلب</string>
+    <string name="tasks_step_stream">استقبال الرد</string>
+    <string name="tasks_step_persist">حفظ الرسالة</string>
+    <string name="tasks_detail_missing">المهمة غير موجودة</string>
+    <string name="tasks_seconds">%1$s ث</string>
+
+    <!-- Errors -->
+    <string name="error_no_provider">لا يوجد مزوّد ذكاء اصطناعي مُهيّأ. أضف مزوّدًا لبدء المحادثة.</string>
+    <string name="error_no_model">اختر نموذجًا مُفعّلًا قبل الإرسال.</string>
+    <string name="error_missing_key">لا يوجد مفتاح API محفوظ لـ %1$s.</string>
+    <string name="error_network">خطأ في الشبكة. تحقّق من الاتصال وعنوان الخدمة.</string>
+    <string name="error_timeout">استغرق المزوّد وقتًا طويلًا للرد.</string>
+    <string name="error_auth">فشلت المصادقة. تحقّق من مفتاح API.</string>
+    <string name="error_rate_limit">حدّد المزوّد عدد الطلبات. حاول بعد قليل.</string>
+    <string name="error_server">أعاد المزوّد خطأ (%1$d).</string>
+    <string name="error_parse">رد غير متوقع من المزوّد.</string>
+    <string name="error_cancelled">تم إيقاف التوليد.</string>
+    <string name="error_unknown">حدث خطأ ما.</string>
+    <string name="error_secure_storage">التخزين الآمن غير متاح.</string>
+    <string name="error_empty_message">اكتب رسالة أولًا.</string>
+
+    <!-- Common states -->
+    <string name="state_loading">جارٍ التحميل…</string>
+    <string name="state_empty">لا يوجد شيء بعد</string>
+    <string name="state_error">حدث خطأ ما</string>
+    <string name="state_offline">غير متصل</string>
+
+    <!-- Accessibility -->
+    <string name="a11y_avatar">صورة المساعد</string>
+    <string name="a11y_send">إرسال الرسالة</string>
+    <string name="a11y_mic">بدء الإدخال الصوتي</string>
+    <string name="a11y_more">خيارات إضافية</string>
+    <string name="a11y_toggle_enabled">تبديل التفعيل</string>
+    <string name="a11y_current_model">النموذج الحالي</string>
+
+    <!-- Fetch models -->
+    <string name="providers_fetch_models">جلب النماذج</string>
+    <string name="providers_fetch_hint">أدخل عنوان الخدمة ومفتاح API أدناه، ثم اجلب أسماء النماذج من مزوّدك.</string>
+    <string name="providers_fetch_need_key">أدخل مفتاح API أولًا</string>
+    <string name="providers_fetch_success">تم العثور على %1$d نموذجًا</string>
+    <string name="providers_fetch_empty">لم يُرجع المزوّد أي نماذج</string>
+    <string name="providers_models_dialog_title">النماذج المتاحة (%1$d)</string>
+    <string name="providers_models_select_all">تحديد الكل</string>
+    <string name="providers_models_selected">%1$d محدَّد</string>
+    <string name="providers_models_apply">تطبيق التحديد</string>
+    <string name="providers_models_saved">تم حفظ اختيار النماذج</string>
+    <string name="providers_models_pending">ستُحفظ النماذج مع المزوّد</string>
+    <string name="providers_models_shown">النماذج</string>
+
+    <!-- Workspace -->
+    <string name="workspace_title">مساحة العمل</string>
+    <string name="workspace_subtitle">المجلد الذي يعمل فيه الوكيل</string>
+    <string name="workspace_choose">اختيار مجلد مساحة العمل</string>
+    <string name="workspace_change">تغيير المجلد</string>
+    <string name="workspace_connected">متصل: %1$s</string>
+    <string name="workspace_not_connected_title">لا توجد مساحة عمل بعد</string>
+    <string name="workspace_not_connected_body">اختر مجلدًا على هاتفك. سيتمكن الوكيل بعد ذلك من إنشاء الملفات وقراءتها وتعديلها داخله — ولا شيء خارج.</string>
+    <string name="workspace_allow_tools">السماح للوكيل بالعمل على الملفات</string>
+    <string name="workspace_allow_tools_body">عند التفعيل يستطيع المساعد إنشاء الملفات وقراءتها وتعديلها في هذا المجلد باستخدام الأدوات.</string>
+    <string name="workspace_new_file">ملف جديد</string>
+    <string name="workspace_new_folder">مجلد جديد</string>
+    <string name="workspace_empty">هذا المجلد فارغ</string>
+    <string name="workspace_file_name">اسم الملف</string>
+    <string name="workspace_folder_name">اسم المجلد</string>
+    <string name="workspace_created">تم الإنشاء</string>
+    <string name="workspace_deleted">تم الحذف</string>
+    <string name="workspace_delete_title">حذف هذا العنصر؟</string>
+    <string name="workspace_delete_body">سيُحذف نهائيًا من هاتفك.</string>
+    <string name="workspace_disconnect">فصل مساحة العمل</string>
+    <string name="workspace_open_error">تعذّر فتح المجلد</string>
+    <string name="workspace_no_permission">انتهت صلاحية الوصول إلى المجلد. اختر المجلد مرة أخرى.</string>
+    <string name="workspace_editor_title">تعديل الملف</string>
+    <string name="workspace_saved">تم الحفظ</string>
+    <string name="workspace_path_hint">مثال: notes/today.txt</string>
+    <string name="workspace_content_hint">محتوى الملف</string>
+    <string name="workspace_create">إنشاء</string>
+    <string name="workspace_file_too_large">هذا الملف كبير جدًا لتعديله هنا</string>
+    <string name="workspace_browse">تصفح الملفات</string>
+    <string name="workspace_tools_on">أدوات الملفات مُفعّلة</string>
+    <string name="workspace_tools_off">أدوات الملفات مُعطّلة</string>
+    <string name="workspace_saf_note">الوصول محدود بالمجلد الذي تختاره (إطار الوصول للتخزين). لا تُستخدم صلاحية الوصول الكامل للتخزين.</string>
+    <string name="workspace_root">جذر مساحة العمل</string>
+
+    <!-- Permissions: storage -->
+    <string name="perm_storage_name">الملفات والوسائط</string>
+    <string name="perm_storage_body">مطلوبة فقط على أندرويد 12 وما قبله للوصول إلى مجلد مختار. الإصدارات الأحدث تستخدم منتقي المجلدات في النظام.</string>
+    <string name="permissions_workspace_summary">مساحة العمل: %1$s</string>
+    <string name="permissions_workspace_none">غير متصلة</string>
+
+    <!-- Agent tools in chat -->
+    <string name="chat_tools_title">خطوات الوكيل</string>
+    <string name="chat_tools_hint">الوكيل يعمل في مساحة عملك</string>
+    <string name="chat_tool_running">يعمل…</string>
+    <string name="chat_tool_done">تم</string>
+    <string name="chat_tool_failed">فشل</string>
+    <string name="chat_open_workspace">فتح مساحة العمل</string>
+
+    <!-- Workspace settings rows -->
+    <string name="settings_workspace">مساحة العمل</string>
+    <string name="settings_workspace_desc">المجلد الذي يقرأ ويكتب فيه الوكيل</string>
+    <string name="settings_agent_tools">أدوات الملفات</string>
+    <string name="settings_agent_tools_body">السماح للوكيل بإنشاء الملفات وقراءتها وتعديلها في مساحة العمل.</string>
+
+    <string name="tasks_step_tool">تنفيذ أداة</string>
+    <string name="error_no_workspace">لا يوجد مجلد مساحة عمل متصل. افتح الإعدادات ← مساحة العمل لاختيار مجلد.</string>
+    <string name="error_tool_limit">وصل الوكيل إلى الحد الأقصى للخطوات. اطلب منه المتابعة.</string>
+    <string name="chat_workspace_prompt">امنح الوكيل مجلدًا على هذا الهاتف ليتمكن من إنشاء الملفات وتعديلها.</string>
+    <string name="settings_theme_light">فاتح (موصى به)</string>
+    <string name="chat_models_connected">النماذج المربوطة</string>
+    <string name="chat_attach">إرفاق صورة أو PDF</string>
+    <string name="action_remove">إزالة</string>
+    <string name="chat_review_toggle">راجع طلبي</string>
+    <string name="chat_running_background">الوكيل يعمل — يكمل في الخلفية</string>
+    <string name="chat_plan_title">قائمة المهام</string>
+    <string name="chat_plan_running">جارٍ</string>
+    <string name="chat_plan_done">تم</string>
+    <string name="review_title">قبل أن أبدأ</string>
+    <string name="review_body">قرأت طلبك وجهّزت خطة. أجب عمّا تريد لتكون النتيجة أدق.</string>
+    <string name="review_questions_title">أسئلة سريعة</string>
+    <string name="review_improved_title">صياغة أوضح لطلبك</string>
+    <string name="review_start">ابدأ التنفيذ</string>
+    <string name="review_send_as_is">أرسل كما هو</string>
+    <string name="agent_run_notification_title">المساعد الذكي يعمل</string>
+    <string name="agent_run_notification_body">مهمتك تكمل في الخلفية</string>
+    <string name="agent_run_channel">تشغيل الوكيل</string>
+    <string name="attachment_failed">تعذر قراءة الملف</string>
+    <string name="attachment_empty">لا يوجد محتوى قابل للقراءة في هذا الملف</string>
+    <string name="chat_attach_hint">الصور وصفحات PDF تُرسل إلى نموذج يدعم الرؤية</string>
+    <string name="settings_review">مراجعة الطلبات</string>
+    <string name="settings_review_body">اسأل أسئلة توضيحية واعرض قائمة مهام قبل أن يبدأ الوكيل</string>
+    <string name="error_http_not_found">لم يجد المزوّد هذا العنوان (404). تأكد من عنوان الخدمة (غالبًا ينتهي بـ /v1) وأن اسم النموذج متاح لهذا المفتاح.</string>
+    <string name="error_not_found">هذا العنصر لم يعد موجودًا. أعد فتح الشاشة أو أضف المزوّد من جديد.</string>
+    <string name="error_unknown_detail">حدث خطأ: %1$s</string>
+    <string name="providers_fetching_models">جارٍ جلب النماذج…</string>
+    <string name="providers_saving_models">جارٍ الحفظ…</string>
+    <string name="providers_models_enabled_count">المحدد: %1$d من %2$d</string>
+    <string name="providers_models_saved_title">تم حفظ النماذج وتفعيلها</string>
+    <string name="providers_models_saved_body">%1$d نموذجًا ستظهر الآن في اختيار النماذج وفي شريط المحادثة.</string>
+    <string name="providers_models_apply_save">حفظ وتطبيق</string>
+</resources>

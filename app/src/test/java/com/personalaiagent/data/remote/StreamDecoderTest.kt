@@ -99,4 +99,28 @@ class StreamDecoderTest {
         }.exceptionOrNull()
         assertTrue(error is ProviderException)
     }
+
+    @Test
+    fun `openai decoder separates the reasoning stream from the answer`() {
+        // DeepSeek/Qwen style "thinking" chunks must never leak into the answer text.
+        val decoder = OpenAiStreamDecoder(json)
+        val reasoning = decoder.decode(
+            SseEvent(null, """{"choices":[{"delta":{"reasoning_content":"أفكر في السؤال"}}]}"""),
+        )
+        assertEquals(ChatChunk.Reasoning("أفكر في السؤال"), reasoning)
+
+        val answer = decoder.decode(
+            SseEvent(null, """{"choices":[{"delta":{"content":"الإجابة"}}]}"""),
+        )
+        assertEquals(ChatChunk.Delta("الإجابة"), answer)
+    }
+
+    @Test
+    fun `reasoning is also read from the short reasoning field`() {
+        val decoder = OpenAiStreamDecoder(json)
+        assertEquals(
+            ChatChunk.Reasoning("step"),
+            decoder.decode(SseEvent(null, """{"choices":[{"delta":{"reasoning":"step"}}]}""")),
+        )
+    }
 }

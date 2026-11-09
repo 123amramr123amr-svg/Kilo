@@ -50,6 +50,7 @@ class OpenAiCompatibleClient(
                 http.streamEvents(url, headers, body).collect { event ->
                     when (val chunk = decoder.decode(event)) {
                         is ChatChunk.Delta -> emit(chunk)
+                        is ChatChunk.Reasoning -> emit(chunk)
                         is ChatChunk.Usage -> usage = chunk
                         is ChatChunk.ToolCallChunk -> Unit
                         ChatChunk.Completed -> Unit

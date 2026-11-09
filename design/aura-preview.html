@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AURA — هوية التطبيق ومعاينة الواجهة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --sand: #E8E0D5;
+    --sand-high: #EFE9DF;
+    --parchment: #F5F0EB;
+    --ink: #1C1814;
+    --sub: #5A5248;
+    --gold: #B08A5D;
+    --gold-deep: #8A6A3F;
+    --gold-light: #C9A06A;
+    --nile: #4C7A6B;
+    --line: rgba(28, 24, 20, 0.10);
+    --display: 'Cormorant Garamond', 'Noto Serif', Georgia, serif;
+    --body: 'Tajawal', 'Noto Naskh Arabic', system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: linear-gradient(180deg, var(--sand-high) 0%, var(--sand) 55%, #E3D9CB 100%);
+    color: var(--ink);
+    font-family: var(--body);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  /* ---------- dunes + pyramid, pure CSS (mirrors the launcher icon) ---------- */
+  .scene { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+  .sun {
+    position: absolute; width: 190px; height: 190px; border-radius: 50%;
+    top: 12%; left: 14%;
+    background: radial-gradient(circle, rgba(201,160,106,.5) 0%, rgba(201,160,106,.12) 55%, transparent 70%);
+  }
+  .pyramid {
+    position: absolute; bottom: 0; left: 6%;
+    width: 0; height: 0;
+    border-left: 240px solid transparent;
+    border-right: 240px solid transparent;
+    border-bottom: 300px solid rgba(126, 94, 56, 0.20);
+    filter: drop-shadow(0 30px 60px rgba(28,24,20,.18));
+  }
+  .pyramid::after {
+    content: ""; position: absolute; left: -240px; bottom: -300px;
+    width: 0; height: 0;
+    border-left: 120px solid transparent;
+    border-right: 120px solid transparent;
+    border-bottom: 300px solid rgba(201, 160, 106, 0.28);
+  }
+  .dune { position: absolute; bottom: -60px; width: 140%; height: 220px; border-radius: 50% 50% 0 0; }
+  .dune.one { background: rgba(214, 198, 176, .75); left: -20%; }
+  .dune.two { background: rgba(226, 214, 196, .85); bottom: -110px; left: -40%; }
+
+  /* ---------- layout ---------- */
+  .app { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 28px 40px 70px; }
+
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px; padding-bottom: 26px;
+  }
+  .brand { display: flex; flex-direction: column; align-items: center; }
+  .wordmark {
+    font-family: var(--display); font-size: 26px; letter-spacing: .34em;
+    text-transform: uppercase; line-height: 1; color: var(--ink);
+  }
+  .wordmark b { font-weight: 500; color: var(--gold); }
+  .sand-line {
+    width: 100%; height: 1px; margin-top: 7px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .links { display: flex; gap: 28px; }
+  .links a {
+    text-decoration: none; color: var(--sub); font-size: 12px; letter-spacing: .12em;
+    text-transform: uppercase; transition: color .2s;
+  }
+  .links a:hover { color: var(--ink); }
+  .menu { display: flex; flex-direction: column; gap: 5px; width: 30px; align-items: flex-end; }
+  .menu i { display: block; height: 1px; background: var(--ink); }
+  .menu i:nth-child(1) { width: 24px; } .menu i:nth-child(2) { width: 17px; } .menu i:nth-child(3) { width: 24px; }
+
+  .main { display: grid; grid-template-columns: 1fr 480px; gap: 56px; align-items: center; margin-top: 34px; }
+
+  /* ---------- hero ---------- */
+  .hero h1 {
+    font-family: var(--display); font-weight: 400; font-size: 62px; line-height: 1.08;
+    letter-spacing: -.01em; margin-bottom: 18px;
+  }
+  .hero h1 em { font-style: italic; color: var(--gold-deep); }
+  .hero p { color: var(--sub); font-size: 15px; line-height: 1.9; max-width: 420px; margin-bottom: 26px; }
+  .hero-meta { display: flex; align-items: center; gap: 14px; color: var(--sub); font-size: 12px; letter-spacing: .06em; }
+  .circle-cta {
+    width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--sub);
+    display: grid; place-items: center; color: var(--ink); text-decoration: none;
+  }
+  .facts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+  .fact {
+    font-size: 11px; letter-spacing: .04em; color: var(--sub);
+    border: 1px solid var(--line); border-radius: 999px; padding: 7px 13px;
+    background: rgba(245, 240, 235, .55);
+  }
+
+  /* ---------- chat card ---------- */
+  .chat {
+    background: rgba(245, 240, 235, .72);
+    border: 1px solid rgba(255, 255, 255, .55);
+    border-radius: 26px;
+    box-shadow: 0 30px 70px rgba(28, 24, 20, .12), inset 0 1px 0 rgba(255, 255, 255, .7);
+    backdrop-filter: blur(18px);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .chat-head { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+  .status { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--sub); letter-spacing: .08em; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #4C7F5A; box-shadow: 0 0 0 3px rgba(76,127,90,.16); }
+  .newchat { background: none; border: 0; color: var(--gold-deep); font-family: var(--body); font-size: 12px; font-weight: 500; cursor: pointer; }
+  .chat-body { padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+
+  .msg { display: flex; gap: 10px; }
+  .msg .avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex: 0 0 auto;
+    border: 1px solid var(--gold); color: var(--gold-deep);
+    display: grid; place-items: center;
+    font-family: var(--display); font-style: italic; font-size: 15px;
+  }
+  .msg .text { font-size: 13.5px; line-height: 1.85; padding-top: 3px; max-width: 300px; }
+  .msg.user { justify-content: flex-start; flex-direction: row-reverse; }
+  .msg.user .bubble {
+    background: var(--ink); color: var(--parchment);
+    padding: 11px 15px; border-radius: 16px 16px 16px 4px; max-width: 300px;
+    font-size: 13.5px; line-height: 1.75;
+  }
+
+  /* activity panel — <details> so it really opens and closes */
+  details.activity {
+    border-radius: 16px; background: rgba(255, 255, 255, .55);
+    border: 1px solid var(--line); overflow: hidden;
+  }
+  details.activity summary {
+    list-style: none; cursor: pointer; padding: 10px 12px;
+    display: flex; align-items: center; gap: 9px; font-size: 11.5px; color: var(--sub);
+  }
+  details.activity summary::-webkit-details-marker { display: none; }
+  details.activity .pulse {
+    width: 13px; height: 13px; border-radius: 50%;
+    border: 1.6px solid var(--gold); border-top-color: transparent; flex: 0 0 auto;
+  }
+  details.activity .step { color: var(--ink); }
+  details.activity .count { margin-inline-start: auto; font-size: 10.5px; color: var(--sub); }
+  details.activity .chev { transition: transform .25s; font-size: 13px; }
+  details[open].activity .chev { transform: rotate(180deg); }
+  .activity-body { padding: 4px 14px 14px; font-size: 11.5px; line-height: 1.9; color: var(--sub); }
+  .activity-body .label { color: var(--gold-deep); font-size: 10.5px; margin-bottom: 4px; }
+  .activity-body .reasoning { font-family: var(--display); font-size: 13px; color: var(--sub); margin-bottom: 12px; }
+  .activity-body .tool { display: flex; gap: 8px; margin-bottom: 6px; }
+  .activity-body .tool .mark { color: #4C7F5A; }
+  .activity-body .tool .name { color: var(--ink); font-size: 11.5px; }
+  .activity-body .tool .io { color: var(--sub); font-size: 11px; }
+
+  .chat-input { border-top: 1px solid var(--line); padding: 12px 16px 16px; background: rgba(255,255,255,.28); }
+  .model-chips { display: flex; gap: 7px; margin-bottom: 9px; overflow-x: auto; }
+  .chip {
+    font-size: 10.5px; padding: 5px 11px; border-radius: 999px;
+    background: rgba(255,255,255,.6); border: 1px solid var(--line); color: var(--sub); white-space: nowrap;
+  }
+  .chip.active { background: var(--gold); color: #231B10; border-color: transparent; }
+  .box {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255, 255, 255, .75); border: 1px solid rgba(28,24,20,.07);
+    border-radius: 16px; padding: 10px 13px;
+  }
+  .box:focus-within { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(176,138,93,.14); }
+  .box input { flex: 1; border: 0; background: none; outline: none; font-family: var(--body); font-size: 13px; color: var(--ink); }
+  .box input::placeholder { color: var(--sub); opacity: .75; }
+  .send { width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--ink); color: var(--parchment); cursor: pointer; display: grid; place-items: center; }
+
+  /* ---------- design system strip ---------- */
+  .system { margin-top: 64px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .card-system {
+    background: rgba(245, 240, 235, .6); border: 1px solid var(--line);
+    border-radius: 18px; padding: 18px;
+  }
+  .card-system h3 { font-family: var(--display); font-weight: 500; font-size: 18px; margin-bottom: 10px; }
+  .card-system p { font-size: 12px; line-height: 1.9; color: var(--sub); }
+  .swatches { display: flex; gap: 8px; margin-top: 12px; }
+  .sw { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); }
+  .icon-preview { display: flex; gap: 14px; align-items: center; margin-top: 12px; }
+  .icon-round {
+    width: 66px; height: 66px; border-radius: 50%; display: grid; place-items: center;
+    background: linear-gradient(180deg, #EFE6D8, #D8C8B0);
+    border: 1px solid rgba(28,24,20,.08);
+  }
+  .icon-round svg { width: 40px; height: 40px; }
+
+  footer { margin-top: 48px; color: var(--sub); font-size: 11.5px; text-align: center; line-height: 2; }
+
+  @media (max-width: 980px) {
+    .main { grid-template-columns: 1fr; gap: 34px; }
+    .hero h1 { font-size: 44px; }
+    .app { padding: 22px 20px 50px; }
+    .links { display: none; }
+    .system { grid-template-columns: 1fr; }
+    .pyramid { opacity: .55; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <div class="sun"></div>
+  <div class="pyramid"></div>
+  <div class="dune one"></div>
+  <div class="dune two"></div>
+</div>
+
+<div class="app">
+  <nav>
+    <div class="brand">
+      <div class="wordmark">A U R <b>A</b></div>
+      <div class="sand-line"></div>
+    </div>
+    <div class="links">
+      <a href="#chat">المحادثة</a>
+      <a href="#system">الوكيل</a>
+      <a href="#system">النماذج</a>
+      <a href="#system">الهوية</a>
+    </div>
+    <div class="menu"><i></i><i></i><i></i></div>
+  </nav>
+
+  <div class="main">
+    <section class="hero">
+      <h1>اكتشف<br /><em>مستقبل الذكاء.</em></h1>
+      <p>وكيل ذكاء اصطناعي بروح مصرية — يتذكّر ما تحدثتما فيه، يعمل داخل مجلدك على الهاتف، ويخبرك بما يفعله خطوة بخطوة.</p>
+      <div class="hero-meta">
+        <a class="circle-cta" href="#chat">↑</a>
+        <span>ابدأ محادثة — بعد اختيار النموذج</span>
+      </div>
+      <div class="facts">
+        <span class="fact">ذاكرة بين المحادثات</span>
+        <span class="fact">بحث · قراءة · كتابة</span>
+        <span class="fact">إعادة محاولة تلقائية</span>
+        <span class="fact">لوحة «ماذا يفعل الوكيل»</span>
+      </div>
+    </section>
+
+    <section class="chat" id="chat">
+      <div class="chat-head">
+        <div class="status"><span class="dot"></span> أورا متصل</div>
+        <button class="newchat">+ محادثة جديدة</button>
+      </div>
+
+      <div class="chat-body">
+        <div class="msg user">
+          <div class="bubble">لخّص لي الملفّين اللي في مجلد المشروع، وقارن بينهم.</div>
+        </div>
+
+        <div class="msg">
+          <div class="avatar">A</div>
+          <div class="text">
+            قرأت <b>notes/plan.md</b> و<b>notes/old-plan.md</b>. الاتجاه واحد لكن الخطة الجديدة تقسم العمل على ثلاث مراحل…
+          </div>
+        </div>
+
+        <details class="activity">
+          <summary>
+            <span class="pulse"></span>
+            <span class="step">يقرأ ملفًا · notes/old-plan.md</span>
+            <span class="count">٣ خطوات</span>
+            <span class="chev">⌄</span>
+          </summary>
+          <div class="activity-body">
+            <div class="label">يفكّر…</div>
+            <div class="reasoning">أحتاج أولًا الملفّين، ثم أستخرج الفروق وأرتّبها في ثلاث نقاط قبل الإجابة.</div>
+            <div class="label">الخطة</div>
+            <div>١. قراءة الملفّين &nbsp; ٢. استخراج الفروق &nbsp; ٣. صياغة المقارنة</div>
+            <div style="height:10px"></div>
+            <div class="tool"><span class="mark">✓</span><div><div class="name">يستعرض الملفات</div><div class="io">→ notes/ &nbsp;|&nbsp; ← plan.md، old-plan.md</div></div></div>
+            <div class="tool"><span class="mark">✓</span><div><div class="name">يقرأ ملفًا</div><div class="io">→ notes/plan.md &nbsp;|&nbsp; ← ٢٤٠ سطرًا</div></div></div>
+            <div class="tool"><span class="mark">✓</span><div><div class="name">يقرأ ملفًا</div><div class="io">→ notes/old-plan.md &nbsp;|&nbsp; ← ١٨٧ سطرًا</div></div></div>
+          </div>
+        </details>
+      </div>
+
+      <div class="chat-input">
+        <div class="model-chips">
+          <span class="chip">النماذج</span>
+          <span class="chip active">DeepSeek V4 Flash</span>
+          <span class="chip">GLM 5.3 Flash</span>
+          <span class="chip">MiniMax M2.7</span>
+        </div>
+        <div class="box">
+          <input placeholder="اكتب رسالتك… أو اطلب مهمة" />
+          <button class="send">↑</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="system" id="system">
+    <div class="card-system">
+      <h3>اللوحة</h3>
+      <p>رمال دافئة، ورق برشمان، حبر داكن، وذهب واحد فقط. لا أزرق ولا بنفسجي — كل شيء يخدم إحساس المتحف.</p>
+      <div class="swatches">
+        <span class="sw" style="background:#E8E0D5"></span>
+        <span class="sw" style="background:#F5F0EB"></span>
+        <span class="sw" style="background:#1C1814"></span>
+        <span class="sw" style="background:#B08A5D"></span>
+        <span class="sw" style="background:#4C7A6B"></span>
+      </div>
+    </div>
+
+    <div class="card-system">
+      <h3>الشعار</h3>
+      <p>هرم بواجهتين وشمس وأفق — نفس الشكل في أيقونة التطبيق وشاشة البداية ورأس المحادثة.</p>
+      <div class="icon-preview">
+        <div class="icon-round">
+          <svg viewBox="0 0 108 108" aria-label="AURA">
+            <circle cx="54" cy="26" r="7" fill="#B08A5D" />
+            <path d="M54 36 L28 80 H54 Z" fill="#C9A06A" />
+            <path d="M54 36 L80 80 H54 Z" fill="#7E5E38" />
+            <line x1="24" y1="86" x2="84" y2="86" stroke="#8A6A3F" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div style="font-family:var(--display); font-size:22px; letter-spacing:.3em;">A U R <span style="color:var(--gold)">A</span></div>
+      </div>
+    </div>
+
+    <div class="card-system">
+      <h3>الخطوط</h3>
+      <p>العناوين بخط مقطّع (Serif) يمنح إحساس الكتاب القديم، والنصوص بخط حديث واضح للقراءة الطويلة — بالعربية والإنجليزية.</p>
+      <div style="font-family:var(--display); font-size:26px; margin-top:10px;">الهرم الرابع</div>
+      <div style="font-family:var(--display); font-size:20px; font-style:italic; color:var(--gold-deep);">AURA · 2026</div>
+    </div>
+  </section>
+
+  <footer>
+    هذه الصفحة تعكس واجهة تطبيق أندرويد الفعلية (المرحلة 6): نفس الألوان، نفس الرموز، ونفس لوحة «ماذا يفعل الوكيل».<br />
+    الهوية الحقيقية داخل التطبيق مرسومة بـCanvas وVector — لا صور ولا خطوط تُنزَّل وقت التشغيل.
+  </footer>
+</div>
+
+</body>
+</html>

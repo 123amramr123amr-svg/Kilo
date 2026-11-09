@@ -30,11 +30,39 @@ jobs:
         with:
           packages: 'platforms;android-35 build-tools;35.0.0'
 
-      # Installs Gradle 8.9 directly, so no wrapper JAR has to be committed.
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
+      # Installs Gradle 8.9 directly (no wrapper JAR in the repo). The distribution
+      # host occasionally answers 504, which killed whole runs, so the download is
+      # retried and falls back to the runner's pre-installed Gradle.
+      - name: Install Gradle
+        env:
+          GRADLE_VERSION: '8.9'
+        run: |
+          set -uo pipefail
+          DEST="$RUNNER_TEMP/gradle"
+          mkdir -p "$DEST"
+          ok=0
+          for attempt in 1 2 3 4 5; do
+            if curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors \
+              --connect-timeout 20 --max-time 300 \
+              -o "$RUNNER_TEMP/gradle.zip" \
+              "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"; then
+              ok=1
+              break
+            fi
+            echo "Gradle download attempt ${attempt} failed, retrying..."
+            sleep $((attempt * 10))
+          done
+          if [ "$ok" = "1" ]; then
+            unzip -q -o "$RUNNER_TEMP/gradle.zip" -d "$DEST"
+            echo "$DEST/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+            "$DEST/gradle-${GRADLE_VERSION}/bin/gradle" --version
+          elif command -v gradle >/dev/null 2>&1; then
+            echo "::warning::Gradle download failed; falling back to the runner's Gradle."
+            gradle --version
+          else
+            echo "::error::Gradle could not be obtained"
+            exit 1
+          fi
 
       - name: Assemble debug APK
         continue-on-error: true

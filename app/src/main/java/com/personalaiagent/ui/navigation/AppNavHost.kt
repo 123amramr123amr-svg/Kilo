@@ -116,7 +116,7 @@ fun AppNavHost(
                     }
                     ChatScreen(
                         viewModel = chatViewModel,
-                        onOpenProviders = { navController.navigate(Routes.PROVIDER_EDIT) },
+                        onOpenProviders = { navController.navigate(Routes.providerEdit(null)) },
                         onOpenModels = {
                             navController.navigate(Routes.MODELS) {
                                 launchSingleTop = true

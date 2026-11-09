@@ -213,15 +213,21 @@ class FakeProviderRepository(
     private val availableModels: List<RemoteModel> = emptyList(),
     private val failUpdates: Boolean = false,
     private val failFetch: AppError? = null,
+    /** When true, an id that does not match [provider] resolves to null (deleted row). */
+    private val strictLookup: Boolean = false,
 ) : ProviderRepository {
 
     val updates = mutableListOf<Triple<String, ProviderDraft, String?>>()
+    val addedDrafts = mutableListOf<Pair<ProviderDraft, String>>()
     override fun observeProviders(): Flow<List<Provider>> = flowOf(listOfNotNull(provider))
     override fun observeProvider(id: String): Flow<Provider?> = flowOf(provider)
-    override suspend fun getProvider(id: String): Provider? = provider
+    override suspend fun getProvider(id: String): Provider? =
+        if (strictLookup && id != provider?.id) null else provider
     override suspend fun getDefaultProvider(): Provider? = provider
-    override suspend fun addProvider(draft: ProviderDraft, apiKey: String): Outcome<String> =
-        Outcome.Success("p-new")
+    override suspend fun addProvider(draft: ProviderDraft, apiKey: String): Outcome<String> {
+        addedDrafts += draft to apiKey
+        return Outcome.Success("p-new")
+    }
 
     override suspend fun updateProvider(id: String, draft: ProviderDraft, apiKey: String?): Outcome<Unit> {
         updates += Triple(id, draft, apiKey)

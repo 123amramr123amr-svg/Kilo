@@ -255,12 +255,17 @@ fun ProviderEditScreen(
                     },
                 )
 
-                Spacer(Modifier.height(12.dp))
-                InfoBanner(
-                    icon = Icons.Rounded.Lock,
-                    title = stringResource(R.string.providers_key_stored),
-                    body = stringResource(R.string.api_keys_body),
-                )
+                // Only claim a key is stored when one really is: this banner used to
+                // show up on a brand new provider and hid the fact that nothing was
+                // saved yet.
+                if (state.hasStoredKey) {
+                    Spacer(Modifier.height(12.dp))
+                    InfoBanner(
+                        icon = Icons.Rounded.Lock,
+                        title = stringResource(R.string.providers_key_stored),
+                        body = stringResource(R.string.api_keys_body),
+                    )
+                }
             }
 
             InfoBanner(

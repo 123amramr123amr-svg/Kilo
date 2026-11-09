@@ -64,17 +64,15 @@ jobs:
             exit 1
           fi
 
+      # A single jar can fail to download with a 502/504 from GitHub's release proxy
+      # or Maven Central; the wrapper retries only that case instead of failing the run.
       - name: Assemble debug APK
         continue-on-error: true
-        run: |
-          set -o pipefail
-          gradle :app:assembleDebug --console=plain --stacktrace 2>&1 | tee assemble.log || touch assemble.failed
+        run: bash .github/scripts/gradle-retry.sh assemble.log :app:assembleDebug || touch assemble.failed
 
       - name: Unit tests
         continue-on-error: true
-        run: |
-          set -o pipefail
-          gradle :app:testDebugUnitTest --console=plain --stacktrace 2>&1 | tee unit-tests.log || touch tests.failed
+        run: bash .github/scripts/gradle-retry.sh unit-tests.log :app:testDebugUnitTest || touch tests.failed
 
       # Surfaces compiler/test failures as check annotations, which stay readable
       # even when the raw Actions log archive is not reachable.

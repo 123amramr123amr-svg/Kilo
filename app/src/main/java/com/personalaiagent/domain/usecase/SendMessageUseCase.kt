@@ -30,6 +30,7 @@ import com.personalaiagent.domain.usecase.agent.AgentToolExecutor
 import com.personalaiagent.domain.usecase.agent.ToolContext
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -178,13 +179,18 @@ class SendMessageUseCase @Inject constructor(
 
         // ---- 3. Build prompt -------------------------------------------------
         val promptStep = taskRepository.startStep(taskId, TaskStepName.BUILD_PROMPT)
-        val history = chatRepository.getMessages(convId)
-            .filter { it.id != assistantId && it.content.isNotBlank() && it.status != MessageStatus.FAILED }
-            .takeLast(AppConstants.MAX_CONTEXT_MESSAGES)
+        // The whole conversation (bounded by count *and* size) so the model keeps
+        // knowing what was said earlier instead of losing the thread.
+        val history = historyFor(convId, assistantId)
+        val memory = memoryBlock(convId)
 
         val systemPrompt = buildString {
             if (model.params.systemPrompt.isNotBlank()) {
                 append(model.params.systemPrompt.trim())
+                append("\n\n")
+            }
+            if (memory.isNotBlank()) {
+                append(memory)
                 append("\n\n")
             }
             if (toolsEnabled) {
@@ -214,7 +220,11 @@ class SendMessageUseCase @Inject constructor(
         taskRepository.finishStep(
             promptStep,
             TaskStepStatus.SUCCEEDED,
-            detail = "${history.size} turns" + if (toolsEnabled) " · ${AgentToolCatalog.tools.size} tools" else "",
+            detail = buildString {
+                append("${history.size} turns")
+                if (memory.isNotBlank()) append(" · memory ${memory.length} chars")
+                if (toolsEnabled) append(" · ${AgentToolCatalog.tools.size} tools")
+            },
         )
 
         // ---- 4. Agent loop ---------------------------------------------------
@@ -249,20 +259,42 @@ class SendMessageUseCase @Inject constructor(
                 val roundText = StringBuilder()
                 val roundCalls = mutableListOf<ToolCall>()
 
-                clients.forKind(provider.kind).stream(request).collect { chunk ->
-                    when (chunk) {
-                        is ChatChunk.Delta -> if (chunk.text.isNotEmpty()) {
-                            roundText.append(chunk.text)
-                            emit(SendMessageEvent.Delta(chunk.text))
-                        }
+                // One silent retry for a transient failure (network blip, 429, 5xx)
+                // when nothing of this round was shown yet — no duplicated text.
+                var attempt = 0
+                while (true) {
+                    attempt++
+                    try {
+                        clients.forKind(provider.kind).stream(request).collect { chunk ->
+                            when (chunk) {
+                                is ChatChunk.Delta -> if (chunk.text.isNotEmpty()) {
+                                    roundText.append(chunk.text)
+                                    emit(SendMessageEvent.Delta(chunk.text))
+                                }
 
-                        is ChatChunk.Usage -> {
-                            tokensIn = chunk.tokenIn ?: tokensIn
-                            tokensOut = chunk.tokenOut ?: tokensOut
-                        }
+                                is ChatChunk.Usage -> {
+                                    tokensIn = chunk.tokenIn ?: tokensIn
+                                    tokensOut = chunk.tokenOut ?: tokensOut
+                                }
 
-                        is ChatChunk.ToolCallChunk -> roundCalls += chunk.call
-                        ChatChunk.Completed -> Unit
+                                is ChatChunk.ToolCallChunk -> roundCalls += chunk.call
+                                ChatChunk.Completed -> Unit
+                            }
+                        }
+                        break
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (e: Exception) {
+                        val error = (e as? ProviderException)?.error ?: e.toAppError()
+                        val canRetry = attempt < 2 && roundText.isEmpty() && roundCalls.isEmpty() &&
+                            error.isTransient()
+                        if (!canRetry) throw e
+                        taskRepository.finishStep(
+                            sendStep,
+                            TaskStepStatus.FAILED,
+                            detail = "retrying after ${error.describe()}",
+                        )
+                        delay(1_200)
                     }
                 }
 
@@ -293,7 +325,9 @@ class SendMessageUseCase @Inject constructor(
                 }
 
                 for (call in roundCalls) {
-                    val path = argumentOf(call, "path")
+                    // What the step touched: a file, a query, a link or a prompt.
+                    // This is what the chat shows in the agent panel.
+                    val path = detailOf(call)
                     val step = taskRepository.startStep(taskId, TaskStepName.EXECUTE_TOOL)
                     val result = toolExecutor.execute(
                         call,
@@ -362,12 +396,74 @@ class SendMessageUseCase @Inject constructor(
         }
     }
 
+    /** Recent turns of this conversation, capped by message count and by size. */
+    private suspend fun historyFor(conversationId: String, assistantId: String): List<ChatMessage> {
+        val all = chatRepository.getMessages(conversationId)
+            .filter { it.id != assistantId && it.content.isNotBlank() && it.status != MessageStatus.FAILED }
+            .takeLast(AppConstants.MAX_CONTEXT_MESSAGES)
+        var budget = AppConstants.MAX_CONTEXT_CHARS
+        val kept = ArrayDeque<ChatMessage>()
+        for (message in all.asReversed()) {
+            if (kept.isNotEmpty() && message.content.length > budget) break
+            budget -= message.content.length
+            kept.addFirst(message)
+        }
+        return kept.toList()
+    }
+
+    /**
+     * A short, local-only summary of what the user talked about before, so a new
+     * chat does not start from zero. Built from stored messages — no extra request,
+     * no cost, and nothing leaves the phone except into the user's own provider.
+     */
+    private suspend fun memoryBlock(currentConversationId: String?): String {
+        val previous = runCatching {
+            chatRepository.recentConversations(currentConversationId, AppConstants.MEMORY_CONVERSATIONS)
+        }.getOrDefault(emptyList())
+        if (previous.isEmpty()) return ""
+
+        val body = StringBuilder()
+        for (conversation in previous) {
+            val exchanges = runCatching {
+                chatRepository.getMessages(conversation.id)
+                    .filter { it.content.isNotBlank() && it.status != MessageStatus.FAILED }
+                    .takeLast(2)
+            }.getOrDefault(emptyList())
+            if (exchanges.isEmpty()) continue
+            val entry = StringBuilder()
+            entry.append("• ").append(conversation.title.take(60)).append('\n')
+            exchanges.forEach { message ->
+                val who = if (message.role == MessageRole.USER) "User" else "Assistant"
+                entry.append("  ").append(who).append(": ")
+                    .append(message.content.replace('\n', ' ').take(AppConstants.MEMORY_MESSAGE_CHARS))
+                    .append('\n')
+            }
+            if (body.length + entry.length > AppConstants.MEMORY_TOTAL_CHARS) break
+            body.append(entry)
+        }
+        if (body.isEmpty()) return ""
+        return buildString {
+            append("Earlier conversations on this device (background only; do not repeat them verbatim):")
+            append('\n')
+            append(body.toString().trim())
+        }
+    }
+
     private suspend fun resolveModel(preferredModelId: String?): AiModel? {
         preferredModelId?.let { id ->
             modelRepository.getModel(id)?.takeIf { it.enabled }?.let { return it }
         }
         modelRepository.getDefaultModel()?.takeIf { it.enabled }?.let { return it }
         return modelRepository.firstEnabledModel()
+    }
+
+    /** The most useful argument of a tool call, for the activity log and the UI. */
+    private fun detailOf(call: ToolCall): String = when (call.name) {
+        AgentToolCatalog.WEB_SEARCH -> argumentOf(call, "query")
+        AgentToolCatalog.OPEN_URL -> argumentOf(call, "url")
+        AgentToolCatalog.GENERATE_IMAGE -> argumentOf(call, "prompt")
+        AgentToolCatalog.OPEN_APP -> argumentOf(call, "app")
+        else -> argumentOf(call, "path")
     }
 
     /** Reads a string field from the tool-call arguments without failing on bad JSON. */
@@ -377,6 +473,13 @@ class SendMessageUseCase @Inject constructor(
             ?.let { (it as? JsonPrimitive)?.contentOrNull }
             .orEmpty()
     }.getOrDefault("")
+}
+
+/** Errors worth one automatic retry: they are usually momentary. */
+internal fun AppError.isTransient(): Boolean = when (this) {
+    AppError.Network, AppError.Timeout, AppError.RateLimit -> true
+    is AppError.Server -> code >= 500
+    else -> false
 }
 
 /** Stable, non-sensitive identifier for logs and the execution log screen. */

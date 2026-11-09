@@ -11,7 +11,10 @@ import com.personalaiagent.domain.repository.CredentialStore
 import com.personalaiagent.domain.repository.ModelRepository
 import com.personalaiagent.domain.repository.ProviderRepository
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -64,9 +67,19 @@ class ReviewDraftUseCase @Inject constructor(
             ),
         )
 
-        val response = runCatching {
-            clients.forKind(provider.kind).stream(request).toList()
-        }.getOrNull() ?: return fallback(text)
+        // The review is a convenience step, never a gate: if the provider is slow
+        // we stop waiting after a few seconds and send the message as written.
+        val response = try {
+            withTimeout(REVIEW_TIMEOUT_MS) {
+                clients.forKind(provider.kind).stream(request).toList()
+            }
+        } catch (timeout: TimeoutCancellationException) {
+            null
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            null
+        } ?: return fallback(text)
 
         val raw = response.filterIsInstance<ChatChunk.Delta>().joinToString("") { it.text }
         return parse(raw) ?: fallback(text)
@@ -165,6 +178,9 @@ class ReviewDraftUseCase @Inject constructor(
     }
 
     companion object {
+        /** Long enough for a fast answer, short enough never to feel like a hang. */
+        private const val REVIEW_TIMEOUT_MS = 6_000L
+
         private val FILE_HINTS = listOf(
             "ملف", "ملفات", "مجلد", "اكتب", "أنشئ", "انشئ", "عدّل", "عدل", "احفظ",
             "file", "folder", "write", "create", "edit", "save", "report", "تقرير",

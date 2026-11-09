@@ -35,6 +35,13 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun getMessages(conversationId: String): List<ChatMessage> =
         messageDao.getByConversation(conversationId).map { it.toDomain() }
 
+    override suspend fun recentConversations(
+        excludeConversationId: String?,
+        limit: Int,
+    ): List<Conversation> =
+        conversationDao.getRecent(excludeConversationId ?: "", limit.coerceIn(1, 10))
+            .map { it.toDomain() }
+
     override suspend fun createConversation(
         title: String,
         providerId: String?,

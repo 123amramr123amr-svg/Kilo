@@ -3,11 +3,17 @@ package com.personalaiagent.ui.screens.chat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +33,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -37,6 +44,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.AddComment
 import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
@@ -74,9 +83,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -106,6 +117,9 @@ import com.personalaiagent.ui.theme.BrandSuccess
 import com.personalaiagent.ui.theme.BrandWarning
 import com.personalaiagent.ui.theme.LocalBrand
 import com.personalaiagent.ui.util.appErrorText
+import com.personalaiagent.domain.usecase.agent.ToolActivityUi
+import com.personalaiagent.domain.model.AiModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun ChatScreen(
@@ -144,9 +158,17 @@ fun ChatScreen(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri -> uri?.let(viewModel::attach) }
 
-    LaunchedEffect(state.messages.size, state.streamingText.length) {
-        if (state.messages.isNotEmpty()) {
-            listState.animateScrollToItem(state.messages.lastIndex)
+    // Follow the conversation without fighting the user. A new message scrolls
+    // smoothly; streamed text only jumps when the user is already at the bottom,
+    // and never restarts an animation on every token (that was the stutter).
+    LaunchedEffect(state.messages.size) {
+        if (state.messages.isNotEmpty()) listState.animateScrollToItem(state.messages.lastIndex)
+    }
+    LaunchedEffect(state.streamingText) {
+        if (state.streamingText.isEmpty() || state.messages.isEmpty()) return@LaunchedEffect
+        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+        if (lastVisible >= state.messages.lastIndex - 1) {
+            listState.scrollToItem(state.messages.lastIndex)
         }
     }
 
@@ -180,7 +202,7 @@ fun ChatScreen(
                             leadingIcon = { Icon(Icons.Rounded.AddComment, contentDescription = null) },
                             onClick = {
                                 showMenu = false
-                                viewModel.newChat()
+                                viewModel.requestNewChat()
                             },
                         )
                         DropdownMenuItem(
@@ -266,7 +288,8 @@ fun ChatScreen(
 
                 state.messages.isEmpty() -> EmptyChatState(
                     modifier = Modifier.align(Alignment.Center),
-                    onOpenModels = onOpenModels,
+                    onPickModel = viewModel::openModelPicker,
+                    onManageModels = onOpenModels,
                 )
 
                 else -> LazyColumn(
@@ -278,12 +301,14 @@ fun ChatScreen(
                     items(state.messages.size, key = { state.messages[it].id }) { index ->
                         val message = state.messages[index]
                         val streaming = message.id == state.streamingMessageId
-                        MessageBubble(
-                            message = message,
-                            streaming = streaming,
-                            streamingText = state.streamingText,
-                            onRetry = viewModel::retryLastMessage,
-                        )
+                        Box(modifier = Modifier.animateItem()) {
+                            MessageBubble(
+                                message = message,
+                                streaming = streaming,
+                                streamingText = state.streamingText,
+                                onRetry = viewModel::retryLastMessage,
+                            )
+                        }
                     }
                 }
             }
@@ -293,36 +318,13 @@ fun ChatScreen(
             PlanCard(plan = state.plan, running = state.isGenerating)
         }
 
-        AnimatedVisibility(visible = state.toolActivity.isNotEmpty()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.chat_tools_title),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                state.toolActivity.takeLast(4).forEach { activity ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = if (activity.ok) Icons.Rounded.TaskAlt else Icons.Rounded.Error,
-                            contentDescription = null,
-                            tint = if (activity.ok) BrandSuccess else MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(12.dp),
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = "${activity.toolName} ${activity.detail}".trim(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                        )
-                    }
-                }
-            }
-        }
+        // The arrow the user asked for: one tap shows what the agent is doing
+        // (searching, reading, writing) and where it is doing it.
+        AgentActivityPanel(
+            activities = state.toolActivity,
+            plan = state.plan,
+            running = state.isGenerating,
+        )
 
         AnimatedVisibility(visible = state.workspaceName == null && state.messages.isEmpty()) {
             Row(
@@ -379,6 +381,16 @@ fun ChatScreen(
             },
             onRemoveAttachment = viewModel::removeAttachment,
             onToggleReview = viewModel::toggleReviewFirst,
+        )
+    }
+
+    if (state.showModelPicker) {
+        ModelPickerDialog(
+            models = state.models,
+            selectedId = state.activeModel?.id,
+            startingNewChat = state.pickerStartsNewChat,
+            onPick = viewModel::chooseModel,
+            onDismiss = viewModel::dismissModelPicker,
         )
     }
 
@@ -441,7 +453,11 @@ private fun SetupProvidersCard(onOpenProviders: () -> Unit, modifier: Modifier =
 }
 
 @Composable
-private fun EmptyChatState(modifier: Modifier = Modifier, onOpenModels: () -> Unit) {
+private fun EmptyChatState(
+    modifier: Modifier = Modifier,
+    onPickModel: () -> Unit,
+    onManageModels: () -> Unit,
+) {
     Column(
         modifier = modifier.padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -450,53 +466,275 @@ private fun EmptyChatState(modifier: Modifier = Modifier, onOpenModels: () -> Un
             icon = Icons.Rounded.Lightbulb,
             title = stringResource(R.string.chat_empty_title),
             body = stringResource(R.string.chat_empty_body),
-            actionLabel = stringResource(R.string.chat_model_picker),
-            onAction = onOpenModels,
+            actionLabel = stringResource(R.string.chat_empty_choose_model),
+            onAction = onPickModel,
         )
+        Spacer(Modifier.height(6.dp))
+        TextButton(onClick = onManageModels) {
+            Text(stringResource(R.string.chat_model_picker), style = MaterialTheme.typography.labelMedium)
+        }
     }
 }
 
-/** The checklist the agent committed to before starting. */
+/**
+ * "What is the agent doing?" — a single compact row with an arrow. Collapsed it
+ * shows the current step; tapping it reveals the plan and every step taken, with
+ * the file, query or app it touched.
+ */
 @Composable
-private fun PlanCard(plan: List<String>, running: Boolean) {
-    SectionCard(
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+private fun AgentActivityPanel(
+    activities: List<ToolActivityUi>,
+    plan: List<String>,
+    running: Boolean,
+) {
+    if (activities.isEmpty() && plan.isEmpty()) return
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    // Open by itself when real work starts, so the user sees activity without
+    // having to look for it; they can collapse it at any time.
+    LaunchedEffect(running, activities.size) {
+        if (running && activities.isNotEmpty()) expanded = true
+    }
+    val arrow by animateFloatAsState(if (expanded) 180f else 0f, label = "agent-arrow")
+    val latest = activities.lastOrNull()
+    val latestLabel = if (latest == null) {
+        stringResource(R.string.agent_activity_empty)
+    } else {
+        val label = toolLabel(latest.toolName)
+        if (latest.detail.isBlank()) label else "$label · ${latest.detail}"
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 2.dp)
+            .animateContentSize(),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Rounded.TaskAlt, contentDescription = null, tint = BrandCyan, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.chat_plan_title),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-            Tag(
-                text = stringResource(
-                    if (running) R.string.chat_plan_running else R.string.chat_plan_done,
-                ),
-                color = if (running) BrandWarning else BrandSuccess,
-            )
-        }
-        plan.take(6).forEachIndexed { index, step ->
-            Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)) {
-                Text(
-                    text = "${index + 1}.",
-                    style = MaterialTheme.typography.labelSmall,
+            if (running) {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(15.dp),
                     color = MaterialTheme.colorScheme.primary,
                 )
-                Spacer(Modifier.width(8.dp))
+            } else {
+                Icon(
+                    Icons.Rounded.TaskAlt,
+                    contentDescription = null,
+                    tint = BrandSuccess,
+                    modifier = Modifier.size(15.dp),
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = step,
-                    style = MaterialTheme.typography.bodySmall,
+                    text = stringResource(
+                        if (running) R.string.agent_activity_running else R.string.agent_activity_done,
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = latestLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (activities.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.agent_activity_steps, activities.size),
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            Icon(
+                imageVector = Icons.Rounded.ExpandMore,
+                contentDescription = stringResource(
+                    if (expanded) R.string.agent_activity_hide else R.string.agent_activity_show,
+                ),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp).rotate(arrow),
+            )
+        }
+
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically(),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .heightIn(max = 220.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                if (plan.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.agent_activity_plan),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    plan.forEachIndexed { index, step ->
+                        Text(
+                            text = "${index + 1}. $step",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 2.dp, top = 2.dp),
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+                activities.forEach { activity ->
+                    Row(
+                        modifier = Modifier.padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Icon(
+                            imageVector = if (activity.ok) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline,
+                            contentDescription = stringResource(
+                                if (activity.ok) R.string.chat_tool_done else R.string.chat_tool_failed,
+                            ),
+                            tint = if (activity.ok) BrandSuccess else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(13.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = toolLabel(activity.toolName),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            if (activity.detail.isNotBlank()) {
+                                Text(
+                                    text = activity.detail,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
+}
+
+/** Human label for an agent tool: "Reading a file", not "read_file". */
+@Composable
+private fun toolLabel(toolName: String): String = stringResource(
+    when (toolName) {
+        "list_files" -> R.string.tool_list_files
+        "read_file" -> R.string.tool_read_file
+        "write_file" -> R.string.tool_write_file
+        "append_file" -> R.string.tool_append_file
+        "create_folder" -> R.string.tool_create_folder
+        "delete_path" -> R.string.tool_delete_path
+        "list_apps" -> R.string.tool_list_apps
+        "open_app" -> R.string.tool_open_app
+        "web_search" -> R.string.tool_web_search
+        "open_url" -> R.string.tool_open_url
+        "generate_image" -> R.string.tool_generate_image
+        else -> R.string.tool_generic
+    },
+)
+
+/** The "which model?" sheet: shown before a new chat and when switching mid-chat. */
+@Composable
+private fun ModelPickerDialog(
+    models: List<AiModel>,
+    selectedId: String?,
+    startingNewChat: Boolean,
+    onPick: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.chat_model_pick_title)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(
+                        if (startingNewChat) R.string.chat_model_pick_new_body else R.string.chat_model_pick_switch_body,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(10.dp))
+                LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
+                    items(models, key = { it.id }) { model ->
+                        val active = model.id == selectedId
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.medium)
+                                .background(
+                                    if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+                                    else Color.Transparent,
+                                )
+                                .clickable { onPick(model.id) }
+                                .padding(horizontal = 8.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Rounded.Memory,
+                                contentDescription = null,
+                                tint = if (active) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = model.displayName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = model.providerName,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (model.isDefault) {
+                                Tag(text = stringResource(R.string.chat_model_default_tag), color = BrandCyan)
+                            } else if (active) {
+                                Icon(
+                                    Icons.Rounded.CheckCircle,
+                                    contentDescription = stringResource(R.string.models_active),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = MaterialTheme.shapes.large,
+        tonalElevation = 0.dp,
+    )
 }
 
 @Composable

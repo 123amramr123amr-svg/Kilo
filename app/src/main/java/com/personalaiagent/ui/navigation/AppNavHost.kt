@@ -1,6 +1,18 @@
 package com.personalaiagent.ui.navigation
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
@@ -89,10 +101,28 @@ fun AppNavHost(
                 }
             },
         ) { innerPadding ->
+            // Explicit, short transitions: the default cut between screens felt
+            // abrupt and made every tap read as a jump.
             NavHost(
                 navController = navController,
                 startDestination = if (settings.onboardingCompleted) Routes.CHAT else Routes.ONBOARDING,
                 modifier = Modifier.padding(innerPadding),
+                enterTransition = {
+                    fadeIn(tween(220, easing = FastOutSlowInEasing)) +
+                        slideInHorizontally(tween(260, easing = FastOutSlowInEasing)) { it / 12 }
+                },
+                exitTransition = {
+                    fadeOut(tween(160, easing = FastOutSlowInEasing)) +
+                        slideOutHorizontally(tween(200, easing = FastOutSlowInEasing)) { -it / 16 }
+                },
+                popEnterTransition = {
+                    fadeIn(tween(200, easing = FastOutSlowInEasing)) +
+                        slideInHorizontally(tween(240, easing = FastOutSlowInEasing)) { -it / 12 }
+                },
+                popExitTransition = {
+                    fadeOut(tween(160, easing = FastOutSlowInEasing)) +
+                        slideOutHorizontally(tween(200, easing = FastOutSlowInEasing)) { it / 16 }
+                },
             ) {
                 composable(Routes.ONBOARDING) {
                     OnboardingScreen(

@@ -461,4 +461,30 @@
     <string name="providers_models_saved_title">تم حفظ النماذج وتفعيلها</string>
     <string name="providers_models_saved_body">%1$d نموذجًا ستظهر الآن في اختيار النماذج وفي شريط المحادثة.</string>
     <string name="providers_models_apply_save">حفظ وتطبيق</string>
+
+    <!-- Phase 5: model picker + agent activity -->
+    <string name="chat_model_pick_title">اختر النموذج</string>
+    <string name="chat_model_pick_new_body">سيبدأ الوكيل هذه المحادثة بالنموذج الذي تختاره، ويظل به حتى تغيّره.</string>
+    <string name="chat_model_pick_switch_body">بدّل النموذج الذي يرد على رسائلك.</string>
+    <string name="chat_model_default_tag">الافتراضي</string>
+    <string name="chat_empty_choose_model">اختر نموذجًا لهذه المحادثة</string>
+    <string name="agent_activity_running">الوكيل يعمل…</string>
+    <string name="agent_activity_done">ما فعله الوكيل</string>
+    <string name="agent_activity_show">اعرض ما يفعله الوكيل</string>
+    <string name="agent_activity_hide">أخفِ التفاصيل</string>
+    <string name="agent_activity_steps">%1$d خطوة</string>
+    <string name="agent_activity_plan">الخطة</string>
+    <string name="agent_activity_empty">لم يبدأ الوكيل بأي خطوة بعد.</string>
+    <string name="tool_list_files">يستعرض الملفات</string>
+    <string name="tool_read_file">يقرأ ملفًا</string>
+    <string name="tool_write_file">يكتب ملفًا</string>
+    <string name="tool_append_file">يضيف إلى ملف</string>
+    <string name="tool_create_folder">ينشئ مجلدًا</string>
+    <string name="tool_delete_path">يحذف عنصرًا</string>
+    <string name="tool_list_apps">يستعرض التطبيقات</string>
+    <string name="tool_open_app">يفتح تطبيقًا</string>
+    <string name="tool_web_search">يبحث في الويب</string>
+    <string name="tool_open_url">يفتح رابطًا</string>
+    <string name="tool_generate_image">يرسم صورة</string>
+    <string name="tool_generic">ينفّذ خطوة</string>
 </resources>

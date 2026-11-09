@@ -8,6 +8,21 @@ object AppConstants {
     /** Maximum number of previous turns sent back to the model. */
     const val MAX_CONTEXT_MESSAGES = 30
 
+    /** Soft cap on the characters of history sent in one request (~6k tokens). */
+    const val MAX_CONTEXT_CHARS = 24_000
+
+    /** How many earlier conversations are summarised into the system prompt. */
+    const val MEMORY_CONVERSATIONS = 3
+
+    /** Characters of each remembered message. */
+    const val MEMORY_MESSAGE_CHARS = 180
+
+    /** Total characters of the cross-conversation memory block. */
+    const val MEMORY_TOTAL_CHARS = 900
+
+    /** A run with no event for this long is aborted instead of hanging forever. */
+    const val RUN_STALL_TIMEOUT_MS = 120_000L
+
     /** Backups produced by this app version. */
     const val BACKUP_SCHEMA_VERSION = 1
 

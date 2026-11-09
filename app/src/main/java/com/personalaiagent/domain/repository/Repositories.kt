@@ -129,6 +129,13 @@ interface ChatRepository {
     fun observeLatestConversation(): Flow<Conversation?>
     suspend fun getConversation(id: String): Conversation?
     suspend fun getMessages(conversationId: String): List<ChatMessage>
+
+    /**
+     * The most recently used conversations, newest first, excluding
+     * [excludeConversationId]. Used to give a fresh chat some memory of what the
+     * user talked about before.
+     */
+    suspend fun recentConversations(excludeConversationId: String?, limit: Int = 3): List<Conversation>
     suspend fun createConversation(title: String, providerId: String?, modelId: String?): String
     suspend fun updateConversationModel(id: String, providerId: String?, modelId: String?)
     suspend fun appendMessage(message: ChatMessage)

@@ -109,6 +109,14 @@ class FakeChatRepository : ChatRepository {
     override suspend fun getMessages(conversationId: String): List<ChatMessage> =
         messages.filter { it.conversationId == conversationId }
 
+    override suspend fun recentConversations(
+        excludeConversationId: String?,
+        limit: Int,
+    ): List<Conversation> = conversations
+        .filter { it.id != excludeConversationId }
+        .sortedByDescending { it.updatedAt }
+        .take(limit)
+
     override suspend fun createConversation(title: String, providerId: String?, modelId: String?): String {
         val id = "conv-${++idCounter}"
         conversations += Conversation(id, title, 1000L, 1000L, providerId, modelId)
@@ -302,13 +310,18 @@ class FakeModelRepository(
 class FakeProviderClient(
     private val chunks: List<ChatChunk> = listOf(ChatChunk.Delta("Hello"), ChatChunk.Completed),
     private val failure: AppError? = null,
+    /** Fails this many calls with [transientFailure] before answering normally. */
+    private val failingCalls: Int = 0,
+    private val transientFailure: AppError = AppError.Network,
 ) : ProviderClient {
 
     val requests = mutableListOf<ChatRequest>()
 
     override fun stream(request: ChatRequest): Flow<ChatChunk> {
         requests += request
+        val attempt = requests.size
         return kotlinx.coroutines.flow.flow {
+            if (attempt <= failingCalls) throw com.personalaiagent.data.remote.ProviderException(transientFailure)
             failure?.let { throw com.personalaiagent.data.remote.ProviderException(it) }
             chunks.forEach { emit(it) }
         }

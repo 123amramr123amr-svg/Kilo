@@ -58,6 +58,10 @@ data class ChatUiState(
     val reviewAnswers: Map<Int, String> = emptyMap(),
     val attachments: List<Attachment> = emptyList(),
     val isAttaching: Boolean = false,
+    /** Model sheet, shown before a new chat starts or when switching models. */
+    val showModelPicker: Boolean = false,
+    /** true when confirming the sheet must start a fresh conversation. */
+    val pickerStartsNewChat: Boolean = false,
 ) {
     val canSend: Boolean get() = (input.isNotBlank() || attachments.isNotEmpty()) &&
         activeModel != null && !isGenerating && !isReviewing
@@ -66,6 +70,9 @@ data class ChatUiState(
 sealed interface ChatEvent {
     data class SpeakAnswer(val text: String) : ChatEvent
 }
+
+/** Below this length the review step is skipped: there is nothing to clarify. */
+private const val MIN_REVIEW_LENGTH = 12
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -261,7 +268,9 @@ class ChatViewModel @Inject constructor(
             execute(text = "", plan = emptyList())
             return
         }
-        if (!state.reviewFirst) {
+        // A one-line request has nothing to clarify; skipping the review here saves
+        // a whole round trip and makes short questions feel instant.
+        if (!state.reviewFirst || text.length < MIN_REVIEW_LENGTH) {
             execute(text = text, plan = emptyList())
             return
         }
@@ -321,6 +330,36 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(isGenerating = false) }
     }
 
+    /** Toolbar action: ask which model to use, then start the conversation with it. */
+    fun requestNewChat() {
+        if (_uiState.value.models.isEmpty()) {
+            newChat()
+            return
+        }
+        _uiState.update { it.copy(showModelPicker = true, pickerStartsNewChat = true) }
+    }
+
+    /** Opens the same sheet without starting a new conversation. */
+    fun openModelPicker() {
+        _uiState.update { it.copy(showModelPicker = true, pickerStartsNewChat = false) }
+    }
+
+    fun dismissModelPicker() {
+        _uiState.update { it.copy(showModelPicker = false, pickerStartsNewChat = false) }
+    }
+
+    /**
+     * Confirms the model for the conversation. The choice becomes the default for
+     * later launches, so the agent keeps working with the model you picked.
+     */
+    fun chooseModel(modelId: String) {
+        val startNew = _uiState.value.pickerStartsNewChat
+        selectedModelId.value = modelId
+        _uiState.update { it.copy(showModelPicker = false, pickerStartsNewChat = false) }
+        viewModelScope.launch { runCatching { modelRepository.setDefault(modelId) } }
+        if (startNew) newChat()
+    }
+
     fun newChat() {
         runController.stop()
         followLatestConversation = false
@@ -374,12 +413,17 @@ class ChatViewModel @Inject constructor(
                 attachments = emptyList(),
             )
         }
-        runController.start(
+        val started = runController.start(
             conversationId = if (followLatestConversation) conversationId.value else null,
             text = text.ifBlank { attachments.firstOrNull()?.sourceLabel ?: "الملف المرفق" },
             modelId = selectedModelId.value ?: state.activeModel?.id,
             plan = plan,
             attachments = attachments,
         )
+        if (!started) {
+            // A run is already active. Never leave the composer spinning for a
+            // message that was never sent.
+            _uiState.update { it.copy(isGenerating = false, streamingText = "") }
+        }
     }
 }

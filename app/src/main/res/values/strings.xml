@@ -461,4 +461,30 @@
     <string name="providers_models_saved_title">Models saved and enabled</string>
     <string name="providers_models_saved_body">%1$d model(s) will appear in the model picker and the chat bar right away.</string>
     <string name="providers_models_apply_save">Save and apply</string>
+
+    <!-- Phase 5: model picker + agent activity -->
+    <string name="chat_model_pick_title">Choose a model</string>
+    <string name="chat_model_pick_new_body">The agent will start this conversation with the model you pick and stay with it until you change it.</string>
+    <string name="chat_model_pick_switch_body">Switch the model that answers your messages.</string>
+    <string name="chat_model_default_tag">Default</string>
+    <string name="chat_empty_choose_model">Pick a model for this conversation</string>
+    <string name="agent_activity_running">The agent is working…</string>
+    <string name="agent_activity_done">What the agent did</string>
+    <string name="agent_activity_show">Show what the agent is doing</string>
+    <string name="agent_activity_hide">Hide details</string>
+    <string name="agent_activity_steps">%1$d steps</string>
+    <string name="agent_activity_plan">Plan</string>
+    <string name="agent_activity_empty">The agent has not started a step yet.</string>
+    <string name="tool_list_files">Listing files</string>
+    <string name="tool_read_file">Reading a file</string>
+    <string name="tool_write_file">Writing a file</string>
+    <string name="tool_append_file">Appending to a file</string>
+    <string name="tool_create_folder">Creating a folder</string>
+    <string name="tool_delete_path">Deleting an item</string>
+    <string name="tool_list_apps">Listing apps</string>
+    <string name="tool_open_app">Opening an app</string>
+    <string name="tool_web_search">Searching the web</string>
+    <string name="tool_open_url">Opening a link</string>
+    <string name="tool_generate_image">Generating an image</string>
+    <string name="tool_generic">Working</string>
 </resources>

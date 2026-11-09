@@ -131,6 +131,10 @@ interface ConversationDao {
     @Query("SELECT * FROM conversations ORDER BY createdAt ASC")
     suspend fun getAll(): List<ConversationEntity>
 
+    /** Newest conversations first, for the cross-conversation memory block. */
+    @Query("SELECT * FROM conversations WHERE id != :excludeId ORDER BY updatedAt DESC LIMIT :limit")
+    suspend fun getRecent(excludeId: String, limit: Int): List<ConversationEntity>
+
     @Query("SELECT * FROM conversations WHERE id = :id")
     suspend fun getById(id: String): ConversationEntity?
 

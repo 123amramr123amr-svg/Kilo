@@ -152,4 +152,38 @@ class ProviderEditViewModelTest {
         assertEquals(models, modelRepository.storedCatalogs.single().second)
         assertEquals(0, modelRepository.refreshCalls)
     }
+
+    @Test
+    fun `saving after editing only the URL re-reads the catalog`() = runTest(dispatcher) {
+        // A different base URL invalidates the cached models, so a save without a
+        // freshly fetched list has to ask the new endpoint.
+        val providerRepository = FakeProviderRepository(SampleData.provider())
+        val modelRepository = FakeModelRepository(SampleData.model())
+        val viewModel = viewModel(providerRepository, modelRepository)
+        advanceUntilIdle()
+
+        viewModel.onBaseUrlChange("https://inference.dahl.global/v1")
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertEquals(1, modelRepository.refreshCalls)
+        assertEquals(0, modelRepository.storedCatalogs.size)
+        assertEquals("https://inference.dahl.global/v1", providerRepository.updates.single().second.baseUrl)
+        assertNull(viewModel.uiState.value.fetchError)
+    }
+
+    @Test
+    fun `a failed re-read keeps the user on the screen with the reason`() = runTest(dispatcher) {
+        val providerRepository = FakeProviderRepository(SampleData.provider())
+        val modelRepository = FakeModelRepository(SampleData.model(), failRefresh = AppError.HttpNotFound)
+        val viewModel = viewModel(providerRepository, modelRepository)
+        advanceUntilIdle()
+
+        viewModel.onBaseUrlChange("https://wrong.example/v1")
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertEquals(AppError.HttpNotFound, viewModel.uiState.value.fetchError)
+        assertEquals(false, viewModel.uiState.value.isSaving)
+    }
 }

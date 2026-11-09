@@ -252,7 +252,10 @@ class FakeProviderRepository(
     }
 }
 
-class FakeModelRepository(private var model: AiModel?) : ModelRepository {
+class FakeModelRepository(
+    private var model: AiModel?,
+    private val failRefresh: AppError? = null,
+) : ModelRepository {
 
     val storedCatalogs = mutableListOf<Pair<String, List<RemoteModel>>>()
     var refreshCalls: Int = 0
@@ -269,6 +272,7 @@ class FakeModelRepository(private var model: AiModel?) : ModelRepository {
 
     override suspend fun refreshCatalog(providerId: String): Outcome<CatalogSyncResult> {
         refreshCalls++
+        failRefresh?.let { return Outcome.Failure(it) }
         return Outcome.Success(CatalogSyncResult(0, fromRemote = true))
     }
 

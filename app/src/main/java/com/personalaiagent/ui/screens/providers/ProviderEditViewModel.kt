@@ -217,11 +217,18 @@ class ProviderEditViewModel @Inject constructor(
                                     state.fetchedModels.map { it.remoteId }.toSet()
                                 },
                             )
-                        } else if (state.apiKey.isNotBlank()) {
-                            // Credentials changed but no catalog on screen: ask the provider.
+                        } else {
+                            // No catalog on screen: ask the provider. Changing only the
+                            // base URL also drops the cached models, so this runs even
+                            // when the key itself was not edited.
                             val sync = modelRepository.refreshCatalog(state.providerId)
                             if (sync is com.personalaiagent.core.Outcome.Failure) {
-                                _uiState.update { current -> current.copy(fetchError = sync.error) }
+                                // Stay on the screen so the failure is visible instead of
+                                // navigating away from a provider with zero models.
+                                _uiState.update { current ->
+                                    current.copy(isSaving = false, fetchError = sync.error)
+                                }
+                                return@fold
                             }
                         }
                         _uiState.update { current -> current.copy(isSaving = false, apiKey = "") }

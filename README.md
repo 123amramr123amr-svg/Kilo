@@ -161,4 +161,7 @@ compatibility constraints and the list of known limitations,
 [`docs/PHASE2.md`](docs/PHASE2.md) for the fetch-models flow and the workspace agent
 (tool schemas, agent loop, safety rules), and
 [`docs/PHASE3.md`](docs/PHASE3.md) for the light theme, planning/questions flow,
-background runs, app/URL tools, image & PDF support and image generation.
+background runs, app/URL tools, image & PDF support and image generation, and
+[`docs/PHASE4.md`](docs/PHASE4.md) for the provider/model-saving fixes (real HTTP
+status codes instead of a generic error, applying model ticks without a second
+network call).

@@ -85,4 +85,8 @@ class SettingsViewModel @Inject constructor(
     fun setReviewRequests(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setReviewRequests(enabled) }
     }
+
+    fun setShowAgentActivity(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setShowAgentActivity(enabled) }
+    }
 }

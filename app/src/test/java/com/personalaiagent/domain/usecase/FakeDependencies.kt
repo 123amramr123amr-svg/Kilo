@@ -86,6 +86,8 @@ class FakeSettingsRepository(
         update { it.copy(agentFileToolsEnabled = enabled) }
     override suspend fun setReviewRequests(enabled: Boolean) =
         update { it.copy(reviewRequests = enabled) }
+    override suspend fun setShowAgentActivity(enabled: Boolean) =
+        update { it.copy(showAgentActivity = enabled) }
     override suspend fun clearAll() = update { AppSettings() }
 
     private fun update(transform: (AppSettings) -> AppSettings) {

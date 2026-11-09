@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en">
 
-    <string name="app_name">Personal AI Agent</string>
-    <string name="app_tagline">Your on-device AI assistant</string>
+    <string name="app_name">AURA</string>
+    <string name="app_tagline">An AI agent with an Egyptian soul</string>
 
     <!-- Global actions -->
     <string name="action_start">Start now</string>
@@ -34,7 +34,7 @@
     <string name="cd_back">Back</string>
 
     <!-- Onboarding -->
-    <string name="onboarding_headline">Personal AI Agent</string>
+    <string name="onboarding_headline">AURA</string>
     <string name="onboarding_subheadline">The smart assistant that works from your device</string>
     <string name="onboarding_language_title">Choose your language</string>
     <string name="onboarding_language_body">The interface and the assistant replies use this language. You can change it later from Settings.</string>
@@ -444,7 +444,7 @@
     <string name="review_improved_title">Sharper version of your request</string>
     <string name="review_start">Start the task</string>
     <string name="review_send_as_is">Send as is</string>
-    <string name="agent_run_notification_title">Personal AI Agent is working</string>
+    <string name="agent_run_notification_title">AURA is working</string>
     <string name="agent_run_notification_body">Your task continues in the background</string>
     <string name="agent_run_channel">Agent runs</string>
     <string name="attachment_failed">The file could not be read</string>
@@ -487,4 +487,10 @@
     <string name="tool_open_url">Opening a link</string>
     <string name="tool_generate_image">Generating an image</string>
     <string name="tool_generic">Working</string>
+    <string name="settings_agent_activity">Agent activity</string>
+    <string name="settings_agent_activity_body">Shows what the agent is doing in the chat — thinking, searching, reading, writing. You can hide it any time.</string>
+    <string name="agent_thinking">Thinking…</string>
+    <string name="agent_activity_hide_all">Hide the agent-activity panel (turn it back on in Settings)</string>
+    <string name="chat_pick_model_cta">Choose the model</string>
+    <string name="chat_continue_answer">Continue the answer</string>
 </resources>

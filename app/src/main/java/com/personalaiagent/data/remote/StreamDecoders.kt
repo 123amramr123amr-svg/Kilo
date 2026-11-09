@@ -26,6 +26,11 @@ class OpenAiStreamDecoder(private val json: Json) {
         }
         lastToolCallDeltas = chunk.choices.firstOrNull()?.delta?.toolCalls.orEmpty()
 
+        // "Thinking" models stream their reasoning first; surface it separately so
+        // the chat can show it in the activity panel and never mix it into the answer.
+        val reasoning = chunk.choices.firstOrNull()?.delta?.let { it.reasoningContent ?: it.reasoning }
+        if (!reasoning.isNullOrEmpty()) return ChatChunk.Reasoning(reasoning)
+
         val usage = chunk.usage
         if (usage?.promptTokens != null || usage?.completionTokens != null) {
             // Usage arrives on its own final chunk in OpenAI streams; emit text first.

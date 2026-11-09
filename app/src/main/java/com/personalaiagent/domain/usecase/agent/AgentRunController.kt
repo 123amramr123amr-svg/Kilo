@@ -25,6 +25,8 @@ data class ToolActivityUi(
     val detail: String,
     val ok: Boolean,
     val done: Boolean = true,
+    /** Short preview of what the tool answered, shown in the activity panel. */
+    val output: String = "",
 )
 
 /** Everything the UI needs to render a run, including one that survives the screen. */
@@ -33,6 +35,8 @@ data class AgentRunState(
     val conversationId: String? = null,
     val assistantMessageId: String? = null,
     val streamingText: String = "",
+    /** Visible reasoning of "thinking" models, cleared when the run ends. */
+    val reasoningText: String = "",
     val toolActivity: List<ToolActivityUi> = emptyList(),
     val plan: List<String> = emptyList(),
     val error: AppError? = null,
@@ -90,13 +94,17 @@ class AgentRunController @Inject constructor(
             // one state change per token re-composed the whole list and made the
             // screen feel stuck on slow phones.
             val streamed = StringBuilder()
+            val reasoning = StringBuilder()
             var lastFlush = 0L
 
             fun flush(force: Boolean = false) {
                 val now = System.currentTimeMillis()
                 if (!force && now - lastFlush < STREAM_FLUSH_MS) return
                 lastFlush = now
-                _state.value = _state.value.copy(streamingText = streamed.toString())
+                _state.value = _state.value.copy(
+                    streamingText = streamed.toString(),
+                    reasoningText = reasoning.toString(),
+                )
             }
 
             try {
@@ -116,6 +124,14 @@ class AgentRunController @Inject constructor(
                             flush()
                         }
 
+                        is SendMessageEvent.Reasoning -> {
+                            reasoning.append(event.text)
+                            if (reasoning.length > MAX_REASONING_CHARS) {
+                                reasoning.delete(0, reasoning.length - MAX_REASONING_CHARS)
+                            }
+                            flush()
+                        }
+
                         is SendMessageEvent.ToolActivity -> {
                             flush(force = true)
                             _state.value = _state.value.copy(
@@ -123,6 +139,7 @@ class AgentRunController @Inject constructor(
                                     toolName = event.toolName,
                                     detail = event.detail,
                                     ok = event.ok,
+                                    output = event.output,
                                 ),
                             )
                         }
@@ -224,5 +241,8 @@ class AgentRunController @Inject constructor(
     private companion object {
         /** How often streamed text is pushed to the UI while a run is active. */
         const val STREAM_FLUSH_MS = 60L
+
+        /** Keep the tail of a long reasoning stream; it is a preview, not a log. */
+        const val MAX_REASONING_CHARS = 8_000
     }
 }

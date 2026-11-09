@@ -39,7 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.personalaiagent.R
 import com.personalaiagent.domain.model.AppLanguage
-import com.personalaiagent.ui.components.AgentOrb
+import com.personalaiagent.ui.components.AuraMark
 import com.personalaiagent.ui.components.GradientButton
 import com.personalaiagent.ui.theme.BrandCyan
 import com.personalaiagent.ui.theme.BrandPurple
@@ -61,7 +61,7 @@ fun OnboardingScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(12.dp))
-        AgentOrb(size = 150.dp)
+        AuraMark(size = 132.dp, animated = true)
 
         Spacer(Modifier.height(20.dp))
         Text(

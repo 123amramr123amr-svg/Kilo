@@ -50,6 +50,10 @@ data class ChatUiState(
     val workspaceName: String? = null,
     val toolsEnabled: Boolean = false,
     val toolActivity: List<ToolActivityUi> = emptyList(),
+    /** Visible reasoning stream of "thinking" models. */
+    val reasoningText: String = "",
+    /** False when the user hides the agent-activity panel. */
+    val showActivity: Boolean = true,
     /** Steps the agent committed to for the current request. */
     val plan: List<String> = emptyList(),
     val reviewFirst: Boolean = true,
@@ -70,6 +74,10 @@ data class ChatUiState(
 sealed interface ChatEvent {
     data class SpeakAnswer(val text: String) : ChatEvent
 }
+
+/** Bilingual so the reply follows the language of the conversation. */
+private const val CONTINUE_INSTRUCTION =
+    "Continue the previous answer from exactly where it stopped — do not repeat what is already written. / أكمل الإجابة السابقة من حيث توقفت بالضبط دون إعادة ما كُتب."
 
 /** Below this length the review step is skipped: there is nothing to clarify. */
 private const val MIN_REVIEW_LENGTH = 12
@@ -148,6 +156,7 @@ class ChatViewModel @Inject constructor(
                         workspaceName = settings.workspaceName,
                         toolsEnabled = settings.hasWorkspace && settings.agentFileToolsEnabled,
                         reviewFirst = settings.reviewRequests,
+                        showActivity = settings.showAgentActivity,
                     )
                 }
             }
@@ -178,6 +187,7 @@ class ChatViewModel @Inject constructor(
                         streamingText = run.streamingText,
                         streamingMessageId = run.assistantMessageId,
                         toolActivity = run.toolActivity,
+                        reasoningText = run.reasoningText,
                         plan = run.plan.ifEmpty { it.plan },
                         error = run.error ?: it.error,
                     )
@@ -205,6 +215,12 @@ class ChatViewModel @Inject constructor(
 
     fun selectModel(modelId: String) {
         selectedModelId.value = modelId
+    }
+
+    /** Hides or shows the agent-activity panel for good (Settings switch mirrors it). */
+    fun setActivityVisible(visible: Boolean) {
+        _uiState.update { it.copy(showActivity = visible) }
+        viewModelScope.launch { settingsRepository.setShowAgentActivity(visible) }
     }
 
     fun toggleReviewFirst() {
@@ -389,6 +405,15 @@ class ChatViewModel @Inject constructor(
             conversationId.value = null
             _uiState.update { it.copy(messages = emptyList(), conversationId = null, error = null) }
         }
+    }
+
+    /**
+     * Picks up where a cut-off answer stopped. The partial text is already stored,
+     * so it is part of the history the model receives.
+     */
+    fun continueAnswer() {
+        if (_uiState.value.isGenerating) return
+        execute(text = CONTINUE_INSTRUCTION, plan = emptyList())
     }
 
     fun retryLastMessage() {

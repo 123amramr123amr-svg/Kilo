@@ -1,25 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  AURA mark: a pyramid with a sun disc and two sand horizons.
+  Drawn as flat geometry so it stays crisp at every density and inside the
+  adaptive-icon safe zone (the mask keeps the centre 66dp).
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- sun -->
     <path
-        android:fillColor="#2D7BFF"
-        android:fillAlpha="0.25"
-        android:pathData="M54,26a28,28 0 1,0 0.1,0z" />
+        android:fillColor="#D9AE74"
+        android:pathData="M54,22m-5,0a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    <!-- lit face -->
     <path
-        android:fillColor="#05070E"
-        android:pathData="M54,32a22,22 0 1,0 0.1,0z" />
+        android:fillColor="#C9A06A"
+        android:pathData="M54,32L26,80H54Z" />
+    <!-- shadow face -->
     <path
-        android:fillColor="#22D3EE"
-        android:pathData="M40,52m-4.5,0a4.5,4.5 0 1,0 9,0a4.5,4.5 0 1,0 -9,0" />
+        android:fillColor="#7E5E38"
+        android:pathData="M54,32L82,80H54Z" />
+    <!-- gold rim on the lit edge -->
     <path
-        android:fillColor="#22D3EE"
-        android:pathData="M68,52m-4.5,0a4.5,4.5 0 1,0 9,0a4.5,4.5 0 1,0 -9,0" />
-    <path
-        android:strokeColor="#8B5CF6"
-        android:strokeWidth="3.5"
+        android:strokeColor="#E7C793"
+        android:strokeWidth="1.4"
         android:strokeLineCap="round"
-        android:pathData="M44,64 Q54,72 64,64" />
+        android:pathData="M54,32L26,80" />
+    <!-- horizons -->
+    <path
+        android:strokeColor="#8A6A3F"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M22,86H86" />
+    <path
+        android:strokeColor="#8A6A3F"
+        android:strokeAlpha="0.45"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M31,92H77" />
 </vector>

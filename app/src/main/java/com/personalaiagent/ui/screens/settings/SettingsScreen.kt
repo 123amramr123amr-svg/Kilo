@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.Workspaces
 import androidx.compose.material.icons.rounded.Vibration
 import androidx.compose.material3.AlertDialog
@@ -162,6 +163,19 @@ fun SettingsScreen(
                         Switch(
                             checked = state.settings.reviewRequests,
                             onCheckedChange = viewModel::setReviewRequests,
+                        )
+                    },
+                )
+                com.personalaiagent.ui.components.Divider()
+                SettingsRow(
+                    icon = Icons.Rounded.Visibility,
+                    title = stringResource(R.string.settings_agent_activity),
+                    subtitle = stringResource(R.string.settings_agent_activity_body),
+                    onClick = null,
+                    trailing = {
+                        Switch(
+                            checked = state.settings.showAgentActivity,
+                            onCheckedChange = viewModel::setShowAgentActivity,
                         )
                     },
                 )

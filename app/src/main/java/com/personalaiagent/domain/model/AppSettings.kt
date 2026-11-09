@@ -14,8 +14,14 @@ data class AppSettings(
     val workspaceName: String? = null,
     /** Master switch for the file tools. */
     val agentFileToolsEnabled: Boolean = true,
-    /** Ask clarifying questions and show a task list before starting work. */
-    val reviewRequests: Boolean = true,
+    /**
+     * Ask clarifying questions and show a task list before starting work.
+     * Off by default: it costs a whole extra round trip before the answer starts,
+     * and the toggle in the composer turns it back on whenever it is wanted.
+     */
+    val reviewRequests: Boolean = false,
+    /** Show the live "what is the agent doing" panel in the chat. */
+    val showAgentActivity: Boolean = true,
 ) {
     val hasWorkspace: Boolean get() = !workspaceUri.isNullOrBlank()
 }

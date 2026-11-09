@@ -49,6 +49,9 @@ data class OpenAiChatRequestDto(
 data class OpenAiDeltaDto(
     val role: String? = null,
     val content: String? = null,
+    /** Reasoning stream of "thinking" models (DeepSeek, Qwen, vLLM servers...). */
+    @SerialName("reasoning_content") val reasoningContent: String? = null,
+    @SerialName("reasoning") val reasoning: String? = null,
     @SerialName("tool_calls") val toolCalls: List<OpenAiToolCallDto> = emptyList(),
 )
 

@@ -17,6 +17,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -38,6 +39,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -61,6 +63,7 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.Workspaces
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -89,12 +92,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.personalaiagent.R
@@ -110,6 +116,7 @@ import com.personalaiagent.ui.components.GradientButton
 import com.personalaiagent.ui.components.RichText
 import com.personalaiagent.ui.components.SectionCard
 import com.personalaiagent.ui.components.Tag
+import com.personalaiagent.ui.components.AuraMark
 import com.personalaiagent.ui.components.BrandTopBar
 import com.personalaiagent.ui.components.LoadingState
 import com.personalaiagent.ui.components.EmptyState
@@ -175,13 +182,14 @@ fun ChatScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize().imePadding()) {
-        BrandTopBar(
+        ChatHeader(
             title = stringResource(R.string.app_name),
             subtitle = if (state.hasProviders) {
                 stringResource(R.string.chat_subtitle_ready)
             } else {
                 stringResource(R.string.chat_subtitle_setup)
             },
+            online = state.hasProviders,
             actions = {
                 IconButton(onClick = onOpenModels) {
                     Icon(
@@ -309,6 +317,7 @@ fun ChatScreen(
                                 streaming = streaming,
                                 streamingText = state.streamingText,
                                 onRetry = viewModel::retryLastMessage,
+                                onContinue = viewModel::continueAnswer,
                             )
                         }
                     }
@@ -322,6 +331,9 @@ fun ChatScreen(
             activities = state.toolActivity,
             plan = state.plan,
             running = state.isGenerating,
+            reasoning = state.reasoningText,
+            visible = state.showActivity,
+            onHide = { viewModel.setActivityVisible(false) },
         )
 
         AnimatedVisibility(visible = state.workspaceName == null && state.messages.isEmpty()) {
@@ -460,12 +472,26 @@ private fun EmptyChatState(
         modifier = modifier.padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        EmptyState(
-            icon = Icons.Rounded.Lightbulb,
-            title = stringResource(R.string.chat_empty_title),
-            body = stringResource(R.string.chat_empty_body),
-            actionLabel = stringResource(R.string.chat_empty_choose_model),
-            onAction = onPickModel,
+        AuraMark(size = 92.dp, animated = true)
+        Spacer(Modifier.height(18.dp))
+        Text(
+            text = stringResource(R.string.chat_empty_title),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.chat_empty_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(18.dp))
+        GradientButton(
+            text = stringResource(R.string.chat_empty_choose_model),
+            onClick = onPickModel,
+            modifier = Modifier.widthIn(max = 320.dp),
         )
         Spacer(Modifier.height(6.dp))
         TextButton(onClick = onManageModels) {
@@ -475,31 +501,38 @@ private fun EmptyChatState(
 }
 
 /**
- * "What is the agent doing?" — a single compact row with an arrow. Collapsed it
- * shows the current step; tapping it reveals the plan and every step taken, with
- * the file, query or app it touched.
+ * "What is the agent doing?" — the row the user asked for.
+ *
+ * Collapsed it reports the live step ("Reading a file · notes/todo.md"); the arrow
+ * opens the model's own reasoning, the plan, and every tool call with what went in
+ * and what came back. It can be hidden for good from here or from Settings.
  */
 @Composable
 private fun AgentActivityPanel(
     activities: List<ToolActivityUi>,
     plan: List<String>,
     running: Boolean,
+    reasoning: String,
+    visible: Boolean,
+    onHide: () -> Unit,
 ) {
-    if (activities.isEmpty() && plan.isEmpty()) return
-    var expanded by rememberSaveable { mutableStateOf(false) }
+    if (!visible) return
+    if (activities.isEmpty() && plan.isEmpty() && reasoning.isBlank() && !running) return
 
-    // Open by itself when real work starts, so the user sees activity without
-    // having to look for it; they can collapse it at any time.
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    // Open when real work starts so the user sees activity without hunting for it.
     LaunchedEffect(running, activities.size) {
         if (running && activities.isNotEmpty()) expanded = true
     }
     val arrow by animateFloatAsState(if (expanded) 180f else 0f, label = "agent-arrow")
     val latest = activities.lastOrNull()
-    val latestLabel = if (latest == null) {
-        stringResource(R.string.agent_activity_empty)
-    } else {
-        val label = toolLabel(latest.toolName)
-        if (latest.detail.isBlank()) label else "$label · ${latest.detail}"
+    val latestLabel = when {
+        latest != null -> {
+            val label = toolLabel(latest.toolName)
+            if (latest.detail.isBlank()) label else "$label · ${latest.detail}"
+        }
+        reasoning.isNotBlank() -> stringResource(R.string.agent_thinking)
+        else -> stringResource(R.string.agent_activity_empty)
     }
 
     Column(
@@ -512,9 +545,9 @@ private fun AgentActivityPanel(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.72f))
                 .clickable { expanded = !expanded }
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (running) {
@@ -563,6 +596,14 @@ private fun AgentActivityPanel(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp).rotate(arrow),
             )
+            IconButton(onClick = onHide, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Rounded.VisibilityOff,
+                    contentDescription = stringResource(R.string.agent_activity_hide_all),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
         }
 
         AnimatedVisibility(
@@ -575,11 +616,25 @@ private fun AgentActivityPanel(
                     .fillMaxWidth()
                     .padding(top = 6.dp)
                     .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                    .heightIn(max = 220.dp)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f))
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .heightIn(max = 260.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
+                if (reasoning.isNotBlank()) {
+                    Text(
+                        text = stringResource(R.string.agent_thinking),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        text = reasoning.takeLast(1_200),
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Serif),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 10.dp),
+                    )
+                }
+
                 if (plan.isNotEmpty()) {
                     Text(
                         text = stringResource(R.string.agent_activity_plan),
@@ -594,13 +649,20 @@ private fun AgentActivityPanel(
                             modifier = Modifier.padding(start = 2.dp, top = 2.dp),
                         )
                     }
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(10.dp))
                 }
-                activities.forEach { activity ->
-                    Row(
-                        modifier = Modifier.padding(vertical = 2.dp),
-                        verticalAlignment = Alignment.Top,
-                    ) {
+
+                activities.forEachIndexed { index, activity ->
+                    if (index > 0) {
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 6.dp, top = 6.dp, bottom = 6.dp)
+                                .width(1.dp)
+                                .height(10.dp)
+                                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.Top) {
                         Icon(
                             imageVector = if (activity.ok) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline,
                             contentDescription = stringResource(
@@ -610,7 +672,7 @@ private fun AgentActivityPanel(
                             modifier = Modifier.size(13.dp),
                         )
                         Spacer(Modifier.width(8.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = toolLabel(activity.toolName),
                                 style = MaterialTheme.typography.labelSmall,
@@ -618,9 +680,18 @@ private fun AgentActivityPanel(
                             )
                             if (activity.detail.isNotBlank()) {
                                 Text(
-                                    text = activity.detail,
+                                    text = "→ ${activity.detail}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            if (activity.output.isNotBlank()) {
+                                Text(
+                                    text = "← ${activity.output.replace('\n', ' ').take(160)}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -630,6 +701,70 @@ private fun AgentActivityPanel(
                 }
             }
         }
+    }
+}
+
+/** Wordmark header: pyramid mark, serif AURA, gold hairline and a live status dot. */
+@Composable
+private fun ChatHeader(
+    title: String,
+    subtitle: String?,
+    online: Boolean,
+    actions: @Composable RowScope.() -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 14.dp, end = 4.dp, top = 12.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AuraMark(size = 30.dp, animated = online)
+        Spacer(Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title.uppercase(),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = FontFamily.Serif,
+                    letterSpacing = 4.sp,
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Box(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .width(52.dp)
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(Color.Transparent, MaterialTheme.colorScheme.primary, Color.Transparent),
+                        ),
+                    ),
+            )
+            if (subtitle != null) {
+                Row(
+                    modifier = Modifier.padding(top = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(if (online) BrandSuccess else BrandWarning),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+        actions()
     }
 }
 
@@ -741,6 +876,7 @@ private fun MessageBubble(
     streaming: Boolean,
     streamingText: String,
     onRetry: () -> Unit,
+    onContinue: () -> Unit,
 ) {
     val isUser = message.role == MessageRole.USER
     val palette = LocalBrand.current
@@ -752,35 +888,68 @@ private fun MessageBubble(
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.Top,
     ) {
+        if (!isUser) {
+            // Gold-ringed serif "A", the agent's mark in the AURA identity.
+            Box(
+                modifier = Modifier
+                    .padding(end = 10.dp)
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "A",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = FontFamily.Serif,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+
         Column(
-            modifier = Modifier.widthIn(max = 340.dp),
+            modifier = Modifier.widthIn(max = 330.dp),
             horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
         ) {
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = if (isUser) Color.Transparent else palette.bubbleAssistant,
-                modifier = Modifier.then(
-                    if (isUser) Modifier.background(palette.bubbleUser, MaterialTheme.shapes.large) else Modifier,
-                ),
-            ) {
-                Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            if (isUser) {
+                Box(
+                    modifier = Modifier
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 18.dp,
+                                topEnd = 4.dp,
+                                bottomEnd = 18.dp,
+                                bottomStart = 18.dp,
+                            ),
+                        )
+                        .background(palette.bubbleUser),
+                ) {
+                    SelectionContainer {
+                        Text(
+                            text = displayText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.background,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        )
+                    }
+                }
+            } else {
+                Column {
                     if (displayText.isEmpty() && streaming) {
                         TypingIndicator()
                     } else {
                         SelectionContainer {
-                            if (isUser) {
-                                Text(
-                                    text = displayText,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White,
-                                )
-                            } else {
-                                RichText(text = displayText, color = MaterialTheme.colorScheme.onSurface)
-                            }
+                            RichText(
+                                text = displayText,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
                         }
                         if (streaming) {
-                            Spacer(Modifier.height(2.dp))
+                            Spacer(Modifier.height(4.dp))
                             TypingIndicator(compact = true)
                         }
                     }
@@ -804,6 +973,15 @@ private fun MessageBubble(
                     if (!streaming) {
                         TextButton(onClick = onRetry) {
                             Text(stringResource(R.string.chat_retry_failed), style = MaterialTheme.typography.labelSmall)
+                        }
+                        // A cut-off answer can be resumed instead of regenerated.
+                        if (message.content.isNotBlank()) {
+                            TextButton(onClick = onContinue) {
+                                Text(
+                                    stringResource(R.string.chat_continue_answer),
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            }
                         }
                     }
                 }
@@ -1075,8 +1253,8 @@ private fun Composer(
                     maxLines = 6,
                     shape = MaterialTheme.shapes.large,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
@@ -1114,14 +1292,17 @@ private fun Composer(
                             .size(46.dp)
                             .clip(CircleShape)
                             .background(
-                                if (state.canSend) LocalBrand.current.accentGradient
-                                else androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.surfaceVariant),
+                                androidx.compose.ui.graphics.SolidColor(
+                                    if (state.canSend) MaterialTheme.colorScheme.onBackground
+                                    else MaterialTheme.colorScheme.surfaceVariant,
+                                ),
                             ),
                     ) {
                         Icon(
                             Icons.AutoMirrored.Rounded.Send,
                             contentDescription = stringResource(R.string.a11y_send),
-                            tint = if (state.canSend) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = if (state.canSend) MaterialTheme.colorScheme.background
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }

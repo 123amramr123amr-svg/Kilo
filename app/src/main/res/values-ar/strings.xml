@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:locale="ar">
 
-    <string name="app_name">المساعد الذكي الشخصي</string>
-    <string name="app_tagline">مساعدك الذكي للتحكم في جهازك</string>
+    <string name="app_name">أورا</string>
+    <string name="app_tagline">وكيل ذكاء اصطناعي بروح مصرية</string>
 
     <!-- Global actions -->
     <string name="action_start">ابدأ الآن</string>
@@ -34,7 +34,7 @@
     <string name="cd_back">رجوع</string>
 
     <!-- Onboarding -->
-    <string name="onboarding_headline">المساعد الذكي الشخصي</string>
+    <string name="onboarding_headline">أورا</string>
     <string name="onboarding_subheadline">مساعدك الذكي للتحكم في هاتفك</string>
     <string name="onboarding_language_title">اختر لغتك</string>
     <string name="onboarding_language_body">تُستخدم هذه اللغة في الواجهة وفي ردود المساعد. يمكنك تغييرها لاحقًا من الإعدادات.</string>
@@ -444,7 +444,7 @@
     <string name="review_improved_title">صياغة أوضح لطلبك</string>
     <string name="review_start">ابدأ التنفيذ</string>
     <string name="review_send_as_is">أرسل كما هو</string>
-    <string name="agent_run_notification_title">المساعد الذكي يعمل</string>
+    <string name="agent_run_notification_title">أورا يعمل</string>
     <string name="agent_run_notification_body">مهمتك تكمل في الخلفية</string>
     <string name="agent_run_channel">تشغيل الوكيل</string>
     <string name="attachment_failed">تعذر قراءة الملف</string>
@@ -487,4 +487,10 @@
     <string name="tool_open_url">يفتح رابطًا</string>
     <string name="tool_generate_image">يرسم صورة</string>
     <string name="tool_generic">ينفّذ خطوة</string>
+    <string name="settings_agent_activity">خطوات الوكيل</string>
+    <string name="settings_agent_activity_body">يعرض في المحادثة ما يفعله الوكيل: يفكّر، يبحث، يقرأ ويكتب — يمكنك إخفاؤه في أي وقت.</string>
+    <string name="agent_thinking">يفكّر…</string>
+    <string name="agent_activity_hide_all">إخفاء لوحة خطوات الوكيل (يمكن تشغيلها من الإعدادات)</string>
+    <string name="chat_pick_model_cta">اختر النموذج</string>
+    <string name="chat_continue_answer">أكمل الإجابة</string>
 </resources>

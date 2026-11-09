@@ -50,11 +50,20 @@ sealed interface SendMessageEvent {
 
     data class Delta(val text: String) : SendMessageEvent
 
-    /** A file tool ran (or failed) on the phone workspace. */
+    /** The model is thinking out loud (providers that expose reasoning). */
+    data class Reasoning(val text: String) : SendMessageEvent
+
+    /**
+     * A tool ran (or failed) on the phone workspace.
+     *
+     * @param detail what the step touched (path, query, url, app, prompt)
+     * @param output a short preview of what the tool returned, for the activity panel
+     */
     data class ToolActivity(
         val toolName: String,
         val detail: String,
         val ok: Boolean,
+        val output: String = "",
     ) : SendMessageEvent
 
     data class Completed(
@@ -264,6 +273,7 @@ class SendMessageUseCase @Inject constructor(
                 var attempt = 0
                 while (true) {
                     attempt++
+                    var terminated = false
                     try {
                         clients.forKind(provider.kind).stream(request).collect { chunk ->
                             when (chunk) {
@@ -272,14 +282,24 @@ class SendMessageUseCase @Inject constructor(
                                     emit(SendMessageEvent.Delta(chunk.text))
                                 }
 
+                                is ChatChunk.Reasoning -> if (chunk.text.isNotEmpty()) {
+                                    emit(SendMessageEvent.Reasoning(chunk.text))
+                                }
+
                                 is ChatChunk.Usage -> {
                                     tokensIn = chunk.tokenIn ?: tokensIn
                                     tokensOut = chunk.tokenOut ?: tokensOut
                                 }
 
                                 is ChatChunk.ToolCallChunk -> roundCalls += chunk.call
-                                ChatChunk.Completed -> Unit
+                                ChatChunk.Completed -> terminated = true
                             }
+                        }
+                        // A stream that closes without its terminator was cut off
+                        // (proxy timeout, dropped connection). Retry it when nothing
+                        // was shown yet instead of persisting a truncated answer.
+                        if (!terminated && roundText.isEmpty() && roundCalls.isEmpty()) {
+                            throw ProviderException(AppError.Network)
                         }
                         break
                     } catch (cancelled: CancellationException) {
@@ -338,7 +358,14 @@ class SendMessageUseCase @Inject constructor(
                         if (result.ok) TaskStepStatus.SUCCEEDED else TaskStepStatus.FAILED,
                         detail = if (path.isBlank()) call.name else "$path",
                     )
-                    emit(SendMessageEvent.ToolActivity(call.name, path, ok = result.ok))
+                    emit(
+                        SendMessageEvent.ToolActivity(
+                            toolName = call.name,
+                            detail = path,
+                            ok = result.ok,
+                            output = result.output.take(400),
+                        ),
+                    )
                     toolSummaries += "${call.name} ${path}".trim()
                     turns += ChatTurn(
                         role = MessageRole.TOOL,

@@ -69,21 +69,31 @@ class ProviderEditViewModel @Inject constructor(
     private val addProvider: AddProviderUseCase,
 ) : ViewModel() {
 
-    private val providerId: String? = savedStateHandle.get<String>("providerId")?.takeIf { it.isNotBlank() }
+    private val requestedProviderId: String? =
+        savedStateHandle.get<String>("providerId")?.takeIf { it.isNotBlank() }
 
-    private val _uiState = MutableStateFlow(ProviderFormUiState(isLoading = providerId != null, providerId = providerId))
+    private val _uiState = MutableStateFlow(
+        ProviderFormUiState(isLoading = requestedProviderId != null, providerId = requestedProviderId),
+    )
     val uiState: StateFlow<ProviderFormUiState> = _uiState.asStateFlow()
 
     private val eventChannel = Channel<ProviderFormEvent>(Channel.BUFFERED)
     val events: Flow<ProviderFormEvent> = eventChannel.receiveAsFlow()
 
     init {
-        if (providerId != null) {
+        if (requestedProviderId != null) {
             viewModelScope.launch {
-                val provider = providerRepository.getProvider(providerId)
+                val provider = providerRepository.getProvider(requestedProviderId)
                 _uiState.update { current ->
                     if (provider == null) {
-                        current.copy(isLoading = false, formError = AppError.NotFound)
+                        // The id no longer resolves (deleted row, or a stale navigation
+                        // argument). Staying in "edit" mode would make every save fail
+                        // with "provider not found", so degrade to a new provider.
+                        current.copy(
+                            isLoading = false,
+                            providerId = null,
+                            formError = AppError.NotFound,
+                        )
                     } else {
                         current.copy(
                             isLoading = false,

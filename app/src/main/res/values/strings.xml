@@ -453,7 +453,7 @@
     <string name="settings_review">Review requests</string>
     <string name="settings_review_body">Ask clarifying questions and show a task list before the agent starts</string>
     <string name="error_http_not_found">The provider did not find that address (404). Check the Base URL — it usually ends with /v1 — and that the model exists for this key.</string>
-    <string name="error_not_found">This item no longer exists. Reopen the screen or add the provider again.</string>
+    <string name="error_not_found">This provider no longer exists, so the add-provider form is open — fill it in and save.</string>
     <string name="error_unknown_detail">Something went wrong: %1$s</string>
     <string name="providers_fetching_models">Fetching models…</string>
     <string name="providers_saving_models">Saving…</string>

@@ -146,7 +146,7 @@ fun ProviderEditScreen(
             state.formError?.let { error ->
                 ErrorBanner(
                     message = appErrorText(error),
-                    onDismiss = { viewModel.clearTestResult() },
+                    onDismiss = viewModel::clearFormError,
                 )
             }
 
@@ -270,14 +270,21 @@ fun ProviderEditScreen(
             )
 
             GhostButton(
-                text = stringResource(R.string.providers_fetch_models),
+                text = if (state.isFetchingModels) {
+                    stringResource(R.string.providers_fetching_models)
+                } else {
+                    stringResource(R.string.providers_fetch_models)
+                },
                 onClick = viewModel::fetchModels,
                 enabled = !state.isFetchingModels,
                 icon = Icons.Rounded.CloudDownload,
             )
 
             state.fetchError?.let { error ->
-                ErrorBanner(message = appErrorText(error))
+                ErrorBanner(
+                    message = appErrorText(error),
+                    onDismiss = viewModel::clearFetchError,
+                )
             }
 
             if (state.fetchedModels.isNotEmpty()) {
@@ -290,6 +297,15 @@ fun ProviderEditScreen(
                     Text(
                         text = stringResource(R.string.providers_fetch_success, state.fetchedModels.size),
                         style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.providers_models_enabled_count,
+                            state.selectedModelIds.size,
+                            state.fetchedModels.size,
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(10.dp))
@@ -316,10 +332,22 @@ fun ProviderEditScreen(
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = { viewModel.showModelsDialogAction() }) {
+                    TextButton(
+                        onClick = { viewModel.showModelsDialogAction() },
+                        enabled = !state.isFetchingModels,
+                    ) {
                         Text(stringResource(R.string.providers_models_apply))
                     }
                 }
+            }
+
+            state.appliedModels?.let { count ->
+                InfoBanner(
+                    icon = Icons.Rounded.CheckCircle,
+                    title = stringResource(R.string.providers_models_saved_title),
+                    body = stringResource(R.string.providers_models_saved_body, count),
+                    tint = BrandSuccess,
+                )
             }
 
             state.testSuccessCount?.let { count ->
@@ -409,8 +437,14 @@ fun ProviderEditScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = viewModel::applyModelSelection) {
-                    Text(stringResource(R.string.providers_models_apply))
+                TextButton(onClick = viewModel::applyModelSelection, enabled = !state.isFetchingModels) {
+                    Text(
+                        stringResource(
+                            if (state.isFetchingModels) R.string.providers_saving_models
+                            else if (state.isEditing) R.string.providers_models_apply_save
+                            else R.string.providers_models_apply
+                        ),
+                    )
                 }
             },
             dismissButton = {

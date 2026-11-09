@@ -113,18 +113,10 @@ class ModelRepositoryImpl @Inject constructor(
             }
 
             is Outcome.Failure -> {
-                if (modelDao.countByProvider(providerId) == 0) {
-                    // Offline fallback so the user can still pick a model and retry later.
-                    val bundled = ModelCatalog.bundled(provider.kind)
-                    val count = store(
-                        providerId,
-                        bundled.map { Triple(it.remoteId, it.displayName, it.contextWindow) },
-                    )
-                    Outcome.Success(CatalogSyncResult(count, fromRemote = false))
-                } else {
-                    providerDao.updateStatus(providerId, ProviderStatus.ERROR.name, time.now())
-                    Outcome.Failure(result.error)
-                }
+                // Never invent a catalog: storing bundled names for a provider that
+                // does not serve them makes chat fail with a confusing 404 later.
+                providerDao.updateStatus(providerId, ProviderStatus.ERROR.name, time.now())
+                Outcome.Failure(result.error)
             }
         }
     }
@@ -162,6 +154,28 @@ class ModelRepositoryImpl @Inject constructor(
             }
         }
         return entities.size
+    }
+
+    override suspend fun storeCatalog(
+        providerId: String,
+        models: List<RemoteModel>,
+        enabledRemoteIds: Set<String>,
+    ): Outcome<Int> {
+        if (models.isEmpty()) return Outcome.Failure(AppError.NoModel)
+        if (providerDao.getById(providerId) == null) return Outcome.Failure(AppError.NotFound)
+        return try {
+            val count = store(
+                providerId,
+                models.map { Triple(it.remoteId, it.displayName, it.contextWindow) },
+            )
+            applySelection(providerId, enabledRemoteIds)
+            providerDao.updateStatus(providerId, ProviderStatus.CONNECTED.name, time.now())
+            Outcome.Success(count)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Outcome.Failure(AppError.Unknown(e.message ?: "catalog_store_failed"))
+        }
     }
 
     override suspend fun applySelection(providerId: String, enabledRemoteIds: Set<String>) {

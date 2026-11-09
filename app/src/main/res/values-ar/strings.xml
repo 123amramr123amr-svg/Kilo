@@ -452,4 +452,13 @@
     <string name="chat_attach_hint">الصور وصفحات PDF تُرسل إلى نموذج يدعم الرؤية</string>
     <string name="settings_review">مراجعة الطلبات</string>
     <string name="settings_review_body">اسأل أسئلة توضيحية واعرض قائمة مهام قبل أن يبدأ الوكيل</string>
+    <string name="error_http_not_found">لم يجد المزوّد هذا العنوان (404). تأكد من عنوان الخدمة (غالبًا ينتهي بـ /v1) وأن اسم النموذج متاح لهذا المفتاح.</string>
+    <string name="error_not_found">هذا العنصر لم يعد موجودًا. أعد فتح الشاشة أو أضف المزوّد من جديد.</string>
+    <string name="error_unknown_detail">حدث خطأ: %1$s</string>
+    <string name="providers_fetching_models">جارٍ جلب النماذج…</string>
+    <string name="providers_saving_models">جارٍ الحفظ…</string>
+    <string name="providers_models_enabled_count">المحدد: %1$d من %2$d</string>
+    <string name="providers_models_saved_title">تم حفظ النماذج وتفعيلها</string>
+    <string name="providers_models_saved_body">%1$d نموذجًا ستظهر الآن في اختيار النماذج وفي شريط المحادثة.</string>
+    <string name="providers_models_apply_save">حفظ وتطبيق</string>
 </resources>

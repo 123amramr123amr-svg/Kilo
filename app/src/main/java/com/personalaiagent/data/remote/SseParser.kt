@@ -68,7 +68,11 @@ fun Throwable.toAppError(): AppError = when (this) {
 fun httpStatusToAppError(code: Int): AppError = when {
     code == 401 || code == 403 -> AppError.Auth
     code == 429 -> AppError.RateLimit
+    code == 404 -> AppError.HttpNotFound
     code >= 500 -> AppError.Server(code)
     code == 408 || code == 504 -> AppError.Timeout
+    // Every remaining 4xx (400, 402, 405, 415, 422, ...) is a provider rejection:
+    // show the status code instead of a generic "something went wrong".
+    code in 400..499 -> AppError.Server(code)
     else -> AppError.Unknown("HTTP $code")
 }

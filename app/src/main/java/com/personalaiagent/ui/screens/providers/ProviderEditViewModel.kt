@@ -49,6 +49,8 @@ data class ProviderFormUiState(
     val showModelsDialog: Boolean = false,
     val fetchError: AppError? = null,
     val appliedModels: Int? = null,
+    /** Enabled models after the last apply, shown as a confirmation banner. */
+    val enabledCount: Int = 0,
 ) {
     val isEditing: Boolean get() = providerId != null
     val requiresKey: Boolean get() = !isEditing || !hasStoredKey
@@ -81,7 +83,7 @@ class ProviderEditViewModel @Inject constructor(
                 val provider = providerRepository.getProvider(providerId)
                 _uiState.update { current ->
                     if (provider == null) {
-                        current.copy(isLoading = false, formError = AppError.Unknown("provider not found"))
+                        current.copy(isLoading = false, formError = AppError.NotFound)
                     } else {
                         current.copy(
                             isLoading = false,
@@ -182,12 +184,18 @@ class ProviderEditViewModel @Inject constructor(
         _uiState.update { it.copy(isSaving = true, formError = null) }
         viewModelScope.launch {
             if (state.providerId == null) {
-                addProvider(draft(), state.apiKey).fold(
+                // Known models from the fetch button are stored as-is: no second
+                // network round trip that could fail after a successful fetch.
+                addProvider(draft(), state.apiKey, state.fetchedModels).fold(
                     onSuccess = { created ->
-                        // AddProviderUseCase already refreshed the catalog; only the
-                        // user's ticks need applying.
-                        if (state.selectedModelIds.isNotEmpty()) {
-                            modelRepository.applySelection(created.providerId, state.selectedModelIds)
+                        if (state.fetchedModels.isNotEmpty()) {
+                            modelRepository.storeCatalog(
+                                created.providerId,
+                                state.fetchedModels,
+                                state.selectedModelIds.ifEmpty {
+                                    state.fetchedModels.map { it.remoteId }.toSet()
+                                },
+                            )
                         }
                         _uiState.update { current -> current.copy(isSaving = false, apiKey = "") }
                         eventChannel.send(ProviderFormEvent.Saved)
@@ -205,9 +213,20 @@ class ProviderEditViewModel @Inject constructor(
                     apiKey = state.apiKey.takeIf { it.isNotBlank() },
                 ).fold(
                     onSuccess = {
-                        if (state.apiKey.isNotBlank()) modelRepository.refreshCatalog(state.providerId)
-                        if (state.selectedModelIds.isNotEmpty()) {
-                            modelRepository.applySelection(state.providerId, state.selectedModelIds)
+                        if (state.fetchedModels.isNotEmpty()) {
+                            modelRepository.storeCatalog(
+                                state.providerId,
+                                state.fetchedModels,
+                                state.selectedModelIds.ifEmpty {
+                                    state.fetchedModels.map { it.remoteId }.toSet()
+                                },
+                            )
+                        } else if (state.apiKey.isNotBlank()) {
+                            // Credentials changed but no catalog on screen: ask the provider.
+                            val sync = modelRepository.refreshCatalog(state.providerId)
+                            if (sync is com.personalaiagent.core.Outcome.Failure) {
+                                _uiState.update { current -> current.copy(fetchError = sync.error) }
+                            }
                         }
                         _uiState.update { current -> current.copy(isSaving = false, apiKey = "") }
                         eventChannel.send(ProviderFormEvent.Saved)
@@ -294,6 +313,14 @@ class ProviderEditViewModel @Inject constructor(
         _uiState.update { it.copy(showModelsDialog = false) }
     }
 
+    fun clearFetchError() {
+        _uiState.update { it.copy(fetchError = null) }
+    }
+
+    fun clearFormError() {
+        _uiState.update { it.copy(formError = null) }
+    }
+
     /** Re-opens the selection list without hitting the network again. */
     fun showModelsDialogAction() {
         _uiState.update { current ->
@@ -307,30 +334,71 @@ class ProviderEditViewModel @Inject constructor(
      */
     fun applyModelSelection() {
         val state = _uiState.value
-        if (state.fetchedModels.isEmpty()) return
-        val providerId = state.providerId
-        if (providerId == null) {
-            _uiState.update { it.copy(showModelsDialog = false) }
+        if (state.fetchedModels.isEmpty() || state.isFetchingModels) return
+
+        // Validate what is on screen: these exact values are what we are about to save.
+        ProviderValidator.validate(draft())?.let { error ->
+            _uiState.update { it.copy(formError = error) }
             return
         }
-        _uiState.update { it.copy(isFetchingModels = true) }
-        viewModelScope.launch {
-            val sync = modelRepository.refreshCatalog(providerId)
-            val count = if (sync is com.personalaiagent.core.Outcome.Success) {
-                modelRepository.applySelection(providerId, state.selectedModelIds)
-                state.selectedModelIds.size
-            } else {
-                0
-            }
+        if (state.requiresKey && state.apiKey.isBlank()) {
+            _uiState.update { it.copy(formError = AppError.InvalidInput("key")) }
+            return
+        }
+
+        val selection = state.selectedModelIds.ifEmpty {
+            state.fetchedModels.map { it.remoteId }.toSet()
+        }
+        val providerId = state.providerId
+        if (providerId == null) {
+            // New provider: keep the ticks, they are applied when the provider is saved.
             _uiState.update {
                 it.copy(
-                    isFetchingModels = false,
                     showModelsDialog = false,
-                    appliedModels = count,
-                    fetchError = (sync as? com.personalaiagent.core.Outcome.Failure)?.error,
+                    appliedModels = selection.size,
+                    enabledCount = selection.size,
                 )
             }
-            if (count > 0) eventChannel.send(ProviderFormEvent.ModelsApplied(count))
+            return
+        }
+
+        _uiState.update { it.copy(isFetchingModels = true, fetchError = null, formError = null) }
+        viewModelScope.launch {
+            // 1. Persist the form first (URL / kind / key). Without this the catalog
+            //    would be attached to an endpoint the app cannot actually call.
+            val saved = providerRepository.updateProvider(
+                id = providerId,
+                draft = draft(),
+                apiKey = state.apiKey.takeIf { it.isNotBlank() },
+            )
+            if (saved is com.personalaiagent.core.Outcome.Failure) {
+                _uiState.update {
+                    it.copy(isFetchingModels = false, appliedModels = null, formError = saved.error)
+                }
+                return@launch
+            }
+
+            // 2. Store the catalog that is already on screen — no second request.
+            when (val stored = modelRepository.storeCatalog(providerId, state.fetchedModels, selection)) {
+                is com.personalaiagent.core.Outcome.Failure -> _uiState.update {
+                    it.copy(isFetchingModels = false, appliedModels = null, fetchError = stored.error)
+                }
+
+                is com.personalaiagent.core.Outcome.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isFetchingModels = false,
+                            showModelsDialog = false,
+                            apiKey = "",
+                            hasStoredKey = true,
+                            appliedModels = selection.size,
+                            enabledCount = selection.size,
+                            testSuccessCount = state.fetchedModels.size,
+                        )
+                    }
+                    eventChannel.send(ProviderFormEvent.ModelsApplied(selection.size))
+                }
+            }
         }
     }
 }

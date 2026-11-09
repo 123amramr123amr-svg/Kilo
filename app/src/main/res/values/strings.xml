@@ -452,4 +452,13 @@
     <string name="chat_attach_hint">Images and PDF pages are sent to a model that supports vision</string>
     <string name="settings_review">Review requests</string>
     <string name="settings_review_body">Ask clarifying questions and show a task list before the agent starts</string>
+    <string name="error_http_not_found">The provider did not find that address (404). Check the Base URL — it usually ends with /v1 — and that the model exists for this key.</string>
+    <string name="error_not_found">This item no longer exists. Reopen the screen or add the provider again.</string>
+    <string name="error_unknown_detail">Something went wrong: %1$s</string>
+    <string name="providers_fetching_models">Fetching models…</string>
+    <string name="providers_saving_models">Saving…</string>
+    <string name="providers_models_enabled_count">Selected: %1$d of %2$d</string>
+    <string name="providers_models_saved_title">Models saved and enabled</string>
+    <string name="providers_models_saved_body">%1$d model(s) will appear in the model picker and the chat bar right away.</string>
+    <string name="providers_models_apply_save">Save and apply</string>
 </resources>

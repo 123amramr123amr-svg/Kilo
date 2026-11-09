@@ -26,6 +26,8 @@ fun appErrorText(error: AppError): String = when (error) {
     AppError.Auth -> stringResource(R.string.error_auth)
     AppError.RateLimit -> stringResource(R.string.error_rate_limit)
     is AppError.Server -> stringResource(R.string.error_server, error.code)
+    AppError.HttpNotFound -> stringResource(R.string.error_http_not_found)
+    AppError.NotFound -> stringResource(R.string.error_not_found)
     AppError.Parse -> stringResource(R.string.error_parse)
     AppError.Cancelled -> stringResource(R.string.error_cancelled)
     AppError.NoWorkspace -> stringResource(R.string.error_no_workspace)
@@ -38,6 +40,10 @@ fun appErrorText(error: AppError): String = when (error) {
             stringResource(R.string.attachment_failed)
         "attachment_empty" -> stringResource(R.string.attachment_empty)
         "app_no_launcher", "app_not_found" -> stringResource(R.string.error_unknown)
-        else -> stringResource(R.string.error_unknown)
+        // Show the underlying reason instead of hiding it behind "something
+        // went wrong" — it is the only way a user can report or fix it.
+        else -> error.message?.takeIf { it.isNotBlank() }
+            ?.let { stringResource(R.string.error_unknown_detail, it) }
+            ?: stringResource(R.string.error_unknown)
     }
 }

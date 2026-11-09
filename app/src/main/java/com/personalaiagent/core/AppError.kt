@@ -25,6 +25,15 @@ sealed class AppError {
     data object Auth : AppError()
     data object RateLimit : AppError()
     data class Server(val code: Int) : AppError()
+
+    /**
+     * The provider answered 404 for the requested path or model. Almost always a
+     * wrong base URL (missing `/v1`) or a model id that provider does not serve.
+     */
+    data object HttpNotFound : AppError()
+
+    /** A local row disappeared (provider deleted while a screen was open). */
+    data object NotFound : AppError()
     data object Parse : AppError()
     data object Cancelled : AppError()
 

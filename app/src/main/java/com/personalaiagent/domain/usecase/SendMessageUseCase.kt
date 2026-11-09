@@ -390,6 +390,8 @@ fun AppError.describe(): String = when (this) {
     AppError.Auth -> "auth"
     AppError.RateLimit -> "rate_limit"
     is AppError.Server -> "server: $code"
+    AppError.HttpNotFound -> "http_not_found"
+    AppError.NotFound -> "not_found"
     AppError.Parse -> "parse"
     AppError.Cancelled -> "cancelled"
     AppError.NoWorkspace -> "no_workspace"

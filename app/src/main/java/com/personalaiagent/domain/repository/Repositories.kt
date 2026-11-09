@@ -81,6 +81,17 @@ interface ModelRepository {
      * Used by the "fetch models" dialog to apply what the user ticked.
      */
     suspend fun applySelection(providerId: String, enabledRemoteIds: Set<String>)
+
+    /**
+     * Stores a catalog that was already fetched by the UI (no network call), then
+     * enables exactly [enabledRemoteIds]. Used by the fetch-models dialog so the
+     * models the user just saw are the models that get saved.
+     */
+    suspend fun storeCatalog(
+        providerId: String,
+        models: List<RemoteModel>,
+        enabledRemoteIds: Set<String>,
+    ): Outcome<Int>
     suspend fun clearAll()
 }
 

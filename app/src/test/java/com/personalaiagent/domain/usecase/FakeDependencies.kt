@@ -208,16 +208,25 @@ class FakeTaskRepository : TaskRepository {
     }
 }
 
-class FakeProviderRepository(private var provider: Provider?) : ProviderRepository {
+class FakeProviderRepository(
+    private var provider: Provider?,
+    private val availableModels: List<RemoteModel> = emptyList(),
+    private val failUpdates: Boolean = false,
+    private val failFetch: AppError? = null,
+) : ProviderRepository {
+
+    val updates = mutableListOf<Triple<String, ProviderDraft, String?>>()
     override fun observeProviders(): Flow<List<Provider>> = flowOf(listOfNotNull(provider))
     override fun observeProvider(id: String): Flow<Provider?> = flowOf(provider)
     override suspend fun getProvider(id: String): Provider? = provider
     override suspend fun getDefaultProvider(): Provider? = provider
     override suspend fun addProvider(draft: ProviderDraft, apiKey: String): Outcome<String> =
-        Outcome.Failure(AppError.Unknown("not used in this test"))
+        Outcome.Success("p-new")
 
-    override suspend fun updateProvider(id: String, draft: ProviderDraft, apiKey: String?): Outcome<Unit> =
-        Outcome.Failure(AppError.Unknown("not used in this test"))
+    override suspend fun updateProvider(id: String, draft: ProviderDraft, apiKey: String?): Outcome<Unit> {
+        updates += Triple(id, draft, apiKey)
+        return if (failUpdates) Outcome.Failure(AppError.Auth) else Outcome.Success(Unit)
+    }
 
     override suspend fun deleteProvider(id: String): Outcome<Unit> =
         Outcome.Failure(AppError.Unknown("not used in this test"))
@@ -236,7 +245,7 @@ class FakeProviderRepository(private var provider: Provider?) : ProviderReposito
         providerId: String?,
         draft: ProviderDraft,
         apiKey: String?,
-    ): Outcome<List<RemoteModel>> = Outcome.Success(emptyList())
+    ): Outcome<List<RemoteModel>> = failFetch?.let { Outcome.Failure(it) } ?: Outcome.Success(availableModels)
 
     override suspend fun clearAll() {
         provider = null
@@ -244,6 +253,10 @@ class FakeProviderRepository(private var provider: Provider?) : ProviderReposito
 }
 
 class FakeModelRepository(private var model: AiModel?) : ModelRepository {
+
+    val storedCatalogs = mutableListOf<Pair<String, List<RemoteModel>>>()
+    var refreshCalls: Int = 0
+        private set
     override fun observeModels(): Flow<List<AiModel>> = flowOf(listOfNotNull(model))
     override fun observeEnabledModels(): Flow<List<AiModel>> = flowOf(listOfNotNull(model?.takeIf { it.enabled }))
     override fun observeModel(id: String): Flow<AiModel?> = flowOf(model)
@@ -254,8 +267,19 @@ class FakeModelRepository(private var model: AiModel?) : ModelRepository {
     override suspend fun setDefault(id: String) = Unit
     override suspend fun updateParams(id: String, params: ModelParams) = Unit
 
-    override suspend fun refreshCatalog(providerId: String): Outcome<CatalogSyncResult> =
-        Outcome.Success(CatalogSyncResult(0, fromRemote = true))
+    override suspend fun refreshCatalog(providerId: String): Outcome<CatalogSyncResult> {
+        refreshCalls++
+        return Outcome.Success(CatalogSyncResult(0, fromRemote = true))
+    }
+
+    override suspend fun storeCatalog(
+        providerId: String,
+        models: List<RemoteModel>,
+        enabledRemoteIds: Set<String>,
+    ): Outcome<Int> {
+        storedCatalogs += providerId to models
+        return Outcome.Success(models.size)
+    }
 
     override suspend fun applySelection(providerId: String, enabledRemoteIds: Set<String>) = Unit
 

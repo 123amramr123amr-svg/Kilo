@@ -10,6 +10,7 @@ import com.personalaiagent.domain.repository.ProviderRepository
 import com.personalaiagent.domain.repository.SettingsRepository
 import com.personalaiagent.domain.repository.TaskRepository
 import com.personalaiagent.domain.model.ProviderDraft
+import com.personalaiagent.domain.model.RemoteModel
 import javax.inject.Inject
 
 data class AddProviderResult(
@@ -23,14 +24,34 @@ class AddProviderUseCase @Inject constructor(
     private val providerRepository: ProviderRepository,
     private val modelRepository: ModelRepository,
 ) {
-    suspend operator fun invoke(draft: ProviderDraft, apiKey: String): Outcome<AddProviderResult> {
+    /**
+     * @param knownModels a catalog the UI already fetched with these exact
+     *   credentials. When present it is stored instead of asking the provider again,
+     *   so a successful "fetch models" cannot be undone by a failing second call.
+     */
+    suspend operator fun invoke(
+        draft: ProviderDraft,
+        apiKey: String,
+        knownModels: List<RemoteModel> = emptyList(),
+    ): Outcome<AddProviderResult> {
         ProviderValidator.validate(draft)?.let { return Outcome.Failure(it) }
         if (apiKey.isBlank()) return Outcome.Failure(AppError.InvalidInput("key"))
 
         return when (val created = providerRepository.addProvider(draft, apiKey)) {
             is Outcome.Failure -> created
             is Outcome.Success -> {
-                val sync = modelRepository.refreshCatalog(created.value)
+                val sync = if (knownModels.isNotEmpty()) {
+                    modelRepository.storeCatalog(
+                        created.value,
+                        knownModels,
+                        knownModels.map { it.remoteId }.toSet(),
+                    ).fold(
+                        onSuccess = { Outcome.Success(com.personalaiagent.domain.repository.CatalogSyncResult(it, fromRemote = true)) },
+                        onFailure = { Outcome.Failure(it) },
+                    )
+                } else {
+                    modelRepository.refreshCatalog(created.value)
+                }
                 if (modelRepository.getDefaultModel() == null) {
                     modelRepository.firstEnabledModel()?.let { modelRepository.setDefault(it.id) }
                 }

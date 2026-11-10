@@ -471,8 +471,8 @@ class FakeShellExecutor(
 fun testExecutor(
     workspace: FakeWorkspaceRepository = FakeWorkspaceRepository(),
     json: kotlinx.serialization.json.Json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true },
-    device: com.personalaiagent.domain.usecase.agent.DeviceControl = FakeDeviceControl(),
-    image: com.personalaiagent.domain.usecase.agent.ImageGeneration = FakeImageGeneration(),
+    device: com.personalaiagent.domain.repository.DeviceControl = FakeDeviceControl(),
+    image: com.personalaiagent.domain.repository.ImageGeneration = FakeImageGeneration(),
     skills: com.personalaiagent.domain.usecase.agent.SkillSource = FakeSkillSource(),
     shell: com.personalaiagent.platform.ShellExecutor = FakeShellExecutor(),
     questions: com.personalaiagent.domain.usecase.agent.QuestionBroker =

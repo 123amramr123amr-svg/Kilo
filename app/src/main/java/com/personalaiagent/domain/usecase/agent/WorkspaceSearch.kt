@@ -105,44 +105,6 @@ class WorkspaceSearch @Inject constructor(
         return true
     }
 
-    /** Translates a glob into a regular expression anchored at both ends. */
-    internal fun globToRegex(glob: String): String {
-        val out = StringBuilder("^")
-        var index = 0
-        while (index < glob.length) {
-            val char = glob[index]
-            when {
-                char == '*' && index + 1 < glob.length && glob[index + 1] == '*' -> {
-                    // "**/" also matches zero folders: "**/*.kt" must find "a.kt".
-                    if (index + 2 < glob.length && glob[index + 2] == '/') {
-                        out.append("(?:.*/)?")
-                        index += 3
-                    } else {
-                        out.append(".*")
-                        index += 2
-                    }
-                }
-                char == '*' -> {
-                    out.append("[^/]*")
-                    index++
-                }
-                char == '?' -> {
-                    out.append("[^/]")
-                    index++
-                }
-                char in ".()[]{}+^$|\\" -> {
-                    out.append('\\').append(char)
-                    index++
-                }
-                else -> {
-                    out.append(char)
-                    index++
-                }
-            }
-        }
-        out.append('$')
-        return out.toString()
-    }
 
     companion object {
         const val MAX_FILES = 1_500
@@ -155,4 +117,43 @@ class WorkspaceSearch @Inject constructor(
             ".mp3", ".mp4", ".m4a", ".ogg", ".wav", ".apk", ".so", ".ttf", ".otf", ".db",
         )
     }
+}
+
+/** Translates a glob into a regular expression anchored at both ends. */
+internal fun globToRegex(glob: String): String {
+    val out = StringBuilder("^")
+    var index = 0
+    while (index < glob.length) {
+        val char = glob[index]
+        when {
+            char == '*' && index + 1 < glob.length && glob[index + 1] == '*' -> {
+                // "**/" also matches zero folders: "**/*.kt" must find "a.kt".
+                if (index + 2 < glob.length && glob[index + 2] == '/') {
+                    out.append("(?:.*/)?")
+                    index += 3
+                } else {
+                    out.append(".*")
+                    index += 2
+                }
+            }
+            char == '*' -> {
+                out.append("[^/]*")
+                index++
+            }
+            char == '?' -> {
+                out.append("[^/]")
+                index++
+            }
+            char in ".()[]{}+^$|\\" -> {
+                out.append('\\').append(char)
+                index++
+            }
+            else -> {
+                out.append(char)
+                index++
+            }
+        }
+    }
+    out.append('$')
+    return out.toString()
 }

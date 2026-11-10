@@ -15,7 +15,7 @@ class WorkspaceSearchTest {
 
     @Test
     fun `glob star does not cross folders`() {
-        val regex = Regex(WorkspaceSearch.globToRegex("*.kt"))
+        val regex = Regex(globToRegex("*.kt"))
 
         assertTrue(regex.matches("Main.kt"))
         assertFalse(regex.matches("ui/Main.kt"))
@@ -23,7 +23,7 @@ class WorkspaceSearchTest {
 
     @Test
     fun `double star matches zero or more folders`() {
-        val regex = Regex(WorkspaceSearch.globToRegex("**/*.kt"))
+        val regex = Regex(globToRegex("**/*.kt"))
 
         assertTrue(regex.matches("Main.kt"))
         assertTrue(regex.matches("ui/screen/Main.kt"))
@@ -31,7 +31,7 @@ class WorkspaceSearchTest {
 
     @Test
     fun `single star inside a pattern matches any name part`() {
-        val regex = Regex(WorkspaceSearch.globToRegex("src/*.md"))
+        val regex = Regex(globToRegex("src/*.md"))
 
         assertTrue(regex.matches("src/notes.md"))
         assertFalse(regex.matches("src/deep/notes.md"))
@@ -39,7 +39,7 @@ class WorkspaceSearchTest {
 
     @Test
     fun `question mark matches exactly one character`() {
-        val regex = Regex(WorkspaceSearch.globToRegex("a?.txt"))
+        val regex = Regex(globToRegex("a?.txt"))
 
         assertTrue(regex.matches("ab.txt"))
         assertFalse(regex.matches("abc.txt"))

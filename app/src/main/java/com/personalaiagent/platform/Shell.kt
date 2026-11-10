@@ -78,8 +78,8 @@ class AndroidShellRunner @Inject constructor(
     override suspend fun run(
         command: String,
         workdir: File,
-        timeoutMillis: Long = DEFAULT_TIMEOUT_MS,
-        maxOutputChars: Int = MAX_OUTPUT_CHARS,
+        timeoutMillis: Long,
+        maxOutputChars: Int,
     ): ShellResult = withContext(Dispatchers.IO) {
         val trimmed = command.trim()
         if (trimmed.isEmpty()) {

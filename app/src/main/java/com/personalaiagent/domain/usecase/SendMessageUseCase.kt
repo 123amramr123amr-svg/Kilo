@@ -225,7 +225,8 @@ class SendMessageUseCase @Inject constructor(
                 append(
                     AgentToolCatalog.systemPrompt(
                         workspaceName = settings.workspaceName ?: "Workspace",
-                        skills = runCatching { skillSource.catalog() }.getOrDefault(emptyList()),
+                        skills = runCatching { skillSource.all() }.getOrDefault(emptyList())
+                            .map { skill -> skill.name + ": " + skill.description },
                     ),
                 )
             }

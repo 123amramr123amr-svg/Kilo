@@ -103,6 +103,7 @@ class ChatViewModel @Inject constructor(
     private val reviewDraft: ReviewDraftUseCase,
     private val runController: AgentRunController,
     private val attachmentLoader: AttachmentLoader,
+    private val questions: QuestionBroker,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())

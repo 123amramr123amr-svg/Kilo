@@ -69,9 +69,12 @@ class RetryPolicy(
         if (partialAnswerShown) return RetryDecision.GiveUp
         if (!error.isRetryable()) return RetryDecision.GiveUp
         if (attempt >= maxAttempts) return RetryDecision.GiveUp
+        // The hint can arrive either as an argument (from the HTTP layer) or
+        // inside the error itself; both mean "the provider told us when".
+        val hint = retryAfterSeconds ?: (error as? AppError.RateLimit)?.retryAfterSeconds
         return RetryDecision(
             retry = true,
-            delayMillis = delayFor(error, attempt, retryAfterSeconds),
+            delayMillis = delayFor(error, attempt, hint),
             reason = error.retryReason(),
         )
     }

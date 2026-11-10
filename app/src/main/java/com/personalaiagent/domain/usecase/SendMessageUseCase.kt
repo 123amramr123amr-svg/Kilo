@@ -66,6 +66,18 @@ sealed interface SendMessageEvent {
         val output: String = "",
     ) : SendMessageEvent
 
+    /**
+     * The request failed transiently and will be tried again automatically.
+     * The UI shows "المزوّد مزدحم — إعادة المحاولة بعد ٧ ثوان (٢/٤)" instead of
+     * an error banner that the user cannot act on.
+     */
+    data class Retrying(
+        val attempt: Int,
+        val maxAttempts: Int,
+        val delayMillis: Long,
+        val reason: String,
+    ) : SendMessageEvent()
+
     data class Completed(
         val taskId: String,
         val messageId: String,
@@ -101,6 +113,9 @@ class SendMessageUseCase @Inject constructor(
     private val time: TimeProvider,
     private val ids: IdGenerator,
 ) {
+
+    /** Retries a failed request with backoff, honouring the provider's own hint. */
+    private val retryPolicy = RetryPolicy()
 
     operator fun invoke(
         conversationId: String?,
@@ -138,7 +153,8 @@ class SendMessageUseCase @Inject constructor(
         val convId = conversationId?.also { existing ->
             chatRepository.updateConversationModel(existing, provider.id, model.id)
         } ?: chatRepository.createConversation(
-            title = prompt.take(48),
+            // The name the history list shows: one clean line from what was asked.
+            title = ConversationTitles.from(prompt).ifBlank { prompt.take(ConversationTitles.MAX_LENGTH) },
             providerId = provider.id,
             modelId = model.id,
         )
@@ -268,14 +284,17 @@ class SendMessageUseCase @Inject constructor(
                 val roundText = StringBuilder()
                 val roundCalls = mutableListOf<ToolCall>()
 
-                // One silent retry for a transient failure (network blip, 429, 5xx)
-                // when nothing of this round was shown yet — no duplicated text.
+                // A transient failure (network blip, 429, 5xx, a stream cut before
+                // its terminator) is retried with exponential backoff while nothing
+                // of this round was shown yet — so text never appears twice.
                 var attempt = 0
+                var trimmedContext = false
+                var currentRequest = request
                 while (true) {
                     attempt++
                     var terminated = false
                     try {
-                        clients.forKind(provider.kind).stream(request).collect { chunk ->
+                        clients.forKind(provider.kind).stream(currentRequest).collect { chunk ->
                             when (chunk) {
                                 is ChatChunk.Delta -> if (chunk.text.isNotEmpty()) {
                                     roundText.append(chunk.text)
@@ -305,16 +324,35 @@ class SendMessageUseCase @Inject constructor(
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (e: Exception) {
-                        val error = (e as? ProviderException)?.error ?: e.toAppError()
-                        val canRetry = attempt < 2 && roundText.isEmpty() && roundCalls.isEmpty() &&
-                            error.isTransient()
-                        if (!canRetry) throw e
+                        val providerError = e as? ProviderException
+                        val error = providerError?.error ?: e.toAppError()
+                        val decision = retryPolicy.decide(
+                            error = error,
+                            attempt = attempt,
+                            retryAfterSeconds = providerError?.retryAfterSeconds,
+                            partialAnswerShown = roundText.isNotEmpty() || roundCalls.isNotEmpty(),
+                            trimmedContextAlready = trimmedContext,
+                        )
+                        if (!decision.retry) throw e
                         taskRepository.finishStep(
                             sendStep,
                             TaskStepStatus.FAILED,
-                            detail = "retrying after ${error.describe()}",
+                            detail = "retry ${attempt}/${retryPolicy.maxAttempts} after ${error.describe()}",
                         )
-                        delay(1_200)
+                        if (decision.trimContext) {
+                            trimmedContext = true
+                            trimContext(turns)
+                            currentRequest = currentRequest.copy(messages = turns.toList())
+                        }
+                        emit(
+                            SendMessageEvent.Retrying(
+                                attempt = attempt,
+                                maxAttempts = retryPolicy.maxAttempts,
+                                delayMillis = decision.delayMillis,
+                                reason = decision.reason,
+                            ),
+                        )
+                        if (decision.delayMillis > 0L) delay(decision.delayMillis)
                     }
                 }
 
@@ -423,6 +461,32 @@ class SendMessageUseCase @Inject constructor(
         }
     }
 
+    /**
+     * Halves the prompt after the provider said it is too long: the system
+     * prompt and the newest turns always survive, because dropping the system
+     * prompt would change the agent's behaviour mid-task.
+     */
+    private fun trimContext(turns: MutableList<ChatTurn>) {
+        if (turns.isEmpty()) return
+        val system = turns.first().takeIf { it.role == MessageRole.SYSTEM }
+        val body = turns.filter { it !== system }
+        if (body.size <= 2) {
+            // Nothing else to drop: shorten the longest tool result instead.
+            turns.replaceAll { turn ->
+                if (turn.role == MessageRole.TOOL && turn.content.length > 2_000) {
+                    turn.copy(content = turn.content.take(2_000) + "\n…(truncated)")
+                } else {
+                    turn
+                }
+            }
+            return
+        }
+        val keep = body.takeLast(maxOf(2, body.size / 2))
+        turns.clear()
+        system?.let { turns += it }
+        turns += keep
+    }
+
     /** Recent turns of this conversation, capped by message count and by size. */
     private suspend fun historyFor(conversationId: String, assistantId: String): List<ChatMessage> {
         val all = chatRepository.getMessages(conversationId)
@@ -502,12 +566,12 @@ class SendMessageUseCase @Inject constructor(
     }.getOrDefault("")
 }
 
-/** Errors worth one automatic retry: they are usually momentary. */
-internal fun AppError.isTransient(): Boolean = when (this) {
-    AppError.Network, AppError.Timeout, AppError.RateLimit -> true
-    is AppError.Server -> code >= 500
-    else -> false
-}
+/**
+ * Errors worth an automatic retry: they are usually momentary.
+ * Kept as the single entry point the tests use; the schedule itself lives in
+ * [RetryPolicy].
+ */
+internal fun AppError.isTransient(): Boolean = isRetryable()
 
 /** Stable, non-sensitive identifier for logs and the execution log screen. */
 fun AppError.describe(): String = when (this) {
@@ -518,7 +582,9 @@ fun AppError.describe(): String = when (this) {
     AppError.Network -> "network"
     AppError.Timeout -> "timeout"
     AppError.Auth -> "auth"
-    AppError.RateLimit -> "rate_limit"
+    is AppError.RateLimit -> "rate_limit"
+    is AppError.QuotaExceeded -> "quota_exceeded"
+    AppError.ContextTooLong -> "context_too_long"
     is AppError.Server -> "server: $code"
     AppError.HttpNotFound -> "http_not_found"
     AppError.NotFound -> "not_found"

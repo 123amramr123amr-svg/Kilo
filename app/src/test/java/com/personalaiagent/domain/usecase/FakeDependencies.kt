@@ -88,6 +88,8 @@ class FakeSettingsRepository(
         update { it.copy(reviewRequests = enabled) }
     override suspend fun setShowAgentActivity(enabled: Boolean) =
         update { it.copy(showAgentActivity = enabled) }
+    override suspend fun setPinnedConversations(ids: Set<String>) =
+        update { it.copy(pinnedConversations = ids) }
     override suspend fun clearAll() = update { AppSettings() }
 
     private fun update(transform: (AppSettings) -> AppSettings) {
@@ -154,6 +156,37 @@ class FakeChatRepository : ChatRepository {
             )
             messageFlow.value = messages.toList()
         }
+    }
+
+    override fun observeConversationSummaries(
+        query: String,
+    ): Flow<List<com.personalaiagent.domain.model.ConversationSummary>> =
+        messageFlow.map { all ->
+            conversations
+                .filter { conversation ->
+                    query.isBlank() ||
+                        conversation.title.contains(query, ignoreCase = true) ||
+                        all.any {
+                            it.conversationId == conversation.id &&
+                                it.content.contains(query, ignoreCase = true)
+                        }
+                }
+                .sortedByDescending { it.updatedAt }
+                .map { conversation ->
+                    val own = all.filter { it.conversationId == conversation.id }
+                    com.personalaiagent.domain.model.ConversationSummary(
+                        id = conversation.id,
+                        title = conversation.title,
+                        preview = own.lastOrNull()?.content.orEmpty(),
+                        updatedAt = conversation.updatedAt,
+                        messageCount = own.size,
+                    )
+                }
+        }
+
+    override suspend fun renameConversation(id: String, title: String) {
+        val index = conversations.indexOfFirst { it.id == id }
+        if (index >= 0) conversations[index] = conversations[index].copy(title = title)
     }
 
     override suspend fun deleteConversation(id: String) {

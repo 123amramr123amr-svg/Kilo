@@ -493,4 +493,48 @@
     <string name="agent_activity_hide_all">Hide the agent-activity panel (turn it back on in Settings)</string>
     <string name="chat_pick_model_cta">Choose the model</string>
     <string name="chat_continue_answer">Continue the answer</string>
+
+    <!-- Phase 7: real causes instead of one generic "error" -->
+    <string name="error_rate_limit">The provider asked to slow down (HTTP 429). This is a limit on your key, not a bug.</string>
+    <string name="error_rate_limit_wait">The provider asked to slow down. Try again in about %1$d seconds.</string>
+    <string name="error_quota">Your provider account has no credit or quota left. Add credit, or switch to another provider.</string>
+    <string name="error_context_too_long">This conversation is longer than the model can read. Start a new chat, or pick a model with a bigger context window.</string>
+    <string name="error_server_detail">The provider refused the request (%1$d): %2$s</string>
+    <string name="chat_retrying">The provider is busy — retrying in %1$d s (%2$d/%3$d)</string>
+    <string name="chat_retrying_now">Retrying now (%1$d/%2$d)…</string>
+    <string name="retry_reason_rate_limited">rate limited</string>
+    <string name="retry_reason_timeout">no answer in time</string>
+    <string name="retry_reason_network">connection dropped</string>
+    <string name="retry_reason_http">provider error</string>
+    <string name="retry_reason_context_too_long">conversation too long — shortening it</string>
+
+    <!-- Phase 7: conversation history -->
+    <string name="history_title">Conversations</string>
+    <string name="history_subtitle">Every chat keeps its own name and its own memory</string>
+    <string name="history_search_hint">Search your conversations</string>
+    <string name="history_empty_title">No conversations yet</string>
+    <string name="history_empty_body">Your chats are saved here with a name, so you can always come back to them.</string>
+    <string name="history_empty_search">Nothing matches “%1$s”</string>
+    <string name="history_new_chat">New chat</string>
+    <string name="history_message_count">%1$d messages</string>
+    <string name="history_message_count_one">1 message</string>
+    <string name="history_pin">Pin to top</string>
+    <string name="history_unpin">Unpin</string>
+    <string name="history_rename">Rename</string>
+    <string name="history_delete">Delete</string>
+    <string name="history_delete_title">Delete this conversation?</string>
+    <string name="history_delete_body">“%1$s” and its messages will be deleted from this device. This cannot be undone.</string>
+    <string name="history_rename_title">Conversation name</string>
+    <string name="history_rename_save">Save</string>
+    <string name="history_pinned">Pinned</string>
+    <string name="history_recent">Recent</string>
+    <string name="history_today">Today</string>
+    <string name="history_yesterday">Yesterday</string>
+    <string name="history_now">Just now</string>
+    <string name="history_minutes_ago">%1$d min ago</string>
+    <string name="history_hours_ago">%1$d h ago</string>
+    <string name="history_days_ago">%1$d d ago</string>
+    <string name="history_open">Open conversation</string>
+    <string name="chat_open_history">Conversations</string>
+    <string name="chat_untitled_conversation">Untitled conversation</string>
 </resources>

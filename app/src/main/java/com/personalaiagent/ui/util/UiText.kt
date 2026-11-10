@@ -24,8 +24,14 @@ fun appErrorText(error: AppError): String = when (error) {
     AppError.Network -> stringResource(R.string.error_network)
     AppError.Timeout -> stringResource(R.string.error_timeout)
     AppError.Auth -> stringResource(R.string.error_auth)
-    AppError.RateLimit -> stringResource(R.string.error_rate_limit)
-    is AppError.Server -> stringResource(R.string.error_server, error.code)
+    is AppError.RateLimit -> error.retryAfterSeconds?.let { seconds ->
+        stringResource(R.string.error_rate_limit_wait, seconds)
+    } ?: stringResource(R.string.error_rate_limit)
+    is AppError.QuotaExceeded -> stringResource(R.string.error_quota)
+    AppError.ContextTooLong -> stringResource(R.string.error_context_too_long)
+    is AppError.Server -> error.detail?.takeIf { it.isNotBlank() }?.let { detail ->
+        stringResource(R.string.error_server_detail, error.code, detail)
+    } ?: stringResource(R.string.error_server, error.code)
     AppError.HttpNotFound -> stringResource(R.string.error_http_not_found)
     AppError.NotFound -> stringResource(R.string.error_not_found)
     AppError.Parse -> stringResource(R.string.error_parse)

@@ -25,6 +25,17 @@ import okhttp3.Response
  */
 class HttpEngine(private val client: OkHttpClient) {
 
+    /**
+     * Same connection pool, but without a read timeout: long "thinking" models
+     * legitimately stay silent for a while before the first token, and the
+     * previous 90 s limit was reported to the user as "the provider timed out".
+     */
+    private val streamingClient: OkHttpClient by lazy {
+        client.newBuilder()
+            .readTimeout(0, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .build()
+    }
+
     /** Streams raw SSE events. Cancelling the collector cancels the HTTP call. */
     fun streamEvents(
         url: String,
@@ -32,7 +43,11 @@ class HttpEngine(private val client: OkHttpClient) {
         jsonBody: String,
     ): Flow<SseEvent> = callbackFlow {
         val parser = SseStreamParser()
-        val call = client.newCall(buildRequest(url, headers, jsonBody))
+        // A stream is not a request/response: the model may think for a minute
+        // before the first token. The read timeout must not fire during that
+        // silence — the run watchdog (120 s with no event at all) is what
+        // decides a stream is dead.
+        val call = streamingClient.newCall(buildRequest(url, headers, jsonBody))
 
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -42,7 +57,7 @@ class HttpEngine(private val client: OkHttpClient) {
             override fun onResponse(call: Call, response: Response) {
                 response.use { resp ->
                     if (!resp.isSuccessful) {
-                        close(ProviderException(httpStatusToAppError(resp.code)))
+                        close(failureOf(resp))
                         return
                     }
                     val source = resp.body?.source()
@@ -108,7 +123,7 @@ class HttpEngine(private val client: OkHttpClient) {
             })
         }
         response.use { resp ->
-            if (!resp.isSuccessful) throw ProviderException(httpStatusToAppError(resp.code))
+            if (!resp.isSuccessful) throw failureOf(resp)
             return resp.body?.bytes() ?: throw ProviderException(com.personalaiagent.core.AppError.Parse)
         }
     }
@@ -133,7 +148,7 @@ class HttpEngine(private val client: OkHttpClient) {
         }
 
         response.use { resp ->
-            if (!resp.isSuccessful) throw ProviderException(httpStatusToAppError(resp.code))
+            if (!resp.isSuccessful) throw failureOf(resp)
             return resp.body?.string() ?: throw ProviderException(com.personalaiagent.core.AppError.Parse)
         }
     }
@@ -147,7 +162,27 @@ class HttpEngine(private val client: OkHttpClient) {
             .build()
     }
 
+    /**
+     * Reads an error response once and keeps everything the UI needs: the HTTP
+     * status, the provider's own sentence and the `Retry-After` hint.
+     */
+    private fun failureOf(resp: Response): ProviderException {
+        val retryAfter = ProviderErrors.retryAfterSeconds(
+            resp.header("Retry-After")
+                ?: resp.header("x-ratelimit-reset-requests")
+                ?: resp.header("x-ratelimit-reset"),
+        )
+        val body = runCatching {
+            resp.peekBody(ERROR_BODY_LIMIT).string()
+        }.getOrNull()
+        val error = ProviderErrors.toAppError(resp.code, body, retryAfter)
+        return ProviderException(error, retryAfterSeconds = retryAfter, httpCode = resp.code)
+    }
+
     private companion object {
         val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+
+        /** Enough of an error page to read the sentence, never the whole body. */
+        const val ERROR_BODY_LIMIT = 8_192L
     }
 }

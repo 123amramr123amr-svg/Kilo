@@ -122,8 +122,58 @@ interface ModelDao {
     suspend fun clear()
 }
 
+/** Projection used by the history screen: a card needs no full message bodies. */
+data class ConversationSummaryRow(
+    val id: String,
+    val title: String,
+    val updatedAt: Long,
+    val messageCount: Int,
+    val preview: String?,
+)
+
 @Dao
 interface ConversationDao {
+
+    /**
+     * Newest first, with the last thing that was said and how many messages the
+     * chat has — all computed by SQLite, so opening the history never loads a
+     * single message body into memory.
+     */
+    @Query(
+        """
+        SELECT c.id AS id,
+               c.title AS title,
+               c.updatedAt AS updatedAt,
+               (SELECT COUNT(*) FROM messages m WHERE m.conversationId = c.id) AS messageCount,
+               (SELECT m.content FROM messages m
+                 WHERE m.conversationId = c.id
+                 ORDER BY m.createdAt DESC, m.id DESC LIMIT 1) AS preview
+        FROM conversations c
+        ORDER BY c.updatedAt DESC
+        """,
+    )
+    fun observeSummaries(): Flow<List<ConversationSummaryRow>>
+
+    /** Same rows, filtered by a search term over the title and the messages. */
+    @Query(
+        """
+        SELECT c.id AS id,
+               c.title AS title,
+               c.updatedAt AS updatedAt,
+               (SELECT COUNT(*) FROM messages m WHERE m.conversationId = c.id) AS messageCount,
+               (SELECT m.content FROM messages m
+                 WHERE m.conversationId = c.id
+                 ORDER BY m.createdAt DESC, m.id DESC LIMIT 1) AS preview
+        FROM conversations c
+        WHERE c.title LIKE '%' || :query || '%'
+           OR EXISTS (
+                SELECT 1 FROM messages m2
+                 WHERE m2.conversationId = c.id AND m2.content LIKE '%' || :query || '%'
+           )
+        ORDER BY c.updatedAt DESC
+        """,
+    )
+    fun searchSummaries(query: String): Flow<List<ConversationSummaryRow>>
 
     @Query("SELECT * FROM conversations ORDER BY updatedAt DESC LIMIT 1")
     fun observeLatest(): Flow<ConversationEntity?>

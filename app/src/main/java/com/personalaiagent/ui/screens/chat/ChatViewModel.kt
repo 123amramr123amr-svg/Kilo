@@ -17,6 +17,7 @@ import com.personalaiagent.domain.repository.ProviderRepository
 import com.personalaiagent.domain.repository.SettingsRepository
 import com.personalaiagent.domain.usecase.ReviewDraftUseCase
 import com.personalaiagent.domain.usecase.agent.AgentRunController
+import com.personalaiagent.domain.usecase.agent.RetryNotice
 import com.personalaiagent.domain.usecase.agent.ToolActivityUi
 import com.personalaiagent.platform.AttachmentLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -56,6 +57,8 @@ data class ChatUiState(
     val showActivity: Boolean = true,
     /** Steps the agent committed to for the current request. */
     val plan: List<String> = emptyList(),
+    /** Set while an automatic retry is waiting, so the UI can count down. */
+    val retry: RetryNotice? = null,
     val reviewFirst: Boolean = true,
     val isReviewing: Boolean = false,
     val review: DraftReview? = null,
@@ -189,6 +192,7 @@ class ChatViewModel @Inject constructor(
                         toolActivity = run.toolActivity,
                         reasoningText = run.reasoningText,
                         plan = run.plan.ifEmpty { it.plan },
+                        retry = run.retry,
                         error = run.error ?: it.error,
                     )
                 }
@@ -396,6 +400,35 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Opens an earlier conversation from the history screen. The run controller is
+     * stopped first so a half-written answer never lands in the wrong chat.
+     */
+    fun openConversation(id: String) {
+        if (id == _uiState.value.conversationId && _uiState.value.messages.isEmpty()) return
+        if (id == _uiState.value.conversationId) return
+        runController.stop()
+        followLatestConversation = false
+        conversationId.value = id
+        runController.attachConversation(id)
+        _uiState.update {
+            it.copy(
+                conversationId = id,
+                messages = emptyList(),
+                input = "",
+                error = null,
+                streamingText = "",
+                streamingMessageId = null,
+                isGenerating = false,
+                toolActivity = emptyList(),
+                plan = emptyList(),
+                retry = null,
+                reasoningText = "",
+                attachments = emptyList(),
+            )
+        }
+    }
+
     fun deleteCurrentConversation() {
         val id = _uiState.value.conversationId ?: return
         runController.stop()
@@ -435,6 +468,7 @@ class ChatViewModel @Inject constructor(
                 streamingMessageId = null,
                 toolActivity = emptyList(),
                 plan = plan,
+                retry = null,
                 attachments = emptyList(),
             )
         }

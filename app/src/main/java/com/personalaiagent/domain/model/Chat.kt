@@ -9,6 +9,23 @@ data class Conversation(
     val modelId: String?,
 )
 
+/**
+ * One row of the conversation history: enough to draw a card without loading
+ * every message of every chat into memory.
+ */
+data class ConversationSummary(
+    val id: String,
+    val title: String,
+    val preview: String,
+    val updatedAt: Long,
+    val messageCount: Int,
+    val pinned: Boolean = false,
+) {
+    /** True when the row still carries the placeholder created before the first message. */
+    val isUntitled: Boolean
+        get() = title.isBlank() || title == "New conversation" || title == "محادثة جديدة"
+}
+
 data class ChatMessage(
     val id: String,
     val conversationId: String,

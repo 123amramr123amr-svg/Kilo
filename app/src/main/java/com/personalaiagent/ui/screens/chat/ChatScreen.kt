@@ -139,6 +139,7 @@ fun ChatScreen(
     onOpenTaskLog: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenWorkspace: () -> Unit,
+    onOpenHistory: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -191,6 +192,14 @@ fun ChatScreen(
             },
             online = state.hasProviders,
             actions = {
+                // Every saved conversation, one tap from the chat.
+                IconButton(onClick = onOpenHistory) {
+                    Icon(
+                        Icons.Rounded.History,
+                        contentDescription = stringResource(R.string.chat_open_history),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 IconButton(onClick = onOpenModels) {
                     Icon(
                         Icons.Rounded.Memory,
@@ -284,6 +293,49 @@ fun ChatScreen(
             }
         }
 
+        // "The provider is busy — retrying in 7 s (2/4)": an automatic retry is
+        // progress, not an error, so it gets its own calm line instead of a banner.
+        AnimatedVisibility(visible = state.retry != null) {
+            state.retry?.let { retry ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(14.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = if (retry.delayMillis >= 1_000L) {
+                            stringResource(
+                                R.string.chat_retrying,
+                                (retry.delayMillis / 1_000L).toInt(),
+                                retry.attempt,
+                                retry.maxAttempts,
+                            )
+                        } else {
+                            stringResource(R.string.chat_retrying_now, retry.attempt, retry.maxAttempts)
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        text = retryReason(retry.reason),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when {
                 state.isLoading -> LoadingState(
@@ -306,7 +358,7 @@ fun ChatScreen(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(18.dp),
                 ) {
                     items(state.messages.size, key = { state.messages[it].id }) { index ->
                         val message = state.messages[index]
@@ -769,6 +821,16 @@ private fun ChatHeader(
 }
 
 /** Human label for an agent tool: "Reading a file", not "read_file". */
+/** One short phrase for why the request is being retried. */
+@Composable
+private fun retryReason(reason: String): String = when (reason) {
+    "rate_limited" -> stringResource(R.string.retry_reason_rate_limited)
+    "timeout" -> stringResource(R.string.retry_reason_timeout)
+    "network" -> stringResource(R.string.retry_reason_network)
+    "context_too_long" -> stringResource(R.string.retry_reason_context_too_long)
+    else -> stringResource(R.string.retry_reason_http)
+}
+
 @Composable
 private fun toolLabel(toolName: String): String = stringResource(
     when (toolName) {
@@ -912,7 +974,9 @@ private fun MessageBubble(
         }
 
         Column(
-            modifier = Modifier.widthIn(max = 330.dp),
+            // A bubble hugs its text; an answer uses the full width next to the
+            // avatar, because a long reply squeezed into a bubble is hard to read.
+            modifier = if (isUser) Modifier.widthIn(max = 340.dp) else Modifier.weight(1f),
             horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
         ) {
             if (isUser) {
@@ -931,9 +995,9 @@ private fun MessageBubble(
                     SelectionContainer {
                         Text(
                             text = displayText,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.background,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            modifier = Modifier.padding(horizontal = 15.dp, vertical = 11.dp),
                         )
                     }
                 }
@@ -1066,53 +1130,112 @@ private fun Composer(
     var modelMenu by remember { mutableStateOf(false) }
 
     Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-            // Every connected model, one tap away — right above the input.
-            if (state.models.isNotEmpty()) {
-                val selectedLabel = stringResource(R.string.chat_models_connected)
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+        ) {
+            // One compact meta row. The old composer stacked a row of model chips,
+            // a second row of controls and then the field — three bands tall, each
+            // with its own pill sizes. The active model and the review switch live
+            // here, and everything else moved into the single rounded field.
+            if (state.models.isNotEmpty() || state.reviewFirst) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    contentPadding = PaddingValues(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    item {
-                        Text(
-                            text = selectedLabel,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(end = 2.dp),
-                        )
-                    }
-                    items(state.models, key = { it.id }) { model ->
-                        val active = model.id == state.activeModel?.id
-                        Row(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(
-                                    if (active) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.surfaceVariant,
-                                )
-                                .clickable { onSelectModel(model.id) }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            if (active) {
+                    if (state.models.isNotEmpty()) {
+                        Box {
+                            Row(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable { modelMenu = true }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
                                 Icon(
-                                    Icons.Rounded.CheckCircle,
+                                    Icons.Rounded.Memory,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(13.dp),
                                 )
                                 Spacer(Modifier.width(5.dp))
+                                Text(
+                                    text = state.activeModel?.displayName
+                                        ?: stringResource(R.string.chat_no_models),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.widthIn(max = 168.dp),
+                                )
+                                Icon(
+                                    Icons.Rounded.ArrowDropDown,
+                                    contentDescription = stringResource(R.string.a11y_current_model),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(15.dp),
+                                )
                             }
-                            Text(
-                                text = model.displayName,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = if (active) MaterialTheme.colorScheme.onPrimary
-                                else MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                            )
+                            DropdownMenu(expanded = modelMenu, onDismissRequest = { modelMenu = false }) {
+                                state.models.forEach { model ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Column {
+                                                Text(model.displayName, style = MaterialTheme.typography.bodyMedium)
+                                                Text(
+                                                    model.providerName,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                            }
+                                        },
+                                        trailingIcon = {
+                                            if (model.id == state.activeModel?.id) {
+                                                Tag(text = stringResource(R.string.models_active))
+                                            }
+                                        },
+                                        onClick = {
+                                            modelMenu = false
+                                            onSelectModel(model.id)
+                                        },
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.models_title)) },
+                                    leadingIcon = { Icon(Icons.Rounded.Memory, contentDescription = null) },
+                                    onClick = {
+                                        modelMenu = false
+                                        onOpenModels()
+                                    },
+                                )
+                            }
                         }
+                    } else {
+                        Spacer(Modifier.width(0.dp))
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(onClick = onToggleReview)
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            Icons.Rounded.Tune,
+                            contentDescription = null,
+                            tint = if (state.reviewFirst) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(13.dp),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(R.string.chat_review_toggle),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (state.reviewFirst) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
                 Spacer(Modifier.height(6.dp))
@@ -1130,180 +1253,118 @@ private fun Composer(
                 Spacer(Modifier.height(6.dp))
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onAttach, enabled = !state.isAttaching) {
-                    if (state.isAttaching) {
-                        CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-                    } else {
-                        Icon(
-                            Icons.Rounded.AttachFile,
-                            contentDescription = stringResource(R.string.chat_attach),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                Spacer(Modifier.weight(1f))
-                Row(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(
-                            if (state.reviewFirst) MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.surfaceVariant,
-                        )
-                        .clickable(onClick = onToggleReview)
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.Rounded.Tune,
-                        contentDescription = null,
-                        tint = if (state.reviewFirst) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(13.dp),
-                    )
-                    Spacer(Modifier.width(5.dp))
-                    Text(
-                        text = stringResource(R.string.chat_review_toggle),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (state.reviewFirst) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Spacer(Modifier.width(6.dp))
-                Box {
-                    Row(
+            // The field itself: one rounded card that grows with the text, with
+            // its own toolbar underneath — so the composer never changes shape.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                ),
+            ) {
+                Column(modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 2.dp, bottom = 4.dp)) {
+                    TextField(
+                        value = state.input,
+                        onValueChange = onInputChange,
                         modifier = Modifier
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { modelMenu = true }
-                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                            .fillMaxWidth()
+                            .heightIn(min = 54.dp, max = 140.dp),
+                        placeholder = {
+                            Text(
+                                text = stringResource(R.string.chat_input_hint),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            )
+                        },
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                        maxLines = 6,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                        ),
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text = state.activeModel?.displayName ?: stringResource(R.string.chat_no_models),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            modifier = Modifier.widthIn(max = 110.dp),
-                        )
-                        Icon(
-                            Icons.Rounded.ArrowDropDown,
-                            contentDescription = stringResource(R.string.a11y_current_model),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-                    DropdownMenu(expanded = modelMenu, onDismissRequest = { modelMenu = false }) {
-                        state.models.forEach { model ->
-                            DropdownMenuItem(
-                                text = {
-                                    Column {
-                                        Text(model.displayName, style = MaterialTheme.typography.bodyMedium)
-                                        Text(
-                                            model.providerName,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                },
-                                trailingIcon = {
-                                    if (model.id == state.activeModel?.id) {
-                                        Tag(text = stringResource(R.string.models_active))
-                                    }
-                                },
-                                onClick = {
-                                    modelMenu = false
-                                    onSelectModel(model.id)
-                                },
+                        IconButton(
+                            onClick = onAttach,
+                            enabled = !state.isAttaching,
+                            modifier = Modifier.size(34.dp),
+                        ) {
+                            if (state.isAttaching) {
+                                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(15.dp))
+                            } else {
+                                Icon(
+                                    Icons.Rounded.AttachFile,
+                                    contentDescription = stringResource(R.string.chat_attach),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(19.dp),
+                                )
+                            }
+                        }
+                        IconButton(onClick = onMic, modifier = Modifier.size(34.dp)) {
+                            Icon(
+                                Icons.Rounded.Mic,
+                                contentDescription = stringResource(R.string.a11y_mic),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(19.dp),
                             )
                         }
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.models_title)) },
-                            leadingIcon = { Icon(Icons.Rounded.Memory, contentDescription = null) },
-                            onClick = {
-                                modelMenu = false
-                                onOpenModels()
-                            },
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(6.dp))
-            Row(verticalAlignment = Alignment.Bottom) {
-                IconButton(onClick = onMic) {
-                    Icon(
-                        Icons.Rounded.Mic,
-                        contentDescription = stringResource(R.string.a11y_mic),
-                        tint = BrandCyan,
-                    )
-                }
-                TextField(
-                    value = state.input,
-                    onValueChange = onInputChange,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(MaterialTheme.shapes.large),
-                    placeholder = {
-                        Text(
-                            text = stringResource(R.string.chat_input_hint),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    },
-                    maxLines = 6,
-                    shape = MaterialTheme.shapes.large,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                    ),
-                )
-                Spacer(Modifier.width(8.dp))
-                if (state.isGenerating) {
-                    IconButton(
-                        onClick = onStop,
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.16f)),
-                    ) {
-                        Icon(
-                            Icons.Rounded.Stop,
-                            contentDescription = stringResource(R.string.chat_stop_generating),
-                            tint = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                } else if (state.isReviewing) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-                    }
-                } else {
-                    IconButton(
-                        onClick = onSend,
-                        enabled = state.canSend,
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(
-                                androidx.compose.ui.graphics.SolidColor(
-                                    if (state.canSend) MaterialTheme.colorScheme.onBackground
-                                    else MaterialTheme.colorScheme.surfaceVariant,
-                                ),
-                            ),
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.Send,
-                            contentDescription = stringResource(R.string.a11y_send),
-                            tint = if (state.canSend) MaterialTheme.colorScheme.background
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Spacer(Modifier.weight(1f))
+                        if (state.isGenerating) {
+                            IconButton(
+                                onClick = onStop,
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.14f)),
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Stop,
+                                    contentDescription = stringResource(R.string.chat_stop_generating),
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        } else if (state.isReviewing) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+                            }
+                        } else {
+                            IconButton(
+                                onClick = onSend,
+                                enabled = state.canSend,
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (state.canSend) MaterialTheme.colorScheme.onBackground
+                                        else MaterialTheme.colorScheme.surfaceVariant,
+                                    ),
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.Send,
+                                    contentDescription = stringResource(R.string.a11y_send),
+                                    tint = if (state.canSend) MaterialTheme.colorScheme.background
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(17.dp),
+                                )
+                            }
+                        }
                     }
                 }
             }

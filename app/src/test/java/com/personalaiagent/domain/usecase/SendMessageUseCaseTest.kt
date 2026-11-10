@@ -236,7 +236,7 @@ class SendMessageUseCaseTest {
     fun `only momentary errors are worth a retry`() {
         assertTrue(AppError.Network.isTransient())
         assertTrue(AppError.Timeout.isTransient())
-        assertTrue(AppError.RateLimit.isTransient())
+        assertTrue(AppError.RateLimit().isTransient())
         assertTrue(AppError.Server(503).isTransient())
         assertFalse(AppError.Auth.isTransient())
         assertFalse(AppError.HttpNotFound.isTransient())

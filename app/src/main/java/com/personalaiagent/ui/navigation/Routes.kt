@@ -3,6 +3,7 @@ package com.personalaiagent.ui.navigation
 object Routes {
     const val ONBOARDING = "onboarding"
     const val CHAT = "chat"
+    const val HISTORY = "history"
     const val MODELS = "models"
     const val MODEL_SETTINGS = "model_settings/{modelId}"
     const val PROVIDERS = "providers"

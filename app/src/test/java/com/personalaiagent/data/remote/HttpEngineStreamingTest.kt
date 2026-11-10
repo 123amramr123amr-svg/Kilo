@@ -106,7 +106,7 @@ class HttpEngineStreamingTest {
         val error = runCatching {
             client(server.url("/v1").toString()).stream(request(server.url("/v1").toString())).toList()
         }.exceptionOrNull()
-        assertEquals(AppError.RateLimit, (error as ProviderException).error)
+        assertEquals(AppError.RateLimit(), (error as ProviderException).error)
     }
 
     @Test

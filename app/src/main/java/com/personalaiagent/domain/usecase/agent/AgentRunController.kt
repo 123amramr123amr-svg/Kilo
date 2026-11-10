@@ -29,6 +29,14 @@ data class ToolActivityUi(
     val output: String = "",
 )
 
+/** A live "trying again" hint, so the composer never reads as frozen or broken. */
+data class RetryNotice(
+    val attempt: Int,
+    val maxAttempts: Int,
+    val delayMillis: Long,
+    val reason: String,
+)
+
 /** Everything the UI needs to render a run, including one that survives the screen. */
 data class AgentRunState(
     val isRunning: Boolean = false,
@@ -39,6 +47,8 @@ data class AgentRunState(
     val reasoningText: String = "",
     val toolActivity: List<ToolActivityUi> = emptyList(),
     val plan: List<String> = emptyList(),
+    /** Non-null while the request is being retried automatically. */
+    val retry: RetryNotice? = null,
     val error: AppError? = null,
     val finishedText: String? = null,
     /** Increments on every completed run so the UI can react once. */
@@ -124,6 +134,18 @@ class AgentRunController @Inject constructor(
                             flush()
                         }
 
+                        is SendMessageEvent.Retrying -> {
+                            flush(force = true)
+                            _state.value = _state.value.copy(
+                                retry = RetryNotice(
+                                    attempt = event.attempt,
+                                    maxAttempts = event.maxAttempts,
+                                    delayMillis = event.delayMillis,
+                                    reason = event.reason,
+                                ),
+                            )
+                        }
+
                         is SendMessageEvent.Reasoning -> {
                             reasoning.append(event.text)
                             if (reasoning.length > MAX_REASONING_CHARS) {
@@ -146,6 +168,7 @@ class AgentRunController @Inject constructor(
 
                         is SendMessageEvent.Completed -> {
                             _state.value = _state.value.copy(
+                                retry = null,
                                 isRunning = false,
                                 streamingText = "",
                                 assistantMessageId = null,
@@ -156,6 +179,7 @@ class AgentRunController @Inject constructor(
 
                         is SendMessageEvent.Failed -> {
                             _state.value = _state.value.copy(
+                                retry = null,
                                 isRunning = false,
                                 streamingText = "",
                                 assistantMessageId = null,
@@ -213,7 +237,12 @@ class AgentRunController @Inject constructor(
         job?.cancel()
         watchdog?.cancel()
         job = null
-        _state.value = _state.value.copy(isRunning = false, streamingText = "", assistantMessageId = null)
+        _state.value = _state.value.copy(
+            isRunning = false,
+            streamingText = "",
+            assistantMessageId = null,
+            retry = null,
+        )
     }
 
     fun clearError() {

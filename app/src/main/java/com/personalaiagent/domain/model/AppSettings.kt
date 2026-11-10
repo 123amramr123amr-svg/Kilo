@@ -22,6 +22,8 @@ data class AppSettings(
     val reviewRequests: Boolean = false,
     /** Show the live "what is the agent doing" panel in the chat. */
     val showAgentActivity: Boolean = true,
+    /** Conversations the user pinned to the top of the history list. */
+    val pinnedConversations: Set<String> = emptySet(),
 ) {
     val hasWorkspace: Boolean get() = !workspaceUri.isNullOrBlank()
 }

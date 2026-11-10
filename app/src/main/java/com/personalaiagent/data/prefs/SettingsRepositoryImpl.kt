@@ -86,6 +86,10 @@ class SettingsRepositoryImpl(
         dataStore.edit { it[KEY_AGENT_ACTIVITY] = enabled }
     }
 
+    override suspend fun setPinnedConversations(ids: Set<String>) {
+        dataStore.edit { prefs -> prefs[KEY_PINNED_CONVERSATIONS] = ids.joinToString(SEPARATOR) }
+    }
+
     override suspend fun clearAll() {
         localeMirror.clear()
         dataStore.edit { it.clear() }
@@ -108,6 +112,11 @@ class SettingsRepositoryImpl(
         agentFileToolsEnabled = this[KEY_AGENT_TOOLS] ?: true,
         reviewRequests = this[KEY_REVIEW_REQUESTS] ?: false,
         showAgentActivity = this[KEY_AGENT_ACTIVITY] ?: true,
+        pinnedConversations = this[KEY_PINNED_CONVERSATIONS]
+            ?.split(SEPARATOR)
+            ?.filter { it.isNotBlank() }
+            ?.toSet()
+            .orEmpty(),
     )
 
     private fun systemLanguageTag(): String =
@@ -127,5 +136,9 @@ class SettingsRepositoryImpl(
         val KEY_AGENT_TOOLS = booleanPreferencesKey("agent_file_tools")
         val KEY_AGENT_ACTIVITY = booleanPreferencesKey("agent_activity")
         val KEY_REVIEW_REQUESTS = booleanPreferencesKey("review_requests")
+        val KEY_PINNED_CONVERSATIONS = stringPreferencesKey("pinned_conversations")
+
+        /** Conversation ids are UUIDs: they never contain a newline. */
+        const val SEPARATOR = "\n"
     }
 }

@@ -9,8 +9,11 @@ import com.personalaiagent.data.local.toDomain
 import com.personalaiagent.data.local.toEntity
 import com.personalaiagent.domain.model.ChatMessage
 import com.personalaiagent.domain.model.Conversation
+import com.personalaiagent.domain.model.ConversationSummary
+import com.personalaiagent.domain.model.MessageRole
 import com.personalaiagent.domain.model.MessageStatus
 import com.personalaiagent.domain.repository.ChatRepository
+import com.personalaiagent.domain.usecase.ConversationTitles
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -42,6 +45,32 @@ class ChatRepositoryImpl @Inject constructor(
         conversationDao.getRecent(excludeConversationId ?: "", limit.coerceIn(1, 10))
             .map { it.toDomain() }
 
+    override fun observeConversationSummaries(query: String): Flow<List<ConversationSummary>> {
+        val trimmed = query.trim()
+        val rows = if (trimmed.isEmpty()) {
+            conversationDao.observeSummaries()
+        } else {
+            conversationDao.searchSummaries(trimmed)
+        }
+        return rows.map { list ->
+            list.map { row ->
+                ConversationSummary(
+                    id = row.id,
+                    title = row.title,
+                    preview = row.preview?.replace(Regex("\\s+"), " ")?.trim().orEmpty(),
+                    updatedAt = row.updatedAt,
+                    messageCount = row.messageCount,
+                )
+            }
+        }
+    }
+
+    override suspend fun renameConversation(id: String, title: String) {
+        val clean = title.trim().take(MAX_TITLE_CHARS)
+        if (clean.isEmpty()) return
+        conversationDao.rename(id, clean)
+    }
+
     override suspend fun createConversation(
         title: String,
         providerId: String?,
@@ -69,6 +98,22 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun appendMessage(message: ChatMessage) {
         messageDao.insert(message.toEntity())
         conversationDao.touch(message.conversationId, message.createdAt)
+        // A chat created before this feature (or from the model picker) still has
+        // the placeholder title; the first real message names it.
+        if (message.role == MessageRole.USER) {
+            val conversation = conversationDao.getById(message.conversationId)
+            if (conversation != null && isPlaceholderTitle(conversation.title)) {
+                val title = ConversationTitles.from(message.content)
+                if (title.isNotEmpty()) conversationDao.rename(conversation.id, title)
+            }
+        }
+    }
+
+    private fun isPlaceholderTitle(title: String): Boolean {
+        val clean = title.trim()
+        return clean.isEmpty() ||
+            clean.equals("New conversation", ignoreCase = true) ||
+            clean == "محادثة جديدة"
     }
 
     override suspend fun updateAssistantMessage(
@@ -96,5 +141,10 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun clearAll() {
         messageDao.clear()
         conversationDao.clear()
+    }
+
+    private companion object {
+        /** Long enough for a real name, short enough for one line in the list. */
+        const val MAX_TITLE_CHARS = 80
     }
 }

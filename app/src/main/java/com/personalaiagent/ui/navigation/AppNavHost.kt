@@ -55,6 +55,7 @@ import com.personalaiagent.ui.screens.account.PrivacyScreen
 import com.personalaiagent.ui.screens.account.ProfileScreen
 import com.personalaiagent.ui.screens.chat.ChatScreen
 import com.personalaiagent.ui.screens.chat.ChatViewModel
+import com.personalaiagent.ui.screens.history.ConversationHistoryScreen
 import com.personalaiagent.ui.screens.models.ModelSettingsScreen
 import com.personalaiagent.ui.screens.models.ModelsScreen
 import com.personalaiagent.ui.screens.onboarding.OnboardingScreen
@@ -144,6 +145,18 @@ fun AppNavHost(
                             entry.savedStateHandle["voice_text"] = null
                         }
                     }
+                    // The history screen asks the chat entry to open an old
+                    // conversation through this handle, so the route stays simple.
+                    val openConversationFlow =
+                        entry.savedStateHandle.getStateFlow<String?>("open_conversation", null)
+                    val openConversationId by openConversationFlow.collectAsStateWithLifecycle()
+                    LaunchedEffect(openConversationId) {
+                        openConversationId?.let { id ->
+                            // An empty id means "start a new chat" (the + button).
+                            if (id.isBlank()) chatViewModel.newChat() else chatViewModel.openConversation(id)
+                            entry.savedStateHandle["open_conversation"] = null
+                        }
+                    }
                     ChatScreen(
                         viewModel = chatViewModel,
                         onOpenProviders = { navController.navigate(Routes.providerEdit(null)) },
@@ -156,6 +169,29 @@ fun AppNavHost(
                         onOpenTaskLog = { navController.navigate(Routes.TASKS) },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
                         onOpenWorkspace = { navController.navigate(Routes.WORKSPACE) },
+                        onOpenHistory = {
+                            navController.navigate(Routes.HISTORY) { launchSingleTop = true }
+                        },
+                    )
+                }
+
+                composable(Routes.HISTORY) {
+                    ConversationHistoryScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenConversation = { conversationId ->
+                            runCatching {
+                                val chatEntry = navController.getBackStackEntry(Routes.CHAT)
+                                chatEntry.savedStateHandle["open_conversation"] = conversationId
+                            }
+                            navController.popBackStack(Routes.CHAT, inclusive = false)
+                        },
+                        onNewChat = {
+                            runCatching {
+                                val chatEntry = navController.getBackStackEntry(Routes.CHAT)
+                                chatEntry.savedStateHandle["open_conversation"] = ""
+                            }
+                            navController.popBackStack(Routes.CHAT, inclusive = false)
+                        },
                     )
                 }
 

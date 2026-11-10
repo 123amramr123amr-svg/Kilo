@@ -136,6 +136,15 @@ interface ChatRepository {
      * user talked about before.
      */
     suspend fun recentConversations(excludeConversationId: String?, limit: Int = 3): List<Conversation>
+
+    /**
+     * Every conversation, newest first, with its last message as a preview.
+     * [query] filters over the title and the message bodies (case-insensitive
+     * for ASCII; SQLite's LIKE is a no-op for Arabic case, which has none).
+     */
+    fun observeConversationSummaries(query: String = ""): Flow<List<com.personalaiagent.domain.model.ConversationSummary>>
+
+    suspend fun renameConversation(id: String, title: String)
     suspend fun createConversation(title: String, providerId: String?, modelId: String?): String
     suspend fun updateConversationModel(id: String, providerId: String?, modelId: String?)
     suspend fun appendMessage(message: ChatMessage)
@@ -182,5 +191,8 @@ interface SettingsRepository {
     suspend fun setAgentFileToolsEnabled(enabled: Boolean)
     suspend fun setReviewRequests(enabled: Boolean)
     suspend fun setShowAgentActivity(enabled: Boolean)
+
+    /** Replaces the set of conversations pinned to the top of the history list. */
+    suspend fun setPinnedConversations(ids: Set<String>)
     suspend fun clearAll()
 }

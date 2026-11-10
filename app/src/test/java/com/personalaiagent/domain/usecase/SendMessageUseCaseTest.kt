@@ -131,7 +131,7 @@ class SendMessageUseCaseTest {
             time = time,
             ids = ids,
             skillSource = FakeSkillSource(),
-            documentVault = vault,
+            documentVault = com.personalaiagent.domain.usecase.agent.DocumentVault(),
         )
         val failed = useCase(null, "hello", null).toList()
             .filterIsInstance<SendMessageEvent.Failed>().single()

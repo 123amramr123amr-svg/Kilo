@@ -861,6 +861,15 @@ private fun toolLabel(toolName: String): String = stringResource(
         "web_search" -> R.string.tool_web_search
         "open_url" -> R.string.tool_open_url
         "generate_image" -> R.string.tool_generate_image
+        "read" -> R.string.tool_read
+        "edit" -> R.string.tool_edit
+        "patch" -> R.string.tool_patch
+        "grep" -> R.string.tool_grep
+        "glob" -> R.string.tool_glob
+        "shell" -> R.string.tool_shell
+        "diagnostics" -> R.string.tool_diagnostics
+        "question" -> R.string.tool_question
+        "skill" -> R.string.tool_skill
         else -> R.string.tool_generic
     },
 )

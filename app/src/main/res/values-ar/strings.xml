@@ -550,4 +550,13 @@
     <string name="settings_skill_description">الوكيل يستخدمها امتى؟</string>
     <string name="settings_skill_body">التعليمات نفسها</string>
     <string name="chat_reply_tokens">%1$s توكن</string>
+    <string name="tool_read">بيقرأ بأرقام السطور</string>
+    <string name="tool_edit">بيعدّل ملف</string>
+    <string name="tool_patch">بيطبّق تعديلات</string>
+    <string name="tool_grep">بيدوّر جوه الملفات</string>
+    <string name="tool_glob">بيلاقي ملفات</string>
+    <string name="tool_shell">بيشغّل أمر شل</string>
+    <string name="tool_diagnostics">بيفحص الملف</string>
+    <string name="tool_question">بيسألك</string>
+    <string name="tool_skill">بيحمّل مهارة</string>
 </resources>

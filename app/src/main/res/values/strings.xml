@@ -550,4 +550,13 @@
     <string name="settings_skill_description">When should the agent use it?</string>
     <string name="settings_skill_body">The instructions themselves</string>
     <string name="chat_reply_tokens">%1$s tokens</string>
+    <string name="tool_read">Reading with line numbers</string>
+    <string name="tool_edit">Editing a file</string>
+    <string name="tool_patch">Applying edits</string>
+    <string name="tool_grep">Searching inside files</string>
+    <string name="tool_glob">Finding files</string>
+    <string name="tool_shell">Running a shell command</string>
+    <string name="tool_diagnostics">Checking the file</string>
+    <string name="tool_question">Asking you</string>
+    <string name="tool_skill">Loading a skill</string>
 </resources>

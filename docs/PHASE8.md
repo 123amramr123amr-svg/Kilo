@@ -114,7 +114,7 @@ text is never written to disk outside the app's cache.
 
 ## 5. Tests
 
-`188 passed, 0 failed` (CI run 42801552068), up from 147. New this phase:
+`190 passed, 0 failed` (CI run 42803886907), up from 147. New this phase:
 
 - `AgentToolExecutorTest` — edit (unique / ambiguous / replace_all), patch all-or-nothing,
   grep hits and path:line format, glob at the root, shell timeout + deny-list + workdir,
@@ -127,10 +127,12 @@ text is never written to disk outside the app's cache.
 - `SafPathsTest` — `primary:`, `home:`, a card UUID, downloads `raw:`, and cloud providers
   (which have **no** path, so `shell` falls back and says so).
 - `TokenUsageTest` — «8.5k» / «21k» / «1.2M» and the zero case.
+- `SendMessageUseCaseTest` — a document is sent as text (not as an image part), and a
+  follow-up question still sees the document (the in-memory vault).
 
 ## 6. Files
 
-**New:** `domain/usecase/agent/{Skills,QuestionBroker,WorkspaceSearch,Diagnostics}.kt`,
+**New:** `domain/usecase/agent/{Skills,QuestionBroker,WorkspaceSearch,Diagnostics,DocumentVault}.kt`,
 `core/SafPaths.kt`, `platform/{Shell,PdfTextExtractor}.kt`, six `assets/skills/*/SKILL.md`,
 five test files.
 **Changed:** `AgentTools.kt` (catalog + executor), `SendMessageUseCase` (document block, skill
@@ -140,7 +142,14 @@ catalog in the prompt, attachments as text), `AttachmentLoader` (two paths, no 5
 `ConversationHistoryScreen` (per-conversation tokens), `Daos`/`ChatRepositoryImpl`
 (token sums), `Attachment`, `Chat.kt` (`TokenUsage`), both `strings.xml` (+11 keys each).
 
-## 7. Known limits
+## 7. One more thing: the follow-up question
+
+Attachments belong to one message, so «لخّص الـ PDF» worked but «وإيه اللي في آخر صفحة؟»
+did not — the text was gone from the next request. `DocumentVault` keeps the extracted text
+of the last **two** documents per conversation, in memory only (text, never images, never
+written to disk), and re-sends it while the user keeps asking about it.
+
+## 8. Known limits
 
 - **Custom commands** (the `/name` list in the screenshot) are not built — see §2.
 - **Scanned PDFs**: 10 pages per file, because each page is real money in tokens.

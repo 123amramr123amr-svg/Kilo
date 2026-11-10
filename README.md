@@ -27,7 +27,7 @@ The APK is rebuilt and re-published by CI on every push to this branch. It is a
 **debug-signed** build and it contains **no API keys** — you add your own provider key
 inside the app, where it is encrypted with the Android Keystore.
 
-Verified in CI: build **success**, unit tests **122/122 passing** (see
+Verified in CI: build **success**, unit tests **147/147 passing** (see
 [`docs/VERIFICATION.md`](docs/VERIFICATION.md)).
 
 ## Feature highlights
@@ -36,6 +36,13 @@ Verified in CI: build **success**, unit tests **122/122 passing** (see
   display face for headings; the pyramid mark (Canvas) is the launcher icon, the splash and the
   in-app emblem. Dark (burnt umber) and AMOLED themes remain one tap away in Settings.
   Responsive for phones and tablets.
+- **Every conversation is saved with a name** — a history list with the last message, when
+  it happened, how many messages it holds, search across names *and* messages, pin, rename
+  and delete. Opening one resumes exactly where it stopped.
+- **Fewer false errors** — the provider's own sentence, its HTTP status and its `Retry-After`
+  header are kept and shown; 429/5xx/timeouts/dropped streams retry up to 4 times with
+  backoff (and the provider's own wait); an empty quota or a bad key is never retried; a
+  conversation that is too long is shortened once and sent again.
 - **Show me what the model is doing** — the panel above the composer streams the model's own
   reasoning (`reasoning_content`), the plan, and every tool step with what went in (`→`) and
   what came back (`←`). Hide it from the panel or from Settings; the choice is remembered.
@@ -176,5 +183,7 @@ network call), and [`docs/PHASE5.md`](docs/PHASE5.md) for the model picker befor
 new chat, conversation memory, run recovery and the agent-activity panel, and
 [`docs/PHASE6.md`](docs/PHASE6.md) for the AURA identity (sand/ink/gold, serif type, pyramid
 icon), the rewritten activity panel with the model's reasoning, the request to hide it, and the
-speed/connection fixes. The design page from that phase lives at
-[`design/aura-preview.html`](design/aura-preview.html).
+speed/connection fixes, and [`docs/PHASE7.md`](docs/PHASE7.md) for the real error causes
+(backoff, `Retry-After`, context trimming), the conversation history with names and search,
+the rebuilt composer, and the comparison with claude-code / OpenMinis / ai-manus.
+The design page from phase 6 lives at [`design/aura-preview.html`](design/aura-preview.html).

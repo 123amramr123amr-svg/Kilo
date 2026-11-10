@@ -76,7 +76,7 @@ sealed interface SendMessageEvent {
         val maxAttempts: Int,
         val delayMillis: Long,
         val reason: String,
-    ) : SendMessageEvent()
+    ) : SendMessageEvent
 
     data class Completed(
         val taskId: String,

@@ -217,8 +217,8 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.colorScheme.surface,
             unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-            focusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-            unfocusedIndicatorColor = Color.Transparent,
+            focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         ),
     )
 }
@@ -382,8 +382,8 @@ private fun RenameDialog(
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                 ),
             )
         },

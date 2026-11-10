@@ -122,14 +122,78 @@ interface ModelDao {
     suspend fun clear()
 }
 
+/** Projection used by the history screen: a card needs no full message bodies. */
+data class ConversationSummaryRow(
+    val id: String,
+    val title: String,
+    val updatedAt: Long,
+    val messageCount: Int,
+    val preview: String?,
+    val tokensIn: Int,
+    val tokensOut: Int,
+)
+
 @Dao
 interface ConversationDao {
+
+    /**
+     * Newest first, with the last thing that was said and how many messages the
+     * chat has — all computed by SQLite, so opening the history never loads a
+     * single message body into memory.
+     */
+    @Query(
+        """
+        SELECT c.id AS id,
+               c.title AS title,
+               c.updatedAt AS updatedAt,
+               (SELECT COUNT(*) FROM messages m WHERE m.conversationId = c.id) AS messageCount,
+               (SELECT m.content FROM messages m
+                 WHERE m.conversationId = c.id
+                 ORDER BY m.createdAt DESC, m.id DESC LIMIT 1) AS preview,
+               (SELECT COALESCE(SUM(t.tokensIn), 0) FROM task_runs t
+                 WHERE t.conversationId = c.id) AS tokensIn,
+               (SELECT COALESCE(SUM(t.tokensOut), 0) FROM task_runs t
+                 WHERE t.conversationId = c.id) AS tokensOut
+        FROM conversations c
+        ORDER BY c.updatedAt DESC
+        """,
+    )
+    fun observeSummaries(): Flow<List<ConversationSummaryRow>>
+
+    /** Same rows, filtered by a search term over the title and the messages. */
+    @Query(
+        """
+        SELECT c.id AS id,
+               c.title AS title,
+               c.updatedAt AS updatedAt,
+               (SELECT COUNT(*) FROM messages m WHERE m.conversationId = c.id) AS messageCount,
+               (SELECT m.content FROM messages m
+                 WHERE m.conversationId = c.id
+                 ORDER BY m.createdAt DESC, m.id DESC LIMIT 1) AS preview,
+               (SELECT COALESCE(SUM(t.tokensIn), 0) FROM task_runs t
+                 WHERE t.conversationId = c.id) AS tokensIn,
+               (SELECT COALESCE(SUM(t.tokensOut), 0) FROM task_runs t
+                 WHERE t.conversationId = c.id) AS tokensOut
+        FROM conversations c
+        WHERE c.title LIKE '%' || :query || '%'
+           OR EXISTS (
+                SELECT 1 FROM messages m2
+                 WHERE m2.conversationId = c.id AND m2.content LIKE '%' || :query || '%'
+           )
+        ORDER BY c.updatedAt DESC
+        """,
+    )
+    fun searchSummaries(query: String): Flow<List<ConversationSummaryRow>>
 
     @Query("SELECT * FROM conversations ORDER BY updatedAt DESC LIMIT 1")
     fun observeLatest(): Flow<ConversationEntity?>
 
     @Query("SELECT * FROM conversations ORDER BY createdAt ASC")
     suspend fun getAll(): List<ConversationEntity>
+
+    /** Newest conversations first, for the cross-conversation memory block. */
+    @Query("SELECT * FROM conversations WHERE id != :excludeId ORDER BY updatedAt DESC LIMIT :limit")
+    suspend fun getRecent(excludeId: String, limit: Int): List<ConversationEntity>
 
     @Query("SELECT * FROM conversations WHERE id = :id")
     suspend fun getById(id: String): ConversationEntity?
@@ -194,8 +258,23 @@ interface MessageDao {
     suspend fun clear()
 }
 
+/** Tokens spent in one conversation, summed from the execution log. */
+data class TokenUsageRow(val tokensIn: Int, val tokensOut: Int)
+
 @Dao
 interface TaskDao {
+
+    @Query(
+        "SELECT COALESCE(SUM(tokensIn), 0) AS tokensIn, COALESCE(SUM(tokensOut), 0) AS tokensOut " +
+            "FROM task_runs WHERE conversationId = :conversationId",
+    )
+    fun observeConversationTokens(conversationId: String): Flow<TokenUsageRow>
+
+    @Query(
+        "SELECT COALESCE(SUM(tokensIn), 0) AS tokensIn, COALESCE(SUM(tokensOut), 0) AS tokensOut " +
+            "FROM task_runs",
+    )
+    fun observeAllTokens(): Flow<TokenUsageRow>
 
     @Query("SELECT * FROM task_runs ORDER BY startedAt DESC")
     fun observeAll(): Flow<List<TaskRunEntity>>

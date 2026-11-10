@@ -86,6 +86,10 @@ class FakeSettingsRepository(
         update { it.copy(agentFileToolsEnabled = enabled) }
     override suspend fun setReviewRequests(enabled: Boolean) =
         update { it.copy(reviewRequests = enabled) }
+    override suspend fun setShowAgentActivity(enabled: Boolean) =
+        update { it.copy(showAgentActivity = enabled) }
+    override suspend fun setPinnedConversations(ids: Set<String>) =
+        update { it.copy(pinnedConversations = ids) }
     override suspend fun clearAll() = update { AppSettings() }
 
     private fun update(transform: (AppSettings) -> AppSettings) {
@@ -108,6 +112,14 @@ class FakeChatRepository : ChatRepository {
 
     override suspend fun getMessages(conversationId: String): List<ChatMessage> =
         messages.filter { it.conversationId == conversationId }
+
+    override suspend fun recentConversations(
+        excludeConversationId: String?,
+        limit: Int,
+    ): List<Conversation> = conversations
+        .filter { it.id != excludeConversationId }
+        .sortedByDescending { it.updatedAt }
+        .take(limit)
 
     override suspend fun createConversation(title: String, providerId: String?, modelId: String?): String {
         val id = "conv-${++idCounter}"
@@ -144,6 +156,46 @@ class FakeChatRepository : ChatRepository {
             )
             messageFlow.value = messages.toList()
         }
+    }
+
+    override fun observeConversationSummaries(
+        query: String,
+    ): Flow<List<com.personalaiagent.domain.model.ConversationSummary>> =
+        messageFlow.map { all ->
+            conversations
+                .filter { conversation ->
+                    query.isBlank() ||
+                        conversation.title.contains(query, ignoreCase = true) ||
+                        all.any {
+                            it.conversationId == conversation.id &&
+                                it.content.contains(query, ignoreCase = true)
+                        }
+                }
+                .sortedByDescending { it.updatedAt }
+                .map { conversation ->
+                    val own = all.filter { it.conversationId == conversation.id }
+                    com.personalaiagent.domain.model.ConversationSummary(
+                        id = conversation.id,
+                        title = conversation.title,
+                        preview = own.lastOrNull()?.content.orEmpty(),
+                        updatedAt = conversation.updatedAt,
+                        messageCount = own.size,
+                    )
+                }
+        }
+
+    override fun observeConversationTokens(
+        conversationId: String,
+    ): Flow<com.personalaiagent.domain.model.TokenUsage> = flowOf(tokenUsage)
+
+    override fun observeTotalTokens(): Flow<com.personalaiagent.domain.model.TokenUsage> =
+        flowOf(tokenUsage)
+
+    var tokenUsage = com.personalaiagent.domain.model.TokenUsage()
+
+    override suspend fun renameConversation(id: String, title: String) {
+        val index = conversations.indexOfFirst { it.id == id }
+        if (index >= 0) conversations[index] = conversations[index].copy(title = title)
     }
 
     override suspend fun deleteConversation(id: String) {
@@ -302,13 +354,18 @@ class FakeModelRepository(
 class FakeProviderClient(
     private val chunks: List<ChatChunk> = listOf(ChatChunk.Delta("Hello"), ChatChunk.Completed),
     private val failure: AppError? = null,
+    /** Fails this many calls with [transientFailure] before answering normally. */
+    private val failingCalls: Int = 0,
+    private val transientFailure: AppError = AppError.Network,
 ) : ProviderClient {
 
     val requests = mutableListOf<ChatRequest>()
 
     override fun stream(request: ChatRequest): Flow<ChatChunk> {
         requests += request
+        val attempt = requests.size
         return kotlinx.coroutines.flow.flow {
+            if (attempt <= failingCalls) throw com.personalaiagent.data.remote.ProviderException(transientFailure)
             failure?.let { throw com.personalaiagent.data.remote.ProviderException(it) }
             chunks.forEach { emit(it) }
         }
@@ -349,3 +406,87 @@ object SampleData {
 
     val userRole = MessageRole.USER
 }
+
+/**
+ * Skills as plain objects: the asset library is replaced so tests never touch
+ * Android's AssetManager.
+ */
+class FakeSkillSource(
+    private val skills: List<com.personalaiagent.domain.usecase.agent.Skill> = listOf(
+        com.personalaiagent.domain.usecase.agent.Skill(
+            name = "code-review",
+            description = "Review a change before it ships.",
+            body = "Read the diff, then list real problems only.",
+        ),
+    ),
+) : com.personalaiagent.domain.usecase.agent.SkillSource {
+
+    val added = mutableListOf<String>()
+    val deleted = mutableListOf<String>()
+
+    override fun all() = skills
+    override fun byName(name: String) =
+        skills.firstOrNull { it.name.equals(name.trim(), ignoreCase = true) }
+
+    override fun catalog() = skills.joinToString("\n") { "- ${it.name}: ${it.description}" }
+
+    override suspend fun add(name: String, description: String, body: String): Result<com.personalaiagent.domain.usecase.agent.Skill> {
+        added += name
+        return Result.success(com.personalaiagent.domain.usecase.agent.Skill(name, description, body, custom = true))
+    }
+
+    override suspend fun delete(name: String): Result<Unit> {
+        deleted += name
+        return Result.success(Unit)
+    }
+}
+
+/** Records the command and returns a canned result. */
+class FakeShellExecutor(
+    var result: com.personalaiagent.platform.ShellResult =
+        com.personalaiagent.platform.ShellResult(0, "total 0", false, "/data/user/0/app/files/agent-home"),
+) : com.personalaiagent.platform.ShellExecutor {
+
+    val commands = mutableListOf<String>()
+    var lastTimeout: Long = 0
+
+    override suspend fun run(
+        command: String,
+        workdir: java.io.File,
+        timeoutMillis: Long,
+        maxOutputChars: Int,
+    ): com.personalaiagent.platform.ShellResult {
+        commands += command
+        lastTimeout = timeoutMillis
+        return result
+    }
+
+    override fun homeDirectory(): java.io.File = java.io.File("/data/user/0/app/files/agent-home")
+}
+
+/**
+ * One place that builds the executor with every collaborator faked, so adding a
+ * tool dependency does not mean editing a dozen call sites again.
+ */
+fun testExecutor(
+    workspace: FakeWorkspaceRepository = FakeWorkspaceRepository(),
+    json: kotlinx.serialization.json.Json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true },
+    device: com.personalaiagent.domain.repository.DeviceControl = FakeDeviceControl(),
+    image: com.personalaiagent.domain.repository.ImageGeneration = FakeImageGeneration(),
+    skills: com.personalaiagent.domain.usecase.agent.SkillSource = FakeSkillSource(),
+    shell: com.personalaiagent.platform.ShellExecutor = FakeShellExecutor(),
+    questions: com.personalaiagent.domain.usecase.agent.QuestionBroker =
+        com.personalaiagent.domain.usecase.agent.QuestionBroker(),
+    settings: com.personalaiagent.domain.repository.SettingsRepository = FakeSettingsRepository(),
+): com.personalaiagent.domain.usecase.agent.AgentToolExecutor =
+    com.personalaiagent.domain.usecase.agent.AgentToolExecutor(
+        workspace = workspace,
+        json = json,
+        device = device,
+        imageGeneration = image,
+        skills = skills,
+        shell = shell,
+        search = com.personalaiagent.domain.usecase.agent.WorkspaceSearch(workspace),
+        questions = questions,
+        settings = settings,
+    )

@@ -23,8 +23,27 @@ sealed class AppError {
     data object Network : AppError()
     data object Timeout : AppError()
     data object Auth : AppError()
-    data object RateLimit : AppError()
-    data class Server(val code: Int) : AppError()
+
+    /**
+     * The provider asked us to slow down (HTTP 429).
+     *
+     * @param retryAfterSeconds what the `Retry-After` header said, when present —
+     *   the retry loop waits exactly that long instead of guessing.
+     * @param detail the provider's own sentence ("Rate limit reached for gpt-4o…"),
+     *   shown as-is: a bare "rate limited" hides which limit was hit.
+     */
+    data class RateLimit(
+        val retryAfterSeconds: Int? = null,
+        val detail: String? = null,
+    ) : AppError()
+
+    /** The account is out of credit/quota — retrying cannot fix it. */
+    data class QuotaExceeded(val detail: String? = null) : AppError()
+
+    /** The prompt is longer than the model's context window. */
+    data object ContextTooLong : AppError()
+
+    data class Server(val code: Int, val detail: String? = null) : AppError()
 
     /**
      * The provider answered 404 for the requested path or model. Almost always a

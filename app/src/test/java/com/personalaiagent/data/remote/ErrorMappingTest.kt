@@ -11,7 +11,7 @@ class ErrorMappingTest {
     fun `auth and rate limit keep their own cases`() {
         assertEquals(AppError.Auth, httpStatusToAppError(401))
         assertEquals(AppError.Auth, httpStatusToAppError(403))
-        assertEquals(AppError.RateLimit, httpStatusToAppError(429))
+        assertEquals(AppError.RateLimit(), httpStatusToAppError(429))
     }
 
     @Test

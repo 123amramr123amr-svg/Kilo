@@ -6,7 +6,11 @@ import com.personalaiagent.data.repository.ProviderRepositoryImpl
 import com.personalaiagent.data.repository.TaskRepositoryImpl
 import com.personalaiagent.data.remote.RemoteImageGeneration
 import com.personalaiagent.data.workspace.SafWorkspaceRepository
+import com.personalaiagent.domain.usecase.agent.AssetSkillLibrary
+import com.personalaiagent.domain.usecase.agent.SkillSource
 import com.personalaiagent.platform.AndroidDeviceControl
+import com.personalaiagent.platform.AndroidShellRunner
+import com.personalaiagent.platform.ShellExecutor
 import com.personalaiagent.domain.repository.DeviceControl
 import com.personalaiagent.domain.repository.ImageGeneration
 import com.personalaiagent.domain.repository.ChatRepository
@@ -51,4 +55,12 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindImageGeneration(impl: RemoteImageGeneration): ImageGeneration
+
+    @Binds
+    @Singleton
+    abstract fun bindSkillSource(impl: AssetSkillLibrary): SkillSource
+
+    @Binds
+    @Singleton
+    abstract fun bindShellExecutor(impl: AndroidShellRunner): ShellExecutor
 }

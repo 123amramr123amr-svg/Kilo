@@ -75,10 +75,12 @@ class AgentLoopTest {
             taskRepository = taskRepository,
             settingsRepository = settings,
             clients = ProviderClientRouter(client, client),
-            toolExecutor = AgentToolExecutor(workspace, json, FakeDeviceControl(), FakeImageGeneration()),
+            toolExecutor = testExecutor(workspace = workspace),
             json = json,
             time = FakeTime(),
             ids = FakeIds(),
+            skillSource = FakeSkillSource(),
+            documentVault = com.personalaiagent.domain.usecase.agent.DocumentVault(),
         )
     }
 
@@ -107,7 +109,7 @@ class AgentLoopTest {
         assertEquals("Saved notes/todo.md", events.filterIsInstance<SendMessageEvent.Completed>().single().fullText)
 
         // The tools are advertised to the provider and the tool result is fed back.
-        assertEquals(11, client.requests.first().tools.size)
+        assertEquals(20, client.requests.first().tools.size)
         val toolTurn = client.requests.last().messages.last()
         assertEquals(MessageRole.TOOL, toolTurn.role)
         assertEquals("call_1", toolTurn.toolCallId)
@@ -147,10 +149,12 @@ class AgentLoopTest {
             taskRepository = taskRepository,
             settingsRepository = noWorkspace,
             clients = ProviderClientRouter(client, client),
-            toolExecutor = AgentToolExecutor(workspace, json, FakeDeviceControl(), FakeImageGeneration()),
+            toolExecutor = testExecutor(workspace = workspace),
             json = json,
             time = FakeTime(),
             ids = FakeIds(),
+            skillSource = FakeSkillSource(),
+            documentVault = com.personalaiagent.domain.usecase.agent.DocumentVault(),
         )
 
         useCase.invoke(null, "hello", null).toList()

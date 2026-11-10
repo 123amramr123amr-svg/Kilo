@@ -61,7 +61,7 @@ fun RichText(
                     if (index > 0) Spacer(Modifier.padding(top = 6.dp))
                     Text(
                         text = annotated(block.inlines, color),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = color,
                     )
                 }
@@ -72,13 +72,13 @@ fun RichText(
                 ) {
                     Text(
                         text = block.marker,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = annotated(block.inlines, color),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = color,
                     )
                 }
@@ -98,7 +98,7 @@ fun RichText(
                     Spacer(Modifier.width(10.dp))
                     Text(
                         text = annotated(block.inlines, color),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

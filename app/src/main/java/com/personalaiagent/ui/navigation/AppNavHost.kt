@@ -1,6 +1,18 @@
 package com.personalaiagent.ui.navigation
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
@@ -43,6 +55,7 @@ import com.personalaiagent.ui.screens.account.PrivacyScreen
 import com.personalaiagent.ui.screens.account.ProfileScreen
 import com.personalaiagent.ui.screens.chat.ChatScreen
 import com.personalaiagent.ui.screens.chat.ChatViewModel
+import com.personalaiagent.ui.screens.history.ConversationHistoryScreen
 import com.personalaiagent.ui.screens.models.ModelSettingsScreen
 import com.personalaiagent.ui.screens.models.ModelsScreen
 import com.personalaiagent.ui.screens.onboarding.OnboardingScreen
@@ -89,10 +102,28 @@ fun AppNavHost(
                 }
             },
         ) { innerPadding ->
+            // Explicit, short transitions: the default cut between screens felt
+            // abrupt and made every tap read as a jump.
             NavHost(
                 navController = navController,
                 startDestination = if (settings.onboardingCompleted) Routes.CHAT else Routes.ONBOARDING,
                 modifier = Modifier.padding(innerPadding),
+                enterTransition = {
+                    fadeIn(tween(220, easing = FastOutSlowInEasing)) +
+                        slideInHorizontally(tween(260, easing = FastOutSlowInEasing)) { it / 12 }
+                },
+                exitTransition = {
+                    fadeOut(tween(160, easing = FastOutSlowInEasing)) +
+                        slideOutHorizontally(tween(200, easing = FastOutSlowInEasing)) { -it / 16 }
+                },
+                popEnterTransition = {
+                    fadeIn(tween(200, easing = FastOutSlowInEasing)) +
+                        slideInHorizontally(tween(240, easing = FastOutSlowInEasing)) { -it / 12 }
+                },
+                popExitTransition = {
+                    fadeOut(tween(160, easing = FastOutSlowInEasing)) +
+                        slideOutHorizontally(tween(200, easing = FastOutSlowInEasing)) { it / 16 }
+                },
             ) {
                 composable(Routes.ONBOARDING) {
                     OnboardingScreen(
@@ -114,6 +145,18 @@ fun AppNavHost(
                             entry.savedStateHandle["voice_text"] = null
                         }
                     }
+                    // The history screen asks the chat entry to open an old
+                    // conversation through this handle, so the route stays simple.
+                    val openConversationFlow =
+                        entry.savedStateHandle.getStateFlow<String?>("open_conversation", null)
+                    val openConversationId by openConversationFlow.collectAsStateWithLifecycle()
+                    LaunchedEffect(openConversationId) {
+                        openConversationId?.let { id ->
+                            // An empty id means "start a new chat" (the + button).
+                            if (id.isBlank()) chatViewModel.newChat() else chatViewModel.openConversation(id)
+                            entry.savedStateHandle["open_conversation"] = null
+                        }
+                    }
                     ChatScreen(
                         viewModel = chatViewModel,
                         onOpenProviders = { navController.navigate(Routes.providerEdit(null)) },
@@ -126,6 +169,29 @@ fun AppNavHost(
                         onOpenTaskLog = { navController.navigate(Routes.TASKS) },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
                         onOpenWorkspace = { navController.navigate(Routes.WORKSPACE) },
+                        onOpenHistory = {
+                            navController.navigate(Routes.HISTORY) { launchSingleTop = true }
+                        },
+                    )
+                }
+
+                composable(Routes.HISTORY) {
+                    ConversationHistoryScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenConversation = { conversationId ->
+                            runCatching {
+                                val chatEntry = navController.getBackStackEntry(Routes.CHAT)
+                                chatEntry.savedStateHandle["open_conversation"] = conversationId
+                            }
+                            navController.popBackStack(Routes.CHAT, inclusive = false)
+                        },
+                        onNewChat = {
+                            runCatching {
+                                val chatEntry = navController.getBackStackEntry(Routes.CHAT)
+                                chatEntry.savedStateHandle["open_conversation"] = ""
+                            }
+                            navController.popBackStack(Routes.CHAT, inclusive = false)
+                        },
                     )
                 }
 

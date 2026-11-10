@@ -129,6 +129,28 @@ interface ChatRepository {
     fun observeLatestConversation(): Flow<Conversation?>
     suspend fun getConversation(id: String): Conversation?
     suspend fun getMessages(conversationId: String): List<ChatMessage>
+
+    /**
+     * The most recently used conversations, newest first, excluding
+     * [excludeConversationId]. Used to give a fresh chat some memory of what the
+     * user talked about before.
+     */
+    suspend fun recentConversations(excludeConversationId: String?, limit: Int = 3): List<Conversation>
+
+    /**
+     * Every conversation, newest first, with its last message as a preview.
+     * [query] filters over the title and the message bodies (case-insensitive
+     * for ASCII; SQLite's LIKE is a no-op for Arabic case, which has none).
+     */
+    fun observeConversationSummaries(query: String = ""): Flow<List<com.personalaiagent.domain.model.ConversationSummary>>
+
+    suspend fun renameConversation(id: String, title: String)
+
+    /** Tokens spent inside one conversation, live from the execution log. */
+    fun observeConversationTokens(conversationId: String): Flow<com.personalaiagent.domain.model.TokenUsage>
+
+    /** Tokens spent by the whole app. */
+    fun observeTotalTokens(): Flow<com.personalaiagent.domain.model.TokenUsage>
     suspend fun createConversation(title: String, providerId: String?, modelId: String?): String
     suspend fun updateConversationModel(id: String, providerId: String?, modelId: String?)
     suspend fun appendMessage(message: ChatMessage)
@@ -174,5 +196,9 @@ interface SettingsRepository {
     suspend fun setWorkspace(uri: String?, displayName: String?)
     suspend fun setAgentFileToolsEnabled(enabled: Boolean)
     suspend fun setReviewRequests(enabled: Boolean)
+    suspend fun setShowAgentActivity(enabled: Boolean)
+
+    /** Replaces the set of conversations pinned to the top of the history list. */
+    suspend fun setPinnedConversations(ids: Set<String>)
     suspend fun clearAll()
 }

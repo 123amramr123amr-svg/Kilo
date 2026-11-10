@@ -21,6 +21,9 @@ data class ChatRequest(
 /** Incremental output of a completion. */
 sealed interface ChatChunk {
     data class Delta(val text: String) : ChatChunk
+
+    /** A slice of the model's visible reasoning, when the provider exposes it. */
+    data class Reasoning(val text: String) : ChatChunk
     data class Usage(val tokenIn: Int?, val tokenOut: Int?) : ChatChunk
 
     /** Complete tool call, emitted once the provider finished streaming it. */
@@ -28,5 +31,15 @@ sealed interface ChatChunk {
     data object Completed : ChatChunk
 }
 
-class ProviderException(val error: com.personalaiagent.core.AppError, cause: Throwable? = null) :
-    Exception(cause?.message ?: error.toString(), cause)
+/**
+ * A failure raised by a provider call.
+ *
+ * [retryAfterSeconds] and [httpCode] come from the response itself, so the retry
+ * loop can wait exactly as long as the provider asked instead of guessing.
+ */
+class ProviderException(
+    val error: com.personalaiagent.core.AppError,
+    cause: Throwable? = null,
+    val retryAfterSeconds: Int? = null,
+    val httpCode: Int? = null,
+) : Exception(cause?.message ?: error.toString(), cause)

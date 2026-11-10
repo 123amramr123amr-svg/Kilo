@@ -33,7 +33,7 @@ class FakeWorkspaceRepository(
             .filter { it.startsWith(prefix) && it.removePrefix(prefix).isNotEmpty() }
             .map { full ->
                 WorkspaceEntry(
-                    name = full.removePrefix(prefix).substringBefore('/'),
+                    name = full.substringAfterLast('/'),
                     path = full,
                     isDirectory = false,
                     size = files[full]?.length?.toLong() ?: 0L,

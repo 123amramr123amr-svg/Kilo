@@ -40,11 +40,11 @@ val LocalBrand = staticCompositionLocalOf {
 }
 
 private val Shapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(18.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(30.dp),
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(22.dp),
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
 @Composable
@@ -63,16 +63,16 @@ fun PersonalAiAgentTheme(
     val outline = if (amoled) AmoledOutline else MidnightOutline
 
     val scheme = darkColorScheme(
-        primary = BrandBlue,
-        onPrimary = Color.White,
-        primaryContainer = BrandBlueDark,
-        onPrimaryContainer = Color.White,
-        secondary = BrandPurple,
-        onSecondary = Color.White,
-        secondaryContainer = Color(0xFF2A1B4D),
+        primary = Color(0xFFD2A972),
+        onPrimary = Color(0xFF231B10),
+        primaryContainer = Color(0xFF4A3720),
+        onPrimaryContainer = Color(0xFFF6E9D4),
+        secondary = Color(0xFFBFAE96),
+        onSecondary = Color(0xFF241E15),
+        secondaryContainer = Color(0xFF332B21),
         onSecondaryContainer = BrandTextPrimary,
-        tertiary = BrandCyan,
-        onTertiary = Color(0xFF04202B),
+        tertiary = Color(0xFF8FB3A4),
+        onTertiary = Color(0xFF10231C),
         background = background,
         onBackground = BrandTextPrimary,
         surface = surface,
@@ -114,25 +114,24 @@ fun PersonalAiAgentTheme(
 }
 
 /**
- * Default look: white cards on a very light lavender page, ink text and soft
- * blue/purple accents. Large radii and low-contrast borders keep it modern
- * without shouting.
+ * Default look: parchment cards on a warm sand page, ink text and old-gold
+ * accents — the AURA identity.
  */
 @Composable
 private fun LightTheme(content: @Composable () -> Unit) {
     val scheme = lightColorScheme(
-        primary = Color(0xFF3F5BF6),
-        onPrimary = Color.White,
-        primaryContainer = Color(0xFFE8ECFF),
-        onPrimaryContainer = Color(0xFF16203F),
-        secondary = Color(0xFF7C5CFF),
-        onSecondary = Color.White,
-        secondaryContainer = Color(0xFFF0EBFF),
-        onSecondaryContainer = Color(0xFF241A46),
-        tertiary = Color(0xFF0E9AAE),
-        onTertiary = Color.White,
-        tertiaryContainer = Color(0xFFE0F7FA),
-        onTertiaryContainer = Color(0xFF04333A),
+        primary = Color(0xFF8A6A3F),
+        onPrimary = Color(0xFFFDF8F0),
+        primaryContainer = Color(0xFFEFE3D1),
+        onPrimaryContainer = Color(0xFF2A2118),
+        secondary = Color(0xFF6E5B45),
+        onSecondary = Color(0xFFFDF8F0),
+        secondaryContainer = Color(0xFFEDE4D6),
+        onSecondaryContainer = Color(0xFF2C241B),
+        tertiary = Color(0xFF4C6B62),
+        onTertiary = Color(0xFFF7FBF8),
+        tertiaryContainer = Color(0xFFDDE9E3),
+        onTertiaryContainer = Color(0xFF15251F),
         background = LightBackground,
         onBackground = LightTextPrimary,
         surface = LightSurface,
@@ -140,13 +139,13 @@ private fun LightTheme(content: @Composable () -> Unit) {
         surfaceVariant = LightSurfaceElevated,
         onSurfaceVariant = LightTextSecondary,
         surfaceContainer = LightSurfaceElevated,
-        surfaceContainerHigh = Color(0xFFE9EDF8),
+        surfaceContainerHigh = Color(0xFFD9CFBF),
         outline = LightOutline,
         outlineVariant = LightOutline.copy(alpha = 0.7f),
-        error = Color(0xFFDC2B2B),
-        onError = Color.White,
-        errorContainer = Color(0xFFFFECEC),
-        onErrorContainer = Color(0xFF5A1010),
+        error = Color(0xFFA63A2B),
+        onError = Color(0xFFFFF6F2),
+        errorContainer = Color(0xFFF6E1DB),
+        onErrorContainer = Color(0xFF5A1509),
         scrim = Color.Black,
         inverseSurface = LightTextPrimary,
         inverseOnSurface = Color.White,
@@ -156,8 +155,8 @@ private fun LightTheme(content: @Composable () -> Unit) {
         accentGradient = LightGradient,
         accentGradientSoft = LightGradientSoft,
         backdrop = LightBackdrop,
-        success = Color(0xFF12855A),
-        warning = Color(0xFFB4690E),
+        success = Color(0xFF4C7F5A),
+        warning = Color(0xFFA9762A),
         cardBorder = LightOutline,
         bubbleUser = LightBubbleUser,
         bubbleAssistant = LightBubbleAssistant,

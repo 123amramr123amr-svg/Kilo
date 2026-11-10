@@ -18,6 +18,7 @@ import com.personalaiagent.domain.model.RemoteModel
 import com.personalaiagent.domain.repository.CatalogSyncResult
 import com.personalaiagent.domain.repository.CredentialStore
 import com.personalaiagent.domain.repository.ModelRepository
+import com.personalaiagent.domain.usecase.RetryPolicy
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -98,7 +99,26 @@ class ModelRepositoryImpl @Inject constructor(
             ?: return Outcome.Failure(AppError.MissingKey(providerName))
         val provider = providerEntity.toDomain(hasKey = true)
 
-        val result = clients.forKind(provider.kind).fetchModels(provider, key)
+        // Fetching a catalog is exactly where a provider answers "slow down"
+        // while a key is perfectly valid; retrying it silently is the difference
+        // between "the provider failed" and a list of models.
+        val policy = RetryPolicy(
+            maxAttempts = 3,
+            baseDelayMillis = 1_200L,
+            maxDelayMillis = 6_000L,
+            maxRetryAfterMillis = 20_000L,
+        )
+        var attempt = 0
+        var result: Outcome<List<RemoteModel>>
+        while (true) {
+            attempt++
+            result = clients.forKind(provider.kind).fetchModels(provider, key)
+            if (result is Outcome.Success) break
+            val error = (result as Outcome.Failure).error
+            val decision = policy.decide(error, attempt)
+            if (!decision.retry) break
+            kotlinx.coroutines.delay(decision.delayMillis)
+        }
         return when (result) {
             is Outcome.Success -> {
                 if (result.value.isEmpty()) {

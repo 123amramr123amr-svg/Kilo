@@ -92,7 +92,13 @@ jobs:
               if not os.path.exists(name):
                   continue
               lines = open(name, errors="ignore").read().splitlines()
-              picked = [l for l in lines if re.search(r"(^e: |error: |What went wrong|Could not resolve|Caused by: |FAILED$)", l)]
+              picked = [
+                  l for l in lines
+                  if re.search(r"(^e: |error: |What went wrong|Could not resolve|Caused by: |FAILED$)", l)
+                  # Gradle recovers from these by itself; they are noise, not failures.
+                  and "daemon has terminated unexpectedly" not in l
+                  and "daemon process output" not in l
+              ]
               if picked:
                   failures.append(f"=== {name} ===\n" + "\n".join(picked[:120]))
 
@@ -117,10 +123,10 @@ jobs:
               text = text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
               print(f"::{level} title={title}::{text}")
 
+          if passed or failed:
+              emit("notice", "Unit tests", f"{passed} passed, {failed} failed")
           if failures:
               emit("error", "Build or test failure", "\n\n".join(failures)[:60000])
-          elif passed or failed:
-              emit("notice", "Unit tests", f"{passed} passed, {failed} failed")
           PY
 
       - name: Fail the job when the build failed

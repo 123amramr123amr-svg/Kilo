@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:locale="ar">
 
-    <string name="app_name">المساعد الذكي الشخصي</string>
-    <string name="app_tagline">مساعدك الذكي للتحكم في جهازك</string>
+    <string name="app_name">أورا</string>
+    <string name="app_tagline">وكيل ذكاء اصطناعي بروح مصرية</string>
 
     <!-- Global actions -->
     <string name="action_start">ابدأ الآن</string>
@@ -34,7 +34,7 @@
     <string name="cd_back">رجوع</string>
 
     <!-- Onboarding -->
-    <string name="onboarding_headline">المساعد الذكي الشخصي</string>
+    <string name="onboarding_headline">أورا</string>
     <string name="onboarding_subheadline">مساعدك الذكي للتحكم في هاتفك</string>
     <string name="onboarding_language_title">اختر لغتك</string>
     <string name="onboarding_language_body">تُستخدم هذه اللغة في الواجهة وفي ردود المساعد. يمكنك تغييرها لاحقًا من الإعدادات.</string>
@@ -335,7 +335,7 @@
     <string name="error_network">خطأ في الشبكة. تحقّق من الاتصال وعنوان الخدمة.</string>
     <string name="error_timeout">استغرق المزوّد وقتًا طويلًا للرد.</string>
     <string name="error_auth">فشلت المصادقة. تحقّق من مفتاح API.</string>
-    <string name="error_rate_limit">حدّد المزوّد عدد الطلبات. حاول بعد قليل.</string>
+    <string name="error_rate_limit">المزوّد طلب منك التمهّل (429). ده حدّ على مفتاحك، مش عيب في التطبيق.</string>
     <string name="error_server">أعاد المزوّد خطأ (%1$d).</string>
     <string name="error_parse">رد غير متوقع من المزوّد.</string>
     <string name="error_cancelled">تم إيقاف التوليد.</string>
@@ -444,7 +444,7 @@
     <string name="review_improved_title">صياغة أوضح لطلبك</string>
     <string name="review_start">ابدأ التنفيذ</string>
     <string name="review_send_as_is">أرسل كما هو</string>
-    <string name="agent_run_notification_title">المساعد الذكي يعمل</string>
+    <string name="agent_run_notification_title">أورا يعمل</string>
     <string name="agent_run_notification_body">مهمتك تكمل في الخلفية</string>
     <string name="agent_run_channel">تشغيل الوكيل</string>
     <string name="attachment_failed">تعذر قراءة الملف</string>
@@ -461,4 +461,102 @@
     <string name="providers_models_saved_title">تم حفظ النماذج وتفعيلها</string>
     <string name="providers_models_saved_body">%1$d نموذجًا ستظهر الآن في اختيار النماذج وفي شريط المحادثة.</string>
     <string name="providers_models_apply_save">حفظ وتطبيق</string>
+
+    <!-- Phase 5: model picker + agent activity -->
+    <string name="chat_model_pick_title">اختر النموذج</string>
+    <string name="chat_model_pick_new_body">سيبدأ الوكيل هذه المحادثة بالنموذج الذي تختاره، ويظل به حتى تغيّره.</string>
+    <string name="chat_model_pick_switch_body">بدّل النموذج الذي يرد على رسائلك.</string>
+    <string name="chat_model_default_tag">الافتراضي</string>
+    <string name="chat_empty_choose_model">اختر نموذجًا لهذه المحادثة</string>
+    <string name="agent_activity_running">الوكيل يعمل…</string>
+    <string name="agent_activity_done">ما فعله الوكيل</string>
+    <string name="agent_activity_show">اعرض ما يفعله الوكيل</string>
+    <string name="agent_activity_hide">أخفِ التفاصيل</string>
+    <string name="agent_activity_steps">%1$d خطوة</string>
+    <string name="agent_activity_plan">الخطة</string>
+    <string name="agent_activity_empty">لم يبدأ الوكيل بأي خطوة بعد.</string>
+    <string name="tool_list_files">يستعرض الملفات</string>
+    <string name="tool_read_file">يقرأ ملفًا</string>
+    <string name="tool_write_file">يكتب ملفًا</string>
+    <string name="tool_append_file">يضيف إلى ملف</string>
+    <string name="tool_create_folder">ينشئ مجلدًا</string>
+    <string name="tool_delete_path">يحذف عنصرًا</string>
+    <string name="tool_list_apps">يستعرض التطبيقات</string>
+    <string name="tool_open_app">يفتح تطبيقًا</string>
+    <string name="tool_web_search">يبحث في الويب</string>
+    <string name="tool_open_url">يفتح رابطًا</string>
+    <string name="tool_generate_image">يرسم صورة</string>
+    <string name="tool_generic">ينفّذ خطوة</string>
+    <string name="settings_agent_activity">خطوات الوكيل</string>
+    <string name="settings_agent_activity_body">يعرض في المحادثة ما يفعله الوكيل: يفكّر، يبحث، يقرأ ويكتب — يمكنك إخفاؤه في أي وقت.</string>
+    <string name="agent_thinking">يفكّر…</string>
+    <string name="agent_activity_hide_all">إخفاء لوحة خطوات الوكيل (يمكن تشغيلها من الإعدادات)</string>
+    <string name="chat_pick_model_cta">اختر النموذج</string>
+    <string name="chat_continue_answer">أكمل الإجابة</string>
+
+    <!-- المرحلة 7: سبب حقيقي بدل «حصل خطأ» -->
+    <string name="error_rate_limit_wait">المزوّد طلب التمهّل. جرّب تاني بعد حوالي %1$d ثانية.</string>
+    <string name="error_quota">رصيد/حصة حسابك عند المزوّد خلصت. اشحن الحساب أو بدّل لمزوّد تاني.</string>
+    <string name="error_context_too_long">المحادثة أطول من قدرة النموذج على القراءة. ابدأ محادثة جديدة أو اختار نموذج بسياق أكبر.</string>
+    <string name="error_server_detail">المزوّد رفض الطلب (%1$d): %2$s</string>
+    <string name="chat_retrying">المزوّد مشغول — إعادة المحاولة بعد %1$d ثانية (%2$d/%3$d)</string>
+    <string name="chat_retrying_now">جاري إعادة المحاولة (%1$d/%2$d)…</string>
+    <string name="retry_reason_rate_limited">تجاوز حدود الطلبات</string>
+    <string name="retry_reason_timeout">مفيش رد في الوقت</string>
+    <string name="retry_reason_network">الاتصال اتقطع</string>
+    <string name="retry_reason_http">خطأ من المزوّد</string>
+    <string name="retry_reason_context_too_long">المحادثة طويلة — بنقصّها</string>
+
+    <!-- المرحلة 7: سجل المحادثات -->
+    <string name="history_title">المحادثات</string>
+    <string name="history_subtitle">كل محادثة ليها اسمها وذاكرتها</string>
+    <string name="history_search_hint">ابحث في محادثاتك</string>
+    <string name="history_empty_title">مفيش محادثات لسه</string>
+    <string name="history_empty_body">محادثاتك بتتحفظ هنا باسمها، فتقدر ترجعلها في أي وقت.</string>
+    <string name="history_empty_search">مفيش نتيجة لـ «%1$s»</string>
+    <string name="history_new_chat">محادثة جديدة</string>
+    <string name="history_message_count">%1$d رسالة</string>
+    <string name="history_message_count_one">رسالة واحدة</string>
+    <string name="history_pin">تثبيت في الأعلى</string>
+    <string name="history_unpin">إلغاء التثبيت</string>
+    <string name="history_rename">تغيير الاسم</string>
+    <string name="history_delete">حذف</string>
+    <string name="history_delete_title">تحذف المحادثة دي؟</string>
+    <string name="history_delete_body">«%1$s» وكل رسائلها هتتحذف من الجهاز، ومفيش رجوع.</string>
+    <string name="history_rename_title">اسم المحادثة</string>
+    <string name="history_rename_save">حفظ</string>
+    <string name="history_pinned">مثبّتة</string>
+    <string name="history_recent">الأحدث</string>
+    <string name="history_today">النهارده</string>
+    <string name="history_yesterday">أمس</string>
+    <string name="history_now">الآن</string>
+    <string name="history_minutes_ago">من %1$d دقيقة</string>
+    <string name="history_hours_ago">من %1$d ساعة</string>
+    <string name="history_days_ago">من %1$d يوم</string>
+    <string name="history_open">افتح المحادثة</string>
+    <string name="chat_open_history">المحادثات</string>
+    <string name="chat_untitled_conversation">محادثة بدون اسم</string>
+
+    <!-- المرحلة 8: أدوات الوكيل والأسئلة والتوكن والمهارات -->
+    <string name="agent_question_title">الوكيل بيسأل</string>
+    <string name="agent_question_hint">اكتب إجابتك…</string>
+    <string name="agent_question_send">إجابة</string>
+    <string name="agent_question_skip">تخطي</string>
+    <string name="chat_tokens">%1$s توكن</string>
+    <string name="settings_skills">مهارات الوكيل</string>
+    <string name="settings_skills_body">ملفات تعليمات قصيرة بيحمّلها الوكيل وقت ما المهمة تحتاجها بس. ويقدر يسردها ويحمّلها بنفسه بأداة skill.</string>
+    <string name="settings_skill_add">إضافة مهارة +</string>
+    <string name="settings_skill_name">الاسم (بالإنجليزي، مثال: my-review)</string>
+    <string name="settings_skill_description">الوكيل يستخدمها امتى؟</string>
+    <string name="settings_skill_body">التعليمات نفسها</string>
+    <string name="chat_reply_tokens">%1$s توكن</string>
+    <string name="tool_read">بيقرأ بأرقام السطور</string>
+    <string name="tool_edit">بيعدّل ملف</string>
+    <string name="tool_patch">بيطبّق تعديلات</string>
+    <string name="tool_grep">بيدوّر جوه الملفات</string>
+    <string name="tool_glob">بيلاقي ملفات</string>
+    <string name="tool_shell">بيشغّل أمر شل</string>
+    <string name="tool_diagnostics">بيفحص الملف</string>
+    <string name="tool_question">بيسألك</string>
+    <string name="tool_skill">بيحمّل مهارة</string>
 </resources>

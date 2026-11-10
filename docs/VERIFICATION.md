@@ -17,9 +17,9 @@ gradle :app:testDebugUnitTest
 | Item | Result |
 |---|---|
 | `:app:assembleDebug` | **SUCCESS** |
-| `:app:testDebugUnitTest` | **SUCCESS — 116 passed, 0 failed** |
-| APK | published as release asset `personal-ai-agent-debug.apk` (18.99 MB) |
-| Workflow run | `42579957713` (success) — see also `docs/PHASE4.md` |
+| `:app:testDebugUnitTest` | **SUCCESS — 147 passed, 0 failed** |
+| APK | published as release asset `personal-ai-agent-debug.apk` (19,140,678 B) |
+| Workflow run | `42767407934` (success) — see also `docs/PHASE4.md` … `docs/PHASE7.md` |
 
 Installable build:
 `https://github.com/123amramr123amr-svg/Kilo/releases/download/phase1-debug/personal-ai-agent-debug.apk`
@@ -103,7 +103,7 @@ Earlier (pre-build) passes, kept as regression guards:
 | File | Tests | Covers |
 |---|---|---|
 | `SseStreamParserTest` | 7 | SSE framing: multi-line data, named events, comments, empty data field, flush, reset |
-| `StreamDecoderTest` | 10 | OpenAI & Anthropic chunk decoding, usage, `[DONE]`, malformed JSON → `Parse`, Anthropic error events |
+| `StreamDecoderTest` | 12 | OpenAI & Anthropic chunk decoding, usage, `[DONE]`, malformed JSON → `Parse`, Anthropic error events, `reasoning_content` / `reasoning` split from the answer |
 | `ModelCatalogTest` | 8 | non-chat filtering, unknown ids kept, dedupe, capability inference, context windows, fallback |
 | `ProviderValidatorTest` | 8 | https ok, http public rejected, loopback/private http allowed, normalisation, malformed URLs |
 | `EncryptedCredentialStoreTest` | 4 | ciphertext-only persistence, lifecycle, corrupt payload → `null`, clear |
@@ -116,6 +116,9 @@ Earlier (pre-build) passes, kept as regression guards:
 | `AgentLoopTest` | 4 | full tool round trip writes a real file and reports activity, failing tool is fed back and the model still answers, tools not advertised without a workspace, provider failure → `Failed` event |
 | `MarkdownLiteTest` | 6 | headings/bullets/numbered lists, fenced code with language, inline bold/italic/code runs, unclosed fence, empty input |
 | `ReviewDraftUseCaseTest` | 4 | model JSON inside prose/fences, garbage rejection, local fallback content, provider answer path |
+| `RetryPolicyTest` | 11 | backoff growth, `Retry-After` wins over it, absurd hints capped, give-up at the last attempt, no retry for a bad key/quota/4xx, no retry once text is shown, context trimmed once |
+| `ProviderErrorsTest` | 10 | provider sentence extraction, quota vs rate limit, context-length detection, `Retry-After` as seconds and as an HTTP date, status-only mapping unchanged |
+| `ConversationTitlesTest` | 5 | first meaningful line, markdown stripping, Arabic punctuation, truncation, placeholders |
 
 ## What is still not verified
 

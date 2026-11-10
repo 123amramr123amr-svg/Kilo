@@ -11,16 +11,21 @@ import com.personalaiagent.domain.model.Attachment
 import com.personalaiagent.domain.model.ChatMessage
 import com.personalaiagent.domain.model.DraftReview
 import com.personalaiagent.domain.model.MessageRole
+import com.personalaiagent.domain.model.TokenUsage
 import com.personalaiagent.domain.repository.ChatRepository
 import com.personalaiagent.domain.repository.ModelRepository
 import com.personalaiagent.domain.repository.ProviderRepository
 import com.personalaiagent.domain.repository.SettingsRepository
 import com.personalaiagent.domain.usecase.ReviewDraftUseCase
 import com.personalaiagent.domain.usecase.agent.AgentRunController
+import com.personalaiagent.domain.usecase.agent.PendingQuestion
+import com.personalaiagent.domain.usecase.agent.QuestionBroker
+import com.personalaiagent.domain.usecase.agent.RetryNotice
 import com.personalaiagent.domain.usecase.agent.ToolActivityUi
 import com.personalaiagent.platform.AttachmentLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +37,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class ChatUiState(
     val isLoading: Boolean = true,
@@ -50,14 +56,28 @@ data class ChatUiState(
     val workspaceName: String? = null,
     val toolsEnabled: Boolean = false,
     val toolActivity: List<ToolActivityUi> = emptyList(),
+    /** Visible reasoning stream of "thinking" models. */
+    val reasoningText: String = "",
+    /** False when the user hides the agent-activity panel. */
+    val showActivity: Boolean = true,
     /** Steps the agent committed to for the current request. */
     val plan: List<String> = emptyList(),
+    /** Set while an automatic retry is waiting, so the UI can count down. */
+    val retry: RetryNotice? = null,
+    /** A question the agent is blocked on; answered from the chat. */
+    val pendingQuestion: PendingQuestion? = null,
+    /** Tokens spent in this conversation so far (from the execution log). */
+    val tokens: TokenUsage = TokenUsage(),
     val reviewFirst: Boolean = true,
     val isReviewing: Boolean = false,
     val review: DraftReview? = null,
     val reviewAnswers: Map<Int, String> = emptyMap(),
     val attachments: List<Attachment> = emptyList(),
     val isAttaching: Boolean = false,
+    /** Model sheet, shown before a new chat starts or when switching models. */
+    val showModelPicker: Boolean = false,
+    /** true when confirming the sheet must start a fresh conversation. */
+    val pickerStartsNewChat: Boolean = false,
 ) {
     val canSend: Boolean get() = (input.isNotBlank() || attachments.isNotEmpty()) &&
         activeModel != null && !isGenerating && !isReviewing
@@ -66,6 +86,13 @@ data class ChatUiState(
 sealed interface ChatEvent {
     data class SpeakAnswer(val text: String) : ChatEvent
 }
+
+/** Bilingual so the reply follows the language of the conversation. */
+private const val CONTINUE_INSTRUCTION =
+    "Continue the previous answer from exactly where it stopped — do not repeat what is already written. / أكمل الإجابة السابقة من حيث توقفت بالضبط دون إعادة ما كُتب."
+
+/** Below this length the review step is skipped: there is nothing to clarify. */
+private const val MIN_REVIEW_LENGTH = 12
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -76,6 +103,7 @@ class ChatViewModel @Inject constructor(
     private val reviewDraft: ReviewDraftUseCase,
     private val runController: AgentRunController,
     private val attachmentLoader: AttachmentLoader,
+    private val questions: QuestionBroker,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -90,11 +118,31 @@ class ChatViewModel @Inject constructor(
     private var lastCompletedRuns = 0
 
     init {
+        observeQuestion()
         observeConversation()
         observeMessages()
         observeModels(settingsRepository)
         observeProviders()
         observeRun()
+    }
+
+    /** The `question` tool really waits, so the dialog has to follow the broker. */
+    private fun observeQuestion() {
+        viewModelScope.launch {
+            questions.pending.collect { pending ->
+                _uiState.update { it.copy(pendingQuestion = pending) }
+            }
+        }
+    }
+
+    fun answerQuestion(text: String) {
+        questions.answer(text)
+        _uiState.update { it.copy(pendingQuestion = null) }
+    }
+
+    fun dismissQuestion() {
+        questions.cancelQuestion()
+        _uiState.update { it.copy(pendingQuestion = null) }
     }
 
     private fun observeConversation() {
@@ -117,6 +165,13 @@ class ChatViewModel @Inject constructor(
                 .collect { messages ->
                     _uiState.update { it.copy(messages = messages, isLoading = false) }
                 }
+        }
+        viewModelScope.launch {
+            conversationId
+                .flatMapLatest { id ->
+                    if (id == null) flowOf(TokenUsage()) else chatRepository.observeConversationTokens(id)
+                }
+                .collect { usage -> _uiState.update { it.copy(tokens = usage) } }
         }
     }
 
@@ -141,6 +196,7 @@ class ChatViewModel @Inject constructor(
                         workspaceName = settings.workspaceName,
                         toolsEnabled = settings.hasWorkspace && settings.agentFileToolsEnabled,
                         reviewFirst = settings.reviewRequests,
+                        showActivity = settings.showAgentActivity,
                     )
                 }
             }
@@ -171,7 +227,9 @@ class ChatViewModel @Inject constructor(
                         streamingText = run.streamingText,
                         streamingMessageId = run.assistantMessageId,
                         toolActivity = run.toolActivity,
+                        reasoningText = run.reasoningText,
                         plan = run.plan.ifEmpty { it.plan },
+                        retry = run.retry,
                         error = run.error ?: it.error,
                     )
                 }
@@ -200,6 +258,12 @@ class ChatViewModel @Inject constructor(
         selectedModelId.value = modelId
     }
 
+    /** Hides or shows the agent-activity panel for good (Settings switch mirrors it). */
+    fun setActivityVisible(visible: Boolean) {
+        _uiState.update { it.copy(showActivity = visible) }
+        viewModelScope.launch { settingsRepository.setShowAgentActivity(visible) }
+    }
+
     fun toggleReviewFirst() {
         val next = !_uiState.value.reviewFirst
         _uiState.update { it.copy(reviewFirst = next) }
@@ -216,7 +280,10 @@ class ChatViewModel @Inject constructor(
     fun attach(uri: Uri) {
         viewModelScope.launch {
             _uiState.update { it.copy(isAttaching = true, error = null) }
-            val result = runCatching { attachmentLoader.load(uri) }.getOrNull()
+            // A 300-page scan takes seconds to rasterise: never on the main thread.
+            val result = withContext(Dispatchers.IO) {
+                runCatching { attachmentLoader.load(uri) }.getOrNull()
+            }
             val attachments = result?.getOrNull()
             when {
                 attachments == null -> _uiState.update {
@@ -261,7 +328,9 @@ class ChatViewModel @Inject constructor(
             execute(text = "", plan = emptyList())
             return
         }
-        if (!state.reviewFirst) {
+        // A one-line request has nothing to clarify; skipping the review here saves
+        // a whole round trip and makes short questions feel instant.
+        if (!state.reviewFirst || text.length < MIN_REVIEW_LENGTH) {
             execute(text = text, plan = emptyList())
             return
         }
@@ -321,6 +390,36 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(isGenerating = false) }
     }
 
+    /** Toolbar action: ask which model to use, then start the conversation with it. */
+    fun requestNewChat() {
+        if (_uiState.value.models.isEmpty()) {
+            newChat()
+            return
+        }
+        _uiState.update { it.copy(showModelPicker = true, pickerStartsNewChat = true) }
+    }
+
+    /** Opens the same sheet without starting a new conversation. */
+    fun openModelPicker() {
+        _uiState.update { it.copy(showModelPicker = true, pickerStartsNewChat = false) }
+    }
+
+    fun dismissModelPicker() {
+        _uiState.update { it.copy(showModelPicker = false, pickerStartsNewChat = false) }
+    }
+
+    /**
+     * Confirms the model for the conversation. The choice becomes the default for
+     * later launches, so the agent keeps working with the model you picked.
+     */
+    fun chooseModel(modelId: String) {
+        val startNew = _uiState.value.pickerStartsNewChat
+        selectedModelId.value = modelId
+        _uiState.update { it.copy(showModelPicker = false, pickerStartsNewChat = false) }
+        viewModelScope.launch { runCatching { modelRepository.setDefault(modelId) } }
+        if (startNew) newChat()
+    }
+
     fun newChat() {
         runController.stop()
         followLatestConversation = false
@@ -341,6 +440,35 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Opens an earlier conversation from the history screen. The run controller is
+     * stopped first so a half-written answer never lands in the wrong chat.
+     */
+    fun openConversation(id: String) {
+        if (id == _uiState.value.conversationId && _uiState.value.messages.isEmpty()) return
+        if (id == _uiState.value.conversationId) return
+        runController.stop()
+        followLatestConversation = false
+        conversationId.value = id
+        runController.attachConversation(id)
+        _uiState.update {
+            it.copy(
+                conversationId = id,
+                messages = emptyList(),
+                input = "",
+                error = null,
+                streamingText = "",
+                streamingMessageId = null,
+                isGenerating = false,
+                toolActivity = emptyList(),
+                plan = emptyList(),
+                retry = null,
+                reasoningText = "",
+                attachments = emptyList(),
+            )
+        }
+    }
+
     fun deleteCurrentConversation() {
         val id = _uiState.value.conversationId ?: return
         runController.stop()
@@ -350,6 +478,15 @@ class ChatViewModel @Inject constructor(
             conversationId.value = null
             _uiState.update { it.copy(messages = emptyList(), conversationId = null, error = null) }
         }
+    }
+
+    /**
+     * Picks up where a cut-off answer stopped. The partial text is already stored,
+     * so it is part of the history the model receives.
+     */
+    fun continueAnswer() {
+        if (_uiState.value.isGenerating) return
+        execute(text = CONTINUE_INSTRUCTION, plan = emptyList())
     }
 
     fun retryLastMessage() {
@@ -371,15 +508,21 @@ class ChatViewModel @Inject constructor(
                 streamingMessageId = null,
                 toolActivity = emptyList(),
                 plan = plan,
+                retry = null,
                 attachments = emptyList(),
             )
         }
-        runController.start(
+        val started = runController.start(
             conversationId = if (followLatestConversation) conversationId.value else null,
             text = text.ifBlank { attachments.firstOrNull()?.sourceLabel ?: "الملف المرفق" },
             modelId = selectedModelId.value ?: state.activeModel?.id,
             plan = plan,
             attachments = attachments,
         )
+        if (!started) {
+            // A run is already active. Never leave the composer spinning for a
+            // message that was never sent.
+            _uiState.update { it.copy(isGenerating = false, streamingText = "") }
+        }
     }
 }

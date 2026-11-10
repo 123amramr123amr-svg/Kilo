@@ -32,6 +32,8 @@ class SendMessageUseCaseTest {
         client: FakeProviderClient = FakeProviderClient(),
         provider: com.personalaiagent.domain.model.Provider? = SampleData.provider(),
         model: com.personalaiagent.domain.model.AiModel? = SampleData.model(),
+        vault: com.personalaiagent.domain.usecase.agent.DocumentVault =
+            com.personalaiagent.domain.usecase.agent.DocumentVault(),
     ): SendMessageUseCase {
         if (provider != null) credentials.keys[provider.id] = "sk-test"
         return SendMessageUseCase(
@@ -42,10 +44,12 @@ class SendMessageUseCaseTest {
             taskRepository = taskRepository,
             settingsRepository = settings,
             clients = ProviderClientRouter(client, client),
-            toolExecutor = AgentToolExecutor(FakeWorkspaceRepository(), Json { ignoreUnknownKeys = true }, FakeDeviceControl(), FakeImageGeneration()),
+            toolExecutor = testExecutor(workspace = FakeWorkspaceRepository()),
             json = Json { ignoreUnknownKeys = true },
             time = time,
             ids = ids,
+            skillSource = FakeSkillSource(),
+            documentVault = vault,
         )
     }
 
@@ -122,10 +126,12 @@ class SendMessageUseCaseTest {
             taskRepository = taskRepository,
             settingsRepository = settings,
             clients = ProviderClientRouter(FakeProviderClient(), FakeProviderClient()),
-            toolExecutor = AgentToolExecutor(FakeWorkspaceRepository(), Json { ignoreUnknownKeys = true }, FakeDeviceControl(), FakeImageGeneration()),
+            toolExecutor = testExecutor(workspace = FakeWorkspaceRepository()),
             json = Json { ignoreUnknownKeys = true },
             time = time,
             ids = ids,
+            skillSource = FakeSkillSource(),
+            documentVault = com.personalaiagent.domain.usecase.agent.DocumentVault(),
         )
         val failed = useCase(null, "hello", null).toList()
             .filterIsInstance<SendMessageEvent.Failed>().single()
@@ -179,5 +185,112 @@ class SendMessageUseCaseTest {
         assertEquals(first.conversationId, second.conversationId)
         assertEquals(1, chatRepository.conversations.size)
         assertEquals(4, chatRepository.messages.size)
+    }
+
+    @Test
+    fun `a new chat carries context from earlier conversations`() = runTest {
+        // Memory is built from stored messages on the device: no extra request.
+        chatRepository.conversations += com.personalaiagent.domain.model.Conversation(
+            id = "c-old",
+            title = "Cairo trip",
+            createdAt = 500,
+            updatedAt = 900,
+            providerId = "p1",
+            modelId = "p1::gpt-4o",
+        )
+        chatRepository.messages += com.personalaiagent.domain.model.ChatMessage(
+            id = "m-old",
+            conversationId = "c-old",
+            role = MessageRole.USER,
+            content = "I am planning a trip to Cairo in May",
+            createdAt = 501,
+            status = MessageStatus.COMPLETE,
+        )
+
+        val client = FakeProviderClient()
+        useCase(client).invoke(null, "and what about the weather?", null).toList()
+
+        val system = client.requests.single().messages.first { it.role == MessageRole.SYSTEM }
+        assertTrue(system.content.contains("Earlier conversations"))
+        assertTrue(system.content.contains("Cairo"))
+        // The remembered chat stays out of the turn list of the new conversation:
+        // it is background context in the system prompt, not fake turns.
+        assertTrue(
+            client.requests.single().messages
+                .filter { it.role != MessageRole.SYSTEM }
+                .none { it.content.contains("planning a trip") },
+        )
+    }
+
+    @Test
+    fun `a transient failure is retried once and then succeeds`() = runTest {
+        val client = FakeProviderClient(failingCalls = 1)
+        val events = useCase(client).invoke(null, "hello", null).toList()
+
+        assertEquals(2, client.requests.size)
+        assertEquals("Hello", events.filterIsInstance<SendMessageEvent.Completed>().single().fullText)
+    }
+
+    @Test
+    fun `a rejected key is not retried`() = runTest {
+        val client = FakeProviderClient(failure = AppError.Auth)
+        useCase(client).invoke(null, "hello", null).toList()
+        assertEquals(1, client.requests.size)
+    }
+
+    @Test
+    fun `only momentary errors are worth a retry`() {
+        assertTrue(AppError.Network.isTransient())
+        assertTrue(AppError.Timeout.isTransient())
+        assertTrue(AppError.RateLimit().isTransient())
+        assertTrue(AppError.Server(503).isTransient())
+        assertFalse(AppError.Auth.isTransient())
+        assertFalse(AppError.HttpNotFound.isTransient())
+        assertFalse(AppError.Server(400).isTransient())
+        assertFalse(AppError.Parse.isTransient())
+    }
+
+    // ----------------------------------------------------- documents as text
+
+    @Test
+    fun `a document attachment is sent as text, not as an image`() = runTest {
+        val client = FakeProviderClient()
+        val document = com.personalaiagent.domain.model.Attachment(
+            name = "contract.pdf",
+            mimeType = "text/plain",
+            base64 = "",
+            sourceLabel = "contract.pdf · 12 صفحة",
+            text = "--- page 1 ---\nالبند السابع: يحق للطرف الثاني الفسخ بعد إخطار.",
+        )
+
+        useCase(client).invoke(null, "لخّص الملف", null, listOf(document)).toList()
+
+        val userTurn = client.requests.last().messages.last { it.role == MessageRole.USER }
+        assertTrue(userTurn.content.contains("البند السابع"))
+        assertTrue("images must not carry a text document", userTurn.attachments.isEmpty())
+        assertTrue(userTurn.content.contains("contract.pdf"))
+    }
+
+    @Test
+    fun `a follow-up question still has the document in view`() = runTest {
+        val client = FakeProviderClient()
+        val vault = com.personalaiagent.domain.usecase.agent.DocumentVault()
+        val useCase = useCase(client, vault = vault)
+        val document = com.personalaiagent.domain.model.Attachment(
+            name = "contract.pdf",
+            mimeType = "text/plain",
+            base64 = "",
+            text = "البند السابع: الفسخ بعد إخطار 30 يومًا.",
+        )
+
+        useCase.invoke(null, "اقرأ الملف", null, listOf(document)).toList()
+        val conversationId = chatRepository.conversations.first().id
+        useCase.invoke(conversationId, "والبند السابع بيقول إيه؟", null).toList()
+
+        val followUp = client.requests.last().messages.last { it.role == MessageRole.USER }
+        assertTrue(
+            "the document text must still be attached to the follow-up",
+            followUp.content.contains("الفسخ بعد إخطار"),
+        )
     }
 }

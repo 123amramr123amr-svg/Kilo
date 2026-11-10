@@ -9,34 +9,44 @@ import androidx.compose.ui.unit.sp
 private val Default = Typography()
 
 /**
+ * Display type is serif: on Android that resolves to Noto Serif / Noto Naskh
+ * Arabic for Arabic, which gives the editorial, museum-label feel of the AURA
+ * identity without bundling a font file.
+ */
+private val DisplayFamily = FontFamily.Serif
+
+/**
  * Type scale tuned for bilingual use: slightly larger line heights keep Arabic
  * diacritics and descenders from clipping, and Latin sizes stay compact.
  */
 val AppTypography = Typography(
     displaySmall = Default.displaySmall.copy(
-        fontFamily = FontFamily.Default,
+        fontFamily = DisplayFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 42.sp,
         letterSpacing = (-0.4).sp,
     ),
     headlineMedium = Default.headlineMedium.copy(
-        fontWeight = FontWeight.Bold,
+        fontFamily = DisplayFamily,
+        fontWeight = FontWeight.Normal,
         fontSize = 26.sp,
         lineHeight = 36.sp,
     ),
     headlineSmall = Default.headlineSmall.copy(
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = DisplayFamily,
+        fontWeight = FontWeight.Medium,
         fontSize = 22.sp,
         lineHeight = 32.sp,
     ),
     titleLarge = Default.titleLarge.copy(
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = DisplayFamily,
+        fontWeight = FontWeight.Medium,
         fontSize = 19.sp,
         lineHeight = 28.sp,
     ),
     titleMedium = Default.titleMedium.copy(
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
     ),

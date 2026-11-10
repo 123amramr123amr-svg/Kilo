@@ -80,6 +80,7 @@ class AgentLoopTest {
             time = FakeTime(),
             ids = FakeIds(),
             skillSource = FakeSkillSource(),
+            documentVault = com.personalaiagent.domain.usecase.agent.DocumentVault(),
         )
     }
 
@@ -153,6 +154,7 @@ class AgentLoopTest {
             time = FakeTime(),
             ids = FakeIds(),
             skillSource = FakeSkillSource(),
+            documentVault = com.personalaiagent.domain.usecase.agent.DocumentVault(),
         )
 
         useCase.invoke(null, "hello", null).toList()

@@ -19,6 +19,7 @@ import com.personalaiagent.domain.model.ProviderKind
 import com.personalaiagent.domain.model.TaskStatus
 import com.personalaiagent.domain.model.TaskStepName
 import com.personalaiagent.domain.model.TaskStepStatus
+import com.personalaiagent.domain.usecase.agent.DocumentVault
 import com.personalaiagent.domain.usecase.agent.SkillSource
 import com.personalaiagent.domain.model.ToolCall
 import com.personalaiagent.domain.repository.ChatRepository
@@ -115,6 +116,7 @@ class SendMessageUseCase @Inject constructor(
     private val time: TimeProvider,
     private val ids: IdGenerator,
     private val skillSource: SkillSource,
+    private val documentVault: DocumentVault,
 ) {
 
     /** Retries a failed request with backoff, honouring the provider's own hint. */
@@ -241,8 +243,13 @@ class SendMessageUseCase @Inject constructor(
             }
             // Documents are sent as *text*, images as pixels: that is what lets a
             // plain (non-vision) model read a PDF, and it costs no image tokens.
+            // A document stays available for the follow-up questions in the same
+            // conversation (it lives in memory only — see DocumentVault).
             val images = attachments.filter { it.isImage }
-            val documents = documentBlock(attachments)
+            documentVault.remember(convId, attachments)
+            val documents = documentBlock(
+                attachments.filter { it.isDocument }.ifEmpty { documentVault.recall(convId) },
+            )
             history.forEach { message ->
                 val isLastUser = message.id == lastUserId
                 add(

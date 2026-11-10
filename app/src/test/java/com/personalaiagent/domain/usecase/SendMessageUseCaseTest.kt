@@ -32,6 +32,8 @@ class SendMessageUseCaseTest {
         client: FakeProviderClient = FakeProviderClient(),
         provider: com.personalaiagent.domain.model.Provider? = SampleData.provider(),
         model: com.personalaiagent.domain.model.AiModel? = SampleData.model(),
+        vault: com.personalaiagent.domain.usecase.agent.DocumentVault =
+            com.personalaiagent.domain.usecase.agent.DocumentVault(),
     ): SendMessageUseCase {
         if (provider != null) credentials.keys[provider.id] = "sk-test"
         return SendMessageUseCase(
@@ -47,6 +49,7 @@ class SendMessageUseCaseTest {
             time = time,
             ids = ids,
             skillSource = FakeSkillSource(),
+            documentVault = vault,
         )
     }
 
@@ -128,6 +131,7 @@ class SendMessageUseCaseTest {
             time = time,
             ids = ids,
             skillSource = FakeSkillSource(),
+            documentVault = vault,
         )
         val failed = useCase(null, "hello", null).toList()
             .filterIsInstance<SendMessageEvent.Failed>().single()
@@ -244,5 +248,49 @@ class SendMessageUseCaseTest {
         assertFalse(AppError.HttpNotFound.isTransient())
         assertFalse(AppError.Server(400).isTransient())
         assertFalse(AppError.Parse.isTransient())
+    }
+
+    // ----------------------------------------------------- documents as text
+
+    @Test
+    fun `a document attachment is sent as text, not as an image`() = runTest {
+        val client = FakeProviderClient()
+        val document = com.personalaiagent.domain.model.Attachment(
+            name = "contract.pdf",
+            mimeType = "text/plain",
+            base64 = "",
+            sourceLabel = "contract.pdf · 12 صفحة",
+            text = "--- page 1 ---\nالبند السابع: يحق للطرف الثاني الفسخ بعد إخطار.",
+        )
+
+        useCase(client).invoke(null, "لخّص الملف", null, listOf(document)).toList()
+
+        val userTurn = client.requests.last().messages.last { it.role == MessageRole.USER }
+        assertTrue(userTurn.content.contains("البند السابع"))
+        assertTrue("images must not carry a text document", userTurn.attachments.isEmpty())
+        assertTrue(userTurn.content.contains("contract.pdf"))
+    }
+
+    @Test
+    fun `a follow-up question still has the document in view`() = runTest {
+        val client = FakeProviderClient()
+        val vault = com.personalaiagent.domain.usecase.agent.DocumentVault()
+        val useCase = useCase(client, vault = vault)
+        val document = com.personalaiagent.domain.model.Attachment(
+            name = "contract.pdf",
+            mimeType = "text/plain",
+            base64 = "",
+            text = "البند السابع: الفسخ بعد إخطار 30 يومًا.",
+        )
+
+        useCase.invoke(null, "اقرأ الملف", null, listOf(document)).toList()
+        val conversationId = chatRepository.conversations.first().id
+        useCase.invoke(conversationId, "والبند السابع بيقول إيه؟", null).toList()
+
+        val followUp = client.requests.last().messages.last { it.role == MessageRole.USER }
+        assertTrue(
+            "the document text must still be attached to the follow-up",
+            followUp.content.contains("الفسخ بعد إخطار"),
+        )
     }
 }

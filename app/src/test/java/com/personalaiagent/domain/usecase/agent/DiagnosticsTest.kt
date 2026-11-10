@@ -51,7 +51,7 @@ class DiagnosticsTest {
                 // a comment with a stray )
                 println(text)
             }
-        """.trimIndent()
+        """.trimIndent() + "\n"
         val report = Diagnostics.check("Main.kt", kotlin)
 
         assertTrue(report.render(), report.issues.isEmpty())

@@ -300,6 +300,6 @@ object PdfTextExtractor {
     const val MAX_CHARS = 180_000
     private const val MAX_BLOCK_CHARS = 60_000
     private const val MAX_INFLATE_CHUNKS = 4_000
-    private const val MIN_USABLE_CHARS = 60
+    private const val MIN_USABLE_CHARS = 24
     private const val MIN_QUALITY = 0.75
 }

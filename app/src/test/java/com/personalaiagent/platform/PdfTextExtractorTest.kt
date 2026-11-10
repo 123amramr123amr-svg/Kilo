@@ -49,7 +49,7 @@ class PdfTextExtractorTest {
 
     @Test
     fun `plain content stream is read and marked usable`() {
-        val file = pdf(content("Hello AURA", "second line about the workspace"))
+        val file = pdf(content("Hello AURA", "second line about the workspace and its files"))
         val result = PdfTextExtractor.extract(file)
 
         assertTrue(result.usable)
@@ -59,7 +59,7 @@ class PdfTextExtractorTest {
 
     @Test
     fun `flate compressed stream is inflated before decoding`() {
-        val file = pdf(deflate(content("compressed text survives the inflate step")))
+        val file = pdf(deflate(content("compressed text survives the inflate step intact")))
         val result = PdfTextExtractor.extract(file)
 
         assertTrue(result.usable)

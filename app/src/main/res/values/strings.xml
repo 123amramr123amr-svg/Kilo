@@ -335,7 +335,7 @@
     <string name="error_network">Network error. Check your connection and the base URL.</string>
     <string name="error_timeout">The provider took too long to respond.</string>
     <string name="error_auth">Authentication failed. Check your API key.</string>
-    <string name="error_rate_limit">The provider rate-limited the request. Try again shortly.</string>
+    <string name="error_rate_limit">The provider asked to slow down (HTTP 429). This is a limit on your key, not a bug.</string>
     <string name="error_server">The provider returned an error (%1$d).</string>
     <string name="error_parse">Unexpected response from the provider.</string>
     <string name="error_cancelled">Generation stopped.</string>
@@ -495,7 +495,6 @@
     <string name="chat_continue_answer">Continue the answer</string>
 
     <!-- Phase 7: real causes instead of one generic "error" -->
-    <string name="error_rate_limit">The provider asked to slow down (HTTP 429). This is a limit on your key, not a bug.</string>
     <string name="error_rate_limit_wait">The provider asked to slow down. Try again in about %1$d seconds.</string>
     <string name="error_quota">Your provider account has no credit or quota left. Add credit, or switch to another provider.</string>
     <string name="error_context_too_long">This conversation is longer than the model can read. Start a new chat, or pick a model with a bigger context window.</string>

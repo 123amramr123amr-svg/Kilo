@@ -335,7 +335,7 @@
     <string name="error_network">خطأ في الشبكة. تحقّق من الاتصال وعنوان الخدمة.</string>
     <string name="error_timeout">استغرق المزوّد وقتًا طويلًا للرد.</string>
     <string name="error_auth">فشلت المصادقة. تحقّق من مفتاح API.</string>
-    <string name="error_rate_limit">حدّد المزوّد عدد الطلبات. حاول بعد قليل.</string>
+    <string name="error_rate_limit">المزوّد طلب منك التمهّل (429). ده حدّ على مفتاحك، مش عيب في التطبيق.</string>
     <string name="error_server">أعاد المزوّد خطأ (%1$d).</string>
     <string name="error_parse">رد غير متوقع من المزوّد.</string>
     <string name="error_cancelled">تم إيقاف التوليد.</string>
@@ -495,7 +495,6 @@
     <string name="chat_continue_answer">أكمل الإجابة</string>
 
     <!-- المرحلة 7: سبب حقيقي بدل «حصل خطأ» -->
-    <string name="error_rate_limit">المزوّد طلب منك التمهّل (429). ده حدّ على مفتاحك، مش عيب في التطبيق.</string>
     <string name="error_rate_limit_wait">المزوّد طلب التمهّل. جرّب تاني بعد حوالي %1$d ثانية.</string>
     <string name="error_quota">رصيد/حصة حسابك عند المزوّد خلصت. اشحن الحساب أو بدّل لمزوّد تاني.</string>
     <string name="error_context_too_long">المحادثة أطول من قدرة النموذج على القراءة. ابدأ محادثة جديدة أو اختار نموذج بسياق أكبر.</string>

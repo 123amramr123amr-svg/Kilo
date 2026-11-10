@@ -11,15 +11,23 @@ import android.util.Base64
 import com.personalaiagent.domain.model.Attachment
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Turns a picked document into attachments a vision model can read.
+ * Turns a picked file into something a model can actually read.
  *
- * Images are downscaled to [MAX_IMAGE_SIDE] px and re-encoded as JPEG. PDFs are
- * rasterised with the platform [PdfRenderer] (first [MAX_PDF_PAGES] pages), so no
- * PDF library or server-side parsing is needed.
+ * Two paths, chosen by what the file *is*, not by its size:
+ *
+ * 1. **Text** — a PDF's text layer is extracted on device ([PdfTextExtractor]) and
+ *    sent as text. Plain text/markdown/code/CSV/JSON files are read directly.
+ *    This is the path that scales: 200 typed pages ≈ 90k characters, no images.
+ * 2. **Pixels** — a scanned PDF (no text layer) is rasterised with the platform
+ *    [PdfRenderer], and images are downscaled. Capped, because every page is
+ *    tokens; the attachment label says how many pages were sent.
+ *
+ * Nothing is silently dropped: when a cap is hit, the label spells it out.
  */
 @Singleton
 class AttachmentLoader @Inject constructor(
@@ -32,10 +40,13 @@ class AttachmentLoader @Inject constructor(
         val mime = context.contentResolver.getType(uri).orEmpty()
         when {
             mime == "application/pdf" || name.endsWith(".pdf", ignoreCase = true) ->
-                renderPdf(uri, name, maxPages)
+                loadPdf(uri, name, maxPages)
 
             mime.startsWith("image/") || IMAGE_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) } ->
                 listOfNotNull(encodeImage(readBytes(uri), name))
+
+            mime.startsWith("text/") || TEXT_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) } ->
+                listOf(loadText(uri, name))
 
             else -> throw IllegalArgumentException("unsupported_type")
         }
@@ -53,14 +64,81 @@ class AttachmentLoader @Inject constructor(
         context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
             ?: throw IllegalStateException("unreadable")
 
+    /** Copies the document to a private cache file, streaming, whatever its size. */
+    private fun copyToCache(uri: Uri, name: String): File {
+        val target = File(context.cacheDir, "uploads").apply { mkdirs() }
+            .resolve(name.replace(Regex("[^A-Za-z0-9._-]"), "_").take(80).ifBlank { "document.pdf" })
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            target.outputStream().use { output -> input.copyTo(output, 128 * 1024) }
+        } ?: throw IllegalStateException("unreadable")
+        return target
+    }
+
+    private fun loadPdf(uri: Uri, name: String, maxPages: Int): List<Attachment> {
+        val file = copyToCache(uri, name)
+        val extracted = runCatching { PdfTextExtractor.extract(file) }.getOrNull()
+        if (extracted != null && extracted.usable) {
+            val text = extracted.asDocumentText()
+            if (text.isNotBlank()) {
+                file.delete()
+                return listOf(textAttachment(name, text, extracted.blocks.size, extracted.truncated))
+            }
+        }
+        // No usable text layer: it is a scan (or a broken encoding), so use eyes.
+        return try {
+            renderPdf(uri, name, maxPages)
+        } finally {
+            file.delete()
+        }
+    }
+
+    private fun textAttachment(name: String, text: String, pages: Int, truncated: Boolean): Attachment {
+        val label = buildString {
+            append(name)
+            append(" · ")
+            append(if (pages > 0) "$pages صفحة" else "${text.length} حرف")
+            if (truncated) append(" · أول جزء من الملف")
+        }
+        return Attachment(
+            name = name,
+            mimeType = "text/plain",
+            base64 = "",
+            sourceLabel = label,
+            text = text,
+        )
+    }
+
+    /** Plain text of any size: read in full (bounded), never cut at the first page. */
+    private fun loadText(uri: Uri, name: String): Attachment {
+        val text = context.contentResolver.openInputStream(uri)?.use { stream ->
+            val buffer = ByteArray(MAX_TEXT_BYTES)
+            var total = 0
+            while (total < buffer.size) {
+                val read = stream.read(buffer, total, buffer.size - total)
+                if (read <= 0) break
+                total += read
+            }
+            String(buffer, 0, total, Charsets.UTF_8)
+        } ?: throw IllegalStateException("unreadable")
+        val label = "$name · ${text.length} حرف"
+        return Attachment(
+            name = name,
+            mimeType = "text/plain",
+            base64 = "",
+            sourceLabel = label,
+            text = text,
+        )
+    }
+
     private fun renderPdf(uri: Uri, name: String, maxPages: Int): List<Attachment> {
         val descriptor: ParcelFileDescriptor = context.contentResolver.openFileDescriptor(uri, "r")
             ?: throw IllegalStateException("unreadable")
         return descriptor.use { fd ->
             PdfRenderer(fd).use { renderer ->
-                (0 until minOf(renderer.pageCount, maxPages)).mapNotNull { index ->
+                val pages = minOf(renderer.pageCount, maxPages)
+                (0 until pages).mapNotNull { index ->
                     renderer.openPage(index).use { page ->
-                        val scale = MAX_IMAGE_SIDE.toFloat() / maxOf(page.width, page.height)
+                        val scale = SCAN_IMAGE_SIDE.toFloat() / maxOf(page.width, page.height)
                         val width = (page.width * scale).toInt().coerceAtLeast(1)
                         val height = (page.height * scale).toInt().coerceAtLeast(1)
                         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -72,7 +150,11 @@ class AttachmentLoader @Inject constructor(
                             name = "$name#${index + 1}",
                             mimeType = "image/jpeg",
                             base64 = base64,
-                            sourceLabel = "$name · ${index + 1}/${minOf(renderer.pageCount, maxPages)}",
+                            sourceLabel = if (renderer.pageCount > pages) {
+                                "$name · صورة صفحة ${index + 1} من ${renderer.pageCount} (أول $pages)"
+                            } else {
+                                "$name · ${index + 1}/${renderer.pageCount}"
+                            },
                         )
                     }
                 }
@@ -120,8 +202,21 @@ class AttachmentLoader @Inject constructor(
 
     companion object {
         const val MAX_IMAGE_SIDE = 1400
-        const val MAX_PDF_PAGES = 5
+
+        /** Rasterised pages are capped because each one is paid for in tokens. */
+        const val MAX_PDF_PAGES = 10
+        const val SCAN_IMAGE_SIDE = 1700
+
+        /** Text files: 2 million characters ≈ 500k tokens of *available* text. */
+        const val MAX_TEXT_BYTES = 2_000_000
+
         private const val JPEG_QUALITY = 82
-        private val IMAGE_EXTENSIONS = listOf(".png", ".jpg", ".jpeg", ".webp", ".heic", ".heif")
+        private val IMAGE_EXTENSIONS =
+            listOf(".png", ".jpg", ".jpeg", ".webp", ".heic", ".heif", ".bmp", ".gif")
+        private val TEXT_EXTENSIONS = listOf(
+            ".txt", ".md", ".markdown", ".csv", ".tsv", ".json", ".xml", ".html", ".htm",
+            ".log", ".yaml", ".yml", ".kt", ".kts", ".java", ".py", ".js", ".ts", ".css",
+            ".gradle", ".properties", ".sql", ".sh", ".toml", ".ini",
+        )
     }
 }

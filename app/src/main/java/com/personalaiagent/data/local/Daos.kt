@@ -129,6 +129,8 @@ data class ConversationSummaryRow(
     val updatedAt: Long,
     val messageCount: Int,
     val preview: String?,
+    val tokensIn: Int,
+    val tokensOut: Int,
 )
 
 @Dao
@@ -147,7 +149,11 @@ interface ConversationDao {
                (SELECT COUNT(*) FROM messages m WHERE m.conversationId = c.id) AS messageCount,
                (SELECT m.content FROM messages m
                  WHERE m.conversationId = c.id
-                 ORDER BY m.createdAt DESC, m.id DESC LIMIT 1) AS preview
+                 ORDER BY m.createdAt DESC, m.id DESC LIMIT 1) AS preview,
+               (SELECT COALESCE(SUM(t.tokensIn), 0) FROM task_runs t
+                 WHERE t.conversationId = c.id) AS tokensIn,
+               (SELECT COALESCE(SUM(t.tokensOut), 0) FROM task_runs t
+                 WHERE t.conversationId = c.id) AS tokensOut
         FROM conversations c
         ORDER BY c.updatedAt DESC
         """,
@@ -163,7 +169,11 @@ interface ConversationDao {
                (SELECT COUNT(*) FROM messages m WHERE m.conversationId = c.id) AS messageCount,
                (SELECT m.content FROM messages m
                  WHERE m.conversationId = c.id
-                 ORDER BY m.createdAt DESC, m.id DESC LIMIT 1) AS preview
+                 ORDER BY m.createdAt DESC, m.id DESC LIMIT 1) AS preview,
+               (SELECT COALESCE(SUM(t.tokensIn), 0) FROM task_runs t
+                 WHERE t.conversationId = c.id) AS tokensIn,
+               (SELECT COALESCE(SUM(t.tokensOut), 0) FROM task_runs t
+                 WHERE t.conversationId = c.id) AS tokensOut
         FROM conversations c
         WHERE c.title LIKE '%' || :query || '%'
            OR EXISTS (
@@ -248,8 +258,23 @@ interface MessageDao {
     suspend fun clear()
 }
 
+/** Tokens spent in one conversation, summed from the execution log. */
+data class TokenUsageRow(val tokensIn: Int, val tokensOut: Int)
+
 @Dao
 interface TaskDao {
+
+    @Query(
+        "SELECT COALESCE(SUM(tokensIn), 0) AS tokensIn, COALESCE(SUM(tokensOut), 0) AS tokensOut " +
+            "FROM task_runs WHERE conversationId = :conversationId",
+    )
+    fun observeConversationTokens(conversationId: String): Flow<TokenUsageRow>
+
+    @Query(
+        "SELECT COALESCE(SUM(tokensIn), 0) AS tokensIn, COALESCE(SUM(tokensOut), 0) AS tokensOut " +
+            "FROM task_runs",
+    )
+    fun observeAllTokens(): Flow<TokenUsageRow>
 
     @Query("SELECT * FROM task_runs ORDER BY startedAt DESC")
     fun observeAll(): Flow<List<TaskRunEntity>>

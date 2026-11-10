@@ -51,6 +51,7 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.ErrorOutline
@@ -109,6 +110,7 @@ import com.personalaiagent.domain.model.ChatMessage
 import com.personalaiagent.domain.model.DraftReview
 import com.personalaiagent.domain.model.MessageRole
 import com.personalaiagent.domain.model.MessageStatus
+import com.personalaiagent.domain.model.TokenUsage
 import com.personalaiagent.platform.Speaker
 import com.personalaiagent.ui.components.ConfirmDialog
 import com.personalaiagent.ui.components.GhostButton
@@ -126,6 +128,7 @@ import com.personalaiagent.ui.theme.BrandSuccess
 import com.personalaiagent.ui.theme.BrandWarning
 import com.personalaiagent.ui.theme.LocalBrand
 import com.personalaiagent.ui.util.appErrorText
+import com.personalaiagent.domain.usecase.agent.PendingQuestion
 import com.personalaiagent.domain.usecase.agent.ToolActivityUi
 import com.personalaiagent.domain.model.AiModel
 import kotlinx.coroutines.launch
@@ -439,10 +442,23 @@ fun ChatScreen(
             onSelectModel = viewModel::selectModel,
             onOpenModels = onOpenModels,
             onAttach = {
-                attachLauncher.launch(arrayOf("image/*", "application/pdf"))
+                // Documents and code files too — they are read as text, not pixels.
+                attachLauncher.launch(
+                    arrayOf("image/*", "application/pdf", "text/*", "application/json"),
+                )
             },
             onRemoveAttachment = viewModel::removeAttachment,
             onToggleReview = viewModel::toggleReviewFirst,
+        )
+    }
+
+    // The `question` tool suspends the run until this is answered — so the dialog
+    // is part of the conversation, not a notification.
+    state.pendingQuestion?.let { question ->
+        AgentQuestionDialog(
+            question = question,
+            onAnswer = viewModel::answerQuestion,
+            onDismiss = viewModel::dismissQuestion,
         )
     }
 
@@ -1020,6 +1036,20 @@ private fun MessageBubble(
                 }
             }
 
+            // What this single reply cost — the number the provider reported.
+            val replyTokens = (message.tokenIn ?: 0) + (message.tokenOut ?: 0)
+            if (!isUser && replyTokens > 0 && !streaming) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(
+                        R.string.chat_reply_tokens,
+                        TokenUsage(message.tokenIn ?: 0, message.tokenOut ?: 0).short(),
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                )
+            }
+
             if (message.status == MessageStatus.FAILED) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -1215,27 +1245,52 @@ private fun Composer(
                         Spacer(Modifier.width(0.dp))
                     }
 
-                    Row(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable(onClick = onToggleReview)
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            Icons.Rounded.Tune,
-                            contentDescription = null,
-                            tint = if (state.reviewFirst) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(13.dp),
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.chat_review_toggle),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (state.reviewFirst) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (state.tokens.total > 0) {
+                            // What this conversation has cost so far, from the log.
+                            Row(
+                                modifier = Modifier.padding(end = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    Icons.Rounded.DataUsage,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(12.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = stringResource(
+                                        R.string.chat_tokens,
+                                        state.tokens.short(),
+                                    ),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .clickable(onClick = onToggleReview)
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Rounded.Tune,
+                                contentDescription = null,
+                                tint = if (state.reviewFirst) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(13.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(R.string.chat_review_toggle),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (state.reviewFirst) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
                 Spacer(Modifier.height(6.dp))
@@ -1370,6 +1425,72 @@ private fun Composer(
             }
         }
     }
+}
+
+/**
+ * A real question from the agent: the run is waiting on the other side of this
+ * dialog, so answering continues the same task instead of starting a new one.
+ */
+@Composable
+private fun AgentQuestionDialog(
+    question: PendingQuestion,
+    onAnswer: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by remember(question.id) { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("A", style = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Serif))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.agent_question_title))
+            }
+        },
+        text = {
+            Column {
+                Text(question.question, style = MaterialTheme.typography.bodyMedium)
+                if (question.options.isNotEmpty()) {
+                    Spacer(Modifier.height(10.dp))
+                    question.options.forEach { option ->
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 3.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onAnswer(option) },
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        ) {
+                            Text(
+                                text = option,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(stringResource(R.string.agent_question_hint)) },
+                    maxLines = 3,
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onAnswer(text) }, enabled = text.isNotBlank()) {
+                Text(stringResource(R.string.agent_question_send))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.agent_question_skip)) }
+        },
+    )
 }
 
 /**

@@ -13,7 +13,16 @@ data class Attachment(
     val base64: String,
     val isImage: Boolean = mimeType.startsWith("image/"),
     val sourceLabel: String? = null,
-)
+    /**
+     * Extracted document text (PDF text layer, .txt/.md/.csv/.json/…).
+     *
+     * Documents travel as text, not pixels: a 200-page typed PDF then costs a
+     * fraction of what 200 images would, and even a non-vision model can read it.
+     */
+    val text: String? = null,
+) {
+    val isDocument: Boolean get() = text != null
+}
 
 /** An image produced by an image-capable model, saved into the workspace. */
 data class GeneratedImage(

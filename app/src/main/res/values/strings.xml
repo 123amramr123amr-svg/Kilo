@@ -536,4 +536,18 @@
     <string name="history_open">Open conversation</string>
     <string name="chat_open_history">Conversations</string>
     <string name="chat_untitled_conversation">Untitled conversation</string>
+
+    <!-- Phase 8: agent tools, questions, tokens and skills -->
+    <string name="agent_question_title">The agent is asking</string>
+    <string name="agent_question_hint">Type your answer…</string>
+    <string name="agent_question_send">Answer</string>
+    <string name="agent_question_skip">Skip</string>
+    <string name="chat_tokens">%1$s tokens</string>
+    <string name="settings_skills">Agent skills</string>
+    <string name="settings_skills_body">Short instruction files the agent loads only when a task needs them. It can also list and load them itself with the skill tool.</string>
+    <string name="settings_skill_add">Add skill +</string>
+    <string name="settings_skill_name">Name (english, e.g. my-review)</string>
+    <string name="settings_skill_description">When should the agent use it?</string>
+    <string name="settings_skill_body">The instructions themselves</string>
+    <string name="chat_reply_tokens">%1$s tokens</string>
 </resources>

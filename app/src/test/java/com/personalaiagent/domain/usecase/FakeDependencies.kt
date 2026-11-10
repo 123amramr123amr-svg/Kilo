@@ -184,6 +184,15 @@ class FakeChatRepository : ChatRepository {
                 }
         }
 
+    override fun observeConversationTokens(
+        conversationId: String,
+    ): Flow<com.personalaiagent.domain.model.TokenUsage> = flowOf(tokenUsage)
+
+    override fun observeTotalTokens(): Flow<com.personalaiagent.domain.model.TokenUsage> =
+        flowOf(tokenUsage)
+
+    var tokenUsage = com.personalaiagent.domain.model.TokenUsage()
+
     override suspend fun renameConversation(id: String, title: String) {
         val index = conversations.indexOfFirst { it.id == id }
         if (index >= 0) conversations[index] = conversations[index].copy(title = title)
@@ -397,3 +406,87 @@ object SampleData {
 
     val userRole = MessageRole.USER
 }
+
+/**
+ * Skills as plain objects: the asset library is replaced so tests never touch
+ * Android's AssetManager.
+ */
+class FakeSkillSource(
+    private val skills: List<com.personalaiagent.domain.usecase.agent.Skill> = listOf(
+        com.personalaiagent.domain.usecase.agent.Skill(
+            name = "code-review",
+            description = "Review a change before it ships.",
+            body = "Read the diff, then list real problems only.",
+        ),
+    ),
+) : com.personalaiagent.domain.usecase.agent.SkillSource {
+
+    val added = mutableListOf<String>()
+    val deleted = mutableListOf<String>()
+
+    override fun all() = skills
+    override fun byName(name: String) =
+        skills.firstOrNull { it.name.equals(name.trim(), ignoreCase = true) }
+
+    override fun catalog() = skills.joinToString("\n") { "- ${it.name}: ${it.description}" }
+
+    override suspend fun add(name: String, description: String, body: String): Result<com.personalaiagent.domain.usecase.agent.Skill> {
+        added += name
+        return Result.success(com.personalaiagent.domain.usecase.agent.Skill(name, description, body, custom = true))
+    }
+
+    override suspend fun delete(name: String): Result<Unit> {
+        deleted += name
+        return Result.success(Unit)
+    }
+}
+
+/** Records the command and returns a canned result. */
+class FakeShellExecutor(
+    var result: com.personalaiagent.platform.ShellResult =
+        com.personalaiagent.platform.ShellResult(0, "total 0", false, "/data/user/0/app/files/agent-home"),
+) : com.personalaiagent.platform.ShellExecutor {
+
+    val commands = mutableListOf<String>()
+    var lastTimeout: Long = 0
+
+    override suspend fun run(
+        command: String,
+        workdir: java.io.File,
+        timeoutMillis: Long,
+        maxOutputChars: Int,
+    ): com.personalaiagent.platform.ShellResult {
+        commands += command
+        lastTimeout = timeoutMillis
+        return result
+    }
+
+    override fun homeDirectory(): java.io.File = java.io.File("/data/user/0/app/files/agent-home")
+}
+
+/**
+ * One place that builds the executor with every collaborator faked, so adding a
+ * tool dependency does not mean editing a dozen call sites again.
+ */
+fun testExecutor(
+    workspace: FakeWorkspaceRepository = FakeWorkspaceRepository(),
+    json: kotlinx.serialization.json.Json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true },
+    device: com.personalaiagent.domain.usecase.agent.DeviceControl = FakeDeviceControl(),
+    image: com.personalaiagent.domain.usecase.agent.ImageGeneration = FakeImageGeneration(),
+    skills: com.personalaiagent.domain.usecase.agent.SkillSource = FakeSkillSource(),
+    shell: com.personalaiagent.platform.ShellExecutor = FakeShellExecutor(),
+    questions: com.personalaiagent.domain.usecase.agent.QuestionBroker =
+        com.personalaiagent.domain.usecase.agent.QuestionBroker(),
+    settings: com.personalaiagent.domain.repository.SettingsRepository = FakeSettingsRepository(),
+): com.personalaiagent.domain.usecase.agent.AgentToolExecutor =
+    com.personalaiagent.domain.usecase.agent.AgentToolExecutor(
+        workspace = workspace,
+        json = json,
+        device = device,
+        imageGeneration = image,
+        skills = skills,
+        shell = shell,
+        search = com.personalaiagent.domain.usecase.agent.WorkspaceSearch(workspace),
+        questions = questions,
+        settings = settings,
+    )

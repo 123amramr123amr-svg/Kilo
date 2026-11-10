@@ -10,6 +10,7 @@ import com.personalaiagent.data.remote.ProviderClientRouter
 import com.personalaiagent.data.remote.ProviderException
 import com.personalaiagent.data.remote.toAppError
 import com.personalaiagent.domain.model.AiModel
+import com.personalaiagent.domain.model.Attachment
 import com.personalaiagent.domain.model.ChatMessage
 import com.personalaiagent.domain.model.ChatTurn
 import com.personalaiagent.domain.model.MessageRole
@@ -18,6 +19,7 @@ import com.personalaiagent.domain.model.ProviderKind
 import com.personalaiagent.domain.model.TaskStatus
 import com.personalaiagent.domain.model.TaskStepName
 import com.personalaiagent.domain.model.TaskStepStatus
+import com.personalaiagent.domain.usecase.agent.SkillSource
 import com.personalaiagent.domain.model.ToolCall
 import com.personalaiagent.domain.repository.ChatRepository
 import com.personalaiagent.domain.repository.CredentialStore
@@ -112,6 +114,7 @@ class SendMessageUseCase @Inject constructor(
     private val json: Json,
     private val time: TimeProvider,
     private val ids: IdGenerator,
+    private val skillSource: SkillSource,
 ) {
 
     /** Retries a failed request with backoff, honouring the provider's own hint. */
@@ -219,7 +222,12 @@ class SendMessageUseCase @Inject constructor(
                 append("\n\n")
             }
             if (toolsEnabled) {
-                append(AgentToolCatalog.systemPrompt(settings.workspaceName ?: "Workspace"))
+                append(
+                    AgentToolCatalog.systemPrompt(
+                        workspaceName = settings.workspaceName ?: "Workspace",
+                        skills = runCatching { skillSource.catalog() }.getOrDefault(emptyList()),
+                    ),
+                )
             }
         }.trim()
 
@@ -230,13 +238,22 @@ class SendMessageUseCase @Inject constructor(
             if (provider.kind == ProviderKind.OPENAI_COMPATIBLE && systemPrompt.isNotBlank()) {
                 add(ChatTurn(MessageRole.SYSTEM, systemPrompt))
             }
+            // Documents are sent as *text*, images as pixels: that is what lets a
+            // plain (non-vision) model read a PDF, and it costs no image tokens.
+            val images = attachments.filter { it.isImage }
+            val documents = documentBlock(attachments)
             history.forEach { message ->
+                val isLastUser = message.id == lastUserId
                 add(
                     ChatTurn(
                         role = message.role,
-                        content = message.content,
+                        content = if (isLastUser && documents.isNotBlank()) {
+                            message.content + "\n\n" + documents
+                        } else {
+                            message.content
+                        },
                         // Attachments only belong to the message that carried them.
-                        attachments = if (message.id == lastUserId) attachments else emptyList(),
+                        attachments = if (isLastUser) images else emptyList(),
                     ),
                 )
             }
@@ -507,6 +524,37 @@ class SendMessageUseCase @Inject constructor(
      * chat does not start from zero. Built from stored messages — no extra request,
      * no cost, and nothing leaves the phone except into the user's own provider.
      */
+    /**
+     * Document text for the model, with the size stated instead of silently cut.
+     *
+     * A 300-page PDF cannot fit in any context window, so the block says exactly
+     * how much was sent and how much was left out — the model can then tell the
+     * user what it did not see instead of pretending it read everything.
+     */
+    private fun documentBlock(attachments: List<Attachment>): String {
+        val documents = attachments.mapNotNull { attachment -> attachment.text?.let { attachment to it } }
+        if (documents.isEmpty()) return ""
+        val budget = MAX_DOCUMENT_CHARS / documents.size
+        return documents.joinToString("\n\n") { (attachment, text) ->
+            buildString {
+                append("### الملف المرفق: ").append(attachment.name).append('\n')
+                if (text.length <= budget) {
+                    append(text)
+                } else {
+                    val head = (budget * 3) / 4
+                    val tail = budget - head
+                    append(text.take(head))
+                    append("\n\n[... تم اختصار ")
+                    append(text.length - budget)
+                    append(" حرف من أصل ")
+                    append(text.length)
+                    append(" — الملف أطول من المساحة المتاحة في هذه الرسالة ...]\n\n")
+                    append(text.takeLast(tail))
+                }
+            }
+        }
+    }
+
     private suspend fun memoryBlock(currentConversationId: String?): String {
         val previous = runCatching {
             chatRepository.recentConversations(currentConversationId, AppConstants.MEMORY_CONVERSATIONS)
@@ -574,6 +622,9 @@ class SendMessageUseCase @Inject constructor(
 internal fun AppError.isTransient(): Boolean = isRetryable()
 
 /** Stable, non-sensitive identifier for logs and the execution log screen. */
+/** Characters of document text per message (~12k tokens), shared by all files. */
+private const val MAX_DOCUMENT_CHARS = 48_000
+
 fun AppError.describe(): String = when (this) {
     AppError.NoProvider -> "no_provider"
     AppError.NoModel -> "no_model"

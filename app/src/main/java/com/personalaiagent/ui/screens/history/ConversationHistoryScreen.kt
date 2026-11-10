@@ -309,6 +309,19 @@ private fun ConversationCard(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (conversation.totalTokens > 0) {
+                        Text(
+                            text = " · " + stringResource(
+                                R.string.chat_tokens,
+                                com.personalaiagent.domain.model.TokenUsage(
+                                    conversation.tokensIn,
+                                    conversation.tokensOut,
+                                ).short(),
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
 

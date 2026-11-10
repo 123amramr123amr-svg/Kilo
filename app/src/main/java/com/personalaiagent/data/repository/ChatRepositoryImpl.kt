@@ -5,6 +5,7 @@ import com.personalaiagent.core.TimeProvider
 import com.personalaiagent.data.local.ConversationDao
 import com.personalaiagent.data.local.ConversationEntity
 import com.personalaiagent.data.local.MessageDao
+import com.personalaiagent.data.local.TaskDao
 import com.personalaiagent.data.local.toDomain
 import com.personalaiagent.data.local.toEntity
 import com.personalaiagent.domain.model.ChatMessage
@@ -12,6 +13,7 @@ import com.personalaiagent.domain.model.Conversation
 import com.personalaiagent.domain.model.ConversationSummary
 import com.personalaiagent.domain.model.MessageRole
 import com.personalaiagent.domain.model.MessageStatus
+import com.personalaiagent.domain.model.TokenUsage
 import com.personalaiagent.domain.repository.ChatRepository
 import com.personalaiagent.domain.usecase.ConversationTitles
 import javax.inject.Inject
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.map
 class ChatRepositoryImpl @Inject constructor(
     private val conversationDao: ConversationDao,
     private val messageDao: MessageDao,
+    private val taskDao: TaskDao,
     private val time: TimeProvider,
     private val ids: IdGenerator,
 ) : ChatRepository {
@@ -60,6 +63,8 @@ class ChatRepositoryImpl @Inject constructor(
                     preview = row.preview?.replace(Regex("\\s+"), " ")?.trim().orEmpty(),
                     updatedAt = row.updatedAt,
                     messageCount = row.messageCount,
+                    tokensIn = row.tokensIn,
+                    tokensOut = row.tokensOut,
                 )
             }
         }
@@ -70,6 +75,13 @@ class ChatRepositoryImpl @Inject constructor(
         if (clean.isEmpty()) return
         conversationDao.rename(id, clean)
     }
+
+    override fun observeConversationTokens(conversationId: String): Flow<TokenUsage> =
+        taskDao.observeConversationTokens(conversationId)
+            .map { TokenUsage(it.tokensIn, it.tokensOut) }
+
+    override fun observeTotalTokens(): Flow<TokenUsage> =
+        taskDao.observeAllTokens().map { TokenUsage(it.tokensIn, it.tokensOut) }
 
     override suspend fun createConversation(
         title: String,

@@ -11,17 +11,21 @@ import com.personalaiagent.domain.model.Attachment
 import com.personalaiagent.domain.model.ChatMessage
 import com.personalaiagent.domain.model.DraftReview
 import com.personalaiagent.domain.model.MessageRole
+import com.personalaiagent.domain.model.TokenUsage
 import com.personalaiagent.domain.repository.ChatRepository
 import com.personalaiagent.domain.repository.ModelRepository
 import com.personalaiagent.domain.repository.ProviderRepository
 import com.personalaiagent.domain.repository.SettingsRepository
 import com.personalaiagent.domain.usecase.ReviewDraftUseCase
 import com.personalaiagent.domain.usecase.agent.AgentRunController
+import com.personalaiagent.domain.usecase.agent.PendingQuestion
+import com.personalaiagent.domain.usecase.agent.QuestionBroker
 import com.personalaiagent.domain.usecase.agent.RetryNotice
 import com.personalaiagent.domain.usecase.agent.ToolActivityUi
 import com.personalaiagent.platform.AttachmentLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,6 +37,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class ChatUiState(
     val isLoading: Boolean = true,
@@ -59,6 +64,10 @@ data class ChatUiState(
     val plan: List<String> = emptyList(),
     /** Set while an automatic retry is waiting, so the UI can count down. */
     val retry: RetryNotice? = null,
+    /** A question the agent is blocked on; answered from the chat. */
+    val pendingQuestion: PendingQuestion? = null,
+    /** Tokens spent in this conversation so far (from the execution log). */
+    val tokens: TokenUsage = TokenUsage(),
     val reviewFirst: Boolean = true,
     val isReviewing: Boolean = false,
     val review: DraftReview? = null,
@@ -108,11 +117,31 @@ class ChatViewModel @Inject constructor(
     private var lastCompletedRuns = 0
 
     init {
+        observeQuestion()
         observeConversation()
         observeMessages()
         observeModels(settingsRepository)
         observeProviders()
         observeRun()
+    }
+
+    /** The `question` tool really waits, so the dialog has to follow the broker. */
+    private fun observeQuestion() {
+        viewModelScope.launch {
+            questions.pending.collect { pending ->
+                _uiState.update { it.copy(pendingQuestion = pending) }
+            }
+        }
+    }
+
+    fun answerQuestion(text: String) {
+        questions.answer(text)
+        _uiState.update { it.copy(pendingQuestion = null) }
+    }
+
+    fun dismissQuestion() {
+        questions.cancelQuestion()
+        _uiState.update { it.copy(pendingQuestion = null) }
     }
 
     private fun observeConversation() {
@@ -135,6 +164,13 @@ class ChatViewModel @Inject constructor(
                 .collect { messages ->
                     _uiState.update { it.copy(messages = messages, isLoading = false) }
                 }
+        }
+        viewModelScope.launch {
+            conversationId
+                .flatMapLatest { id ->
+                    if (id == null) flowOf(TokenUsage()) else chatRepository.observeConversationTokens(id)
+                }
+                .collect { usage -> _uiState.update { it.copy(tokens = usage) } }
         }
     }
 
@@ -243,7 +279,10 @@ class ChatViewModel @Inject constructor(
     fun attach(uri: Uri) {
         viewModelScope.launch {
             _uiState.update { it.copy(isAttaching = true, error = null) }
-            val result = runCatching { attachmentLoader.load(uri) }.getOrNull()
+            // A 300-page scan takes seconds to rasterise: never on the main thread.
+            val result = withContext(Dispatchers.IO) {
+                runCatching { attachmentLoader.load(uri) }.getOrNull()
+            }
             val attachments = result?.getOrNull()
             when {
                 attachments == null -> _uiState.update {

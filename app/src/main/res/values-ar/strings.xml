@@ -536,4 +536,18 @@
     <string name="history_open">افتح المحادثة</string>
     <string name="chat_open_history">المحادثات</string>
     <string name="chat_untitled_conversation">محادثة بدون اسم</string>
+
+    <!-- المرحلة 8: أدوات الوكيل والأسئلة والتوكن والمهارات -->
+    <string name="agent_question_title">الوكيل بيسأل</string>
+    <string name="agent_question_hint">اكتب إجابتك…</string>
+    <string name="agent_question_send">إجابة</string>
+    <string name="agent_question_skip">تخطي</string>
+    <string name="chat_tokens">%1$s توكن</string>
+    <string name="settings_skills">مهارات الوكيل</string>
+    <string name="settings_skills_body">ملفات تعليمات قصيرة بيحمّلها الوكيل وقت ما المهمة تحتاجها بس. ويقدر يسردها ويحمّلها بنفسه بأداة skill.</string>
+    <string name="settings_skill_add">إضافة مهارة +</string>
+    <string name="settings_skill_name">الاسم (بالإنجليزي، مثال: my-review)</string>
+    <string name="settings_skill_description">الوكيل يستخدمها امتى؟</string>
+    <string name="settings_skill_body">التعليمات نفسها</string>
+    <string name="chat_reply_tokens">%1$s توكن</string>
 </resources>

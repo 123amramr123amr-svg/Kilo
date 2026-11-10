@@ -42,10 +42,11 @@ class SendMessageUseCaseTest {
             taskRepository = taskRepository,
             settingsRepository = settings,
             clients = ProviderClientRouter(client, client),
-            toolExecutor = AgentToolExecutor(FakeWorkspaceRepository(), Json { ignoreUnknownKeys = true }, FakeDeviceControl(), FakeImageGeneration()),
+            toolExecutor = testExecutor(workspace = FakeWorkspaceRepository()),
             json = Json { ignoreUnknownKeys = true },
             time = time,
             ids = ids,
+            skillSource = FakeSkillSource(),
         )
     }
 
@@ -122,10 +123,11 @@ class SendMessageUseCaseTest {
             taskRepository = taskRepository,
             settingsRepository = settings,
             clients = ProviderClientRouter(FakeProviderClient(), FakeProviderClient()),
-            toolExecutor = AgentToolExecutor(FakeWorkspaceRepository(), Json { ignoreUnknownKeys = true }, FakeDeviceControl(), FakeImageGeneration()),
+            toolExecutor = testExecutor(workspace = FakeWorkspaceRepository()),
             json = Json { ignoreUnknownKeys = true },
             time = time,
             ids = ids,
+            skillSource = FakeSkillSource(),
         )
         val failed = useCase(null, "hello", null).toList()
             .filterIsInstance<SendMessageEvent.Failed>().single()

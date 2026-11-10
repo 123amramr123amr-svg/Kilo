@@ -145,6 +145,12 @@ interface ChatRepository {
     fun observeConversationSummaries(query: String = ""): Flow<List<com.personalaiagent.domain.model.ConversationSummary>>
 
     suspend fun renameConversation(id: String, title: String)
+
+    /** Tokens spent inside one conversation, live from the execution log. */
+    fun observeConversationTokens(conversationId: String): Flow<com.personalaiagent.domain.model.TokenUsage>
+
+    /** Tokens spent by the whole app. */
+    fun observeTotalTokens(): Flow<com.personalaiagent.domain.model.TokenUsage>
     suspend fun createConversation(title: String, providerId: String?, modelId: String?): String
     suspend fun updateConversationModel(id: String, providerId: String?, modelId: String?)
     suspend fun appendMessage(message: ChatMessage)

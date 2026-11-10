@@ -75,10 +75,11 @@ class AgentLoopTest {
             taskRepository = taskRepository,
             settingsRepository = settings,
             clients = ProviderClientRouter(client, client),
-            toolExecutor = AgentToolExecutor(workspace, json, FakeDeviceControl(), FakeImageGeneration()),
+            toolExecutor = testExecutor(workspace = workspace),
             json = json,
             time = FakeTime(),
             ids = FakeIds(),
+            skillSource = FakeSkillSource(),
         )
     }
 
@@ -147,10 +148,11 @@ class AgentLoopTest {
             taskRepository = taskRepository,
             settingsRepository = noWorkspace,
             clients = ProviderClientRouter(client, client),
-            toolExecutor = AgentToolExecutor(workspace, json, FakeDeviceControl(), FakeImageGeneration()),
+            toolExecutor = testExecutor(workspace = workspace),
             json = json,
             time = FakeTime(),
             ids = FakeIds(),
+            skillSource = FakeSkillSource(),
         )
 
         useCase.invoke(null, "hello", null).toList()

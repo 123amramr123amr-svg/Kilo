@@ -65,8 +65,22 @@ Verified in CI: build **success**, unit tests **147/147 passing** (see
 - **Background execution**: tasks continue when you leave the app (foreground service +
   app-scoped run controller) and a stop button is always on screen.
 - **Opens apps & searches**: `list_apps`, `open_app`, `web_search`, `open_url`.
-- **Reviews images and PDFs**: attach a photo or a PDF (pages are rasterised on device) and
-  a vision model reads it.
+- **Reads documents, not just pictures**: a typed PDF's text layer is extracted on the phone
+  and sent as *text* — any page count, no image tokens, and it works even with a model that
+  has no vision; a scanned PDF falls back to a rasteriser (10 pages, and the label says so);
+  plain text/code/CSV/JSON files are read whole. Nothing is cut silently: the model is told
+  exactly how much was omitted.
+- **Ten shell-style tools**: `read` (line numbers), `edit` (refuses an ambiguous match),
+  `patch` (all-or-nothing), `grep`, `glob` (`**` crosses folders), `shell` (the real Android
+  shell in a real working directory, deny-list, timeouts, no root/PTY/python — said plainly),
+  `diagnostics` (JSON/XML/brackets/quotes — shape, not a compiler), `question` (blocks the run
+  until you answer), `skill` (loads instructions on demand) and the file tools below.
+- **Skills** — bundled markdown instructions (`code-review`, `port-from-project`,
+  `skill-creator`, `spike`, `systematic-debugging`, `pdf-and-docs`) that the agent loads only
+  when a task needs them. Settings lists them with their triggers, deletes them, and
+  «إضافة مهارة +» writes a new one into the app.
+- **Token usage you can see**: a count under every answer, a running total for the
+  conversation in the composer, and a total on each card in the history list.
 - **Creates images**: `generate_image` calls `/images/generations` and saves the picture
   into your workspace.
 - **Model switcher above the input**: every connected model, one tap, across providers.
@@ -74,8 +88,9 @@ Verified in CI: build **success**, unit tests **147/147 passing** (see
   provider's model names appear as a checklist. Tick the ones you want; they are saved with
   the provider and show up in the app immediately.
 - **The phone is the agent's workspace**: pick a folder with the system folder picker, then
-  the agent can *create, read, append to and delete* real files in it through six tools
-  (`list_files`, `read_file`, `write_file`, `append_file`, `create_folder`, `delete_path`).
+  the agent can *create, read, edit, patch, search and delete* real files in it through the
+  file tools (`list_files`, `read_file`, `write_file`, `append_file`, `create_folder`,
+  `delete_path`, plus `read`, `edit`, `patch`, `grep`, `glob`, `diagnostics`).
   Every tool call is shown in the chat and recorded as an `EXECUTE_TOOL` step in the
   execution log.
 
@@ -186,4 +201,6 @@ icon), the rewritten activity panel with the model's reasoning, the request to h
 speed/connection fixes, and [`docs/PHASE7.md`](docs/PHASE7.md) for the real error causes
 (backoff, `Retry-After`, context trimming), the conversation history with names and search,
 the rebuilt composer, and the comparison with claude-code / OpenMinis / ai-manus.
+[`docs/PHASE8.md`](docs/PHASE8.md) covers the ten tools, the skills (and why custom commands
+are *not* built), the token counters and the document pipeline — with the limits stated.
 The design page from phase 6 lives at [`design/aura-preview.html`](design/aura-preview.html).
